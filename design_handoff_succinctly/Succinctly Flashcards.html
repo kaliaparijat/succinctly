@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Succinctly — Flashcards</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #0A0A0B; color: #F5F5F7; font-family: 'Inter Tight', system-ui, sans-serif; overflow: hidden; overscroll-behavior-x: none; overscroll-behavior-y: none; }
+  * { box-sizing: border-box; }
+  #root { width: 100vw; height: 100vh; }
+  kbd { font-family: 'JetBrains Mono', monospace; }
+  button { font-family: inherit; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  @keyframes caret { 50% { opacity: 0; } }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="env,react">
+const { useState, useEffect, useCallback, useRef, useMemo, Fragment } = React;
+
+// ═══════════════════════════════════════════════════════════
+// TOKENS
+// ═══════════════════════════════════════════════════════════
+const T = {
+  bg: '#0A0A0B', bgElev: '#111113', bgCard: '#17171A', bgHover: '#1D1D21',
+  border: 'rgba(255,255,255,0.08)', borderStrong: 'rgba(255,255,255,0.14)',
+  text: '#F5F5F7', textMuted: 'rgba(245,245,247,0.6)', textFaint: 'rgba(245,245,247,0.38)',
+  fontSans: '"Inter Tight", -apple-system, system-ui, sans-serif',
+  fontDisplay: '"Instrument Serif", Georgia, serif',
+  fontMono: '"JetBrains Mono", ui-monospace, monospace',
+  decks: {
+    butter:  { bg: '#F5D96B', ink: '#3A2E0A', name: 'Butter' },
+    sky:     { bg: '#A8C8E8', ink: '#0F2940', name: 'Sky' },
+    coral:   { bg: '#F2A68F', ink: '#3A1509', name: 'Coral' },
+    mint:    { bg: '#B8DFC4', ink: '#0F3320', name: 'Mint' },
+    lilac:   { bg: '#D4BFE8', ink: '#2C1840', name: 'Lilac' },
+    paper:   { bg: '#F0E9DC', ink: '#2A2418', name: 'Paper' },
+    terracotta: { bg: '#D98A6B', ink: '#3A1509', name: 'Terracotta' },
+    sage:    { bg: '#C5D4B0', ink: '#1F2B10', name: 'Sage' },
+  },
+};
+const PAPER_NOISE = `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='4'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")`;
+
+// ═══════════════════════════════════════════════════════════
+// ICONS
+// ═══════════════════════════════════════════════════════════
+const Icon = ({ d, size = 20, stroke = 1.6, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color}
+       strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round">{d}</svg>
+);
+const I = {
+  plus: (p) => <Icon {...p} d={<><path d="M12 5v14M5 12h14"/></>} />,
+  arrowL: (p) => <Icon {...p} d={<path d="M15 6l-6 6 6 6"/>} />,
+  arrowR: (p) => <Icon {...p} d={<path d="M9 6l6 6-6 6"/>} />,
+  close: (p) => <Icon {...p} d={<><path d="M6 6l12 12M18 6L6 18"/></>} />,
+  more: (p) => <Icon {...p} d={<><circle cx="5" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="19" cy="12" r="1" fill="currentColor"/></>} />,
+  keyboard: (p) => <Icon {...p} d={<><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></>} />,
+  back: (p) => <Icon {...p} d={<><path d="M19 12H5M11 6l-6 6 6 6"/></>} />,
+  bold: (p) => <Icon {...p} d={<path d="M7 4h6a4 4 0 0 1 0 8H7zM7 12h7a4 4 0 0 1 0 8H7z"/>} />,
+  italic: (p) => <Icon {...p} d={<><path d="M19 4h-9M14 20H5M15 4L9 20"/></>} />,
+  list: (p) => <Icon {...p} d={<><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></>} />,
+  code: (p) => <Icon {...p} d={<><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></>} />,
+  math: (p) => <Icon {...p} d={<><path d="M4 20l8-16h4l-8 16zM14 10h6M14 14h6"/></>} />,
+};
+
+// ═══════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════
+const DECKS = [
+  { id: 'algos', name: 'Algorithms', palette: 'butter', cards: [
+    { q: <>What is the time complexity of <em style={{fontFamily:T.fontMono, fontStyle:'normal', fontSize:'0.8em', padding:'2px 10px', background:'rgba(58,46,10,0.1)', borderRadius:6}}>binary search</em>?</>,
+      a: <><strong>O(log n)</strong><div style={{fontSize:'0.5em', marginTop:16, opacity:0.7, fontFamily:T.fontSans}}>Halves the search space each iteration.</div></> },
+    { q: 'When would you pick a hash table over a balanced BST?', a: 'When you need O(1) average lookup and don\u2019t need ordered traversal.' },
+    { q: 'Quicksort worst-case complexity?', a: 'O(n\u00b2)' },
+  ]},
+  { id: 'linalg', name: 'Linear Algebra', palette: 'sky', cards: [
+    { q: <>What does the <em style={{fontStyle:'italic'}}>determinant</em> represent geometrically?</>, a: 'The signed scaling factor of volume under the linear map.' },
+    { q: 'Eigenvectors of the identity matrix?', a: 'Every nonzero vector — all eigenvalues equal 1.' },
+  ]},
+  { id: 'ind-history', name: 'Indian History', palette: 'coral', cards: [
+    { q: 'Who founded the Mauryan Empire?', a: 'Chandragupta Maurya, around 322 BCE.' },
+    { q: 'In what year was the Indian National Congress founded?', a: '1885, in Bombay.' },
+  ]},
+  { id: 'spanish', name: 'Spanish Verbs', palette: 'mint', cards: [{ q: 'haber (to have)', a: 'he, has, ha, hemos, habéis, han' }] },
+  { id: 'philosophy', name: 'Philosophy 101', palette: 'lilac', cards: [{ q: 'What is epistemology?', a: 'The study of knowledge — its nature, sources, and limits.' }] },
+  { id: 'biology', name: 'Cell Biology', palette: 'sage', cards: [{ q: 'Powerhouse of the cell?', a: 'Mitochondria.' }] },
+];
+
+// ═══════════════════════════════════════════════════════════
+// FLASHCARD (shared)
+// ═══════════════════════════════════════════════════════════
+function Flashcard({ deck, question, answer, flipped, onFlip, width = 700, height = 460, showHint, dragX = 0, fontSize = 42, radius = 20 }) {
+  const pal = deck;
+  const tilt = useMemo(() => {
+    const s = String((question && question.props && question.props.children) || question || '').slice(0, 20);
+    let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+    return ((h % 100) / 100 - 0.5) * 1.2;
+  }, [question]);
+
+  const face = (content, isBack) => (
+    <div style={{
+      position: 'absolute', inset: 0, background: pal.bg, borderRadius: radius,
+      backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden',
+      transform: isBack ? 'rotateY(180deg)' : 'none',
+      padding: `${radius * 2.4}px ${radius * 2.8}px`,
+      display: 'flex', flexDirection: 'column',
+      boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.5)',
+      overflow: 'hidden',
+    }}>
+      <div style={{ position: 'absolute', inset: 0, backgroundImage: PAPER_NOISE, mixBlendMode: 'multiply', opacity: 0.5, pointerEvents: 'none' }}/>
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+        paddingBottom: 14, marginBottom: Math.round(fontSize * 0.8),
+        borderBottom: `1px solid ${pal.ink}22`,
+      }}>
+        <div style={{ fontFamily: T.fontMono, fontSize: 11, letterSpacing: 0.8, color: pal.ink, opacity: 0.5, textTransform: 'uppercase', fontWeight: 500 }}>
+          {isBack ? 'Answer' : 'Question'}
+        </div>
+        <div style={{ fontFamily: T.fontMono, fontSize: 11, letterSpacing: 0.5, color: pal.ink, opacity: 0.45 }}>
+          {pal.name}
+        </div>
+      </div>
+      <div style={{
+        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: pal.ink, fontFamily: T.fontDisplay,
+        fontSize: fontSize, lineHeight: 1.25, fontWeight: 400,
+        letterSpacing: -0.5, textAlign: 'center', textWrap: 'pretty',
+      }}>
+        {content}
+      </div>
+      {showHint && !isBack && (
+        <div style={{ position: 'absolute', bottom: 24, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '6px 12px', borderRadius: 999, background: `${pal.ink}12`,
+            fontFamily: T.fontMono, fontSize: 10, color: pal.ink, opacity: 0.55, letterSpacing: 0.5,
+          }}>
+            <kbd style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, border: `1px solid ${pal.ink}33`, background: `${pal.ink}08` }}>SPACE</kbd>
+            to flip
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div style={{
+      width, height, perspective: 2000,
+      transform: `translateX(${dragX}px) rotate(${tilt + dragX * 0.02}deg)`,
+      filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3)) drop-shadow(0 24px 60px rgba(0,0,0,0.4))',
+    }}>
+      <div onClick={onFlip} style={{
+        width: '100%', height: '100%', position: 'relative',
+        transformStyle: 'preserve-3d',
+        transform: `rotateY(${flipped ? 180 : 0}deg)`,
+        transition: 'transform 320ms cubic-bezier(0.4, 0.0, 0.2, 1)',
+        cursor: onFlip ? 'pointer' : 'default',
+      }}>
+        {face(question, false)}
+        {face(answer, true)}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// DESKTOP — TopBar, KeyHint, Library, Empty, Viewer, Create
+// ═══════════════════════════════════════════════════════════
+function Avatar({ user, size = 28, onClick }) {
+  const initials = (user?.name || 'You').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  return (
+    <button onClick={onClick} style={{
+      width: size, height: size, borderRadius: 999, border: 'none', cursor: 'pointer',
+      background: user?.avatarColor || '#F5D96B', color: '#1a1a1a',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontFamily: T.fontSans, fontSize: size * 0.42, fontWeight: 600,
+      letterSpacing: -0.2, padding: 0, position: 'relative',
+      boxShadow: 'inset 0 0 0 1.5px rgba(0,0,0,0.08), 0 0 0 2px rgba(255,255,255,0.06)',
+    }}>{initials}</button>
+  );
+}
+
+function TopBar({ deckName, onBack, progress, onHelp, user, onAvatarClick }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '20px 28px', borderBottom: `1px solid ${T.border}`,
+      height: 64, boxSizing: 'border-box', flexShrink: 0,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 18, minWidth: 0 }}>
+        {onBack ? (
+          <button onClick={onBack} style={{ background: 'none', border: 'none', color: T.textMuted, cursor: 'pointer', padding: 6, display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+            <I.back size={16}/>Library
+          </button>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 18, height: 22, background: T.text, borderRadius: 2.5, transform: 'rotate(-6deg)' }}/>
+            <div style={{ fontFamily: T.fontDisplay, fontSize: 20, letterSpacing: -0.3 }}>Succinctly</div>
+          </div>
+        )}
+        {deckName && (<>
+          <div style={{ width: 1, height: 18, background: T.border }}/>
+          <div style={{ fontSize: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+            {deckName}
+            {progress && (<span style={{ fontFamily: T.fontMono, fontSize: 11, color: T.textFaint, letterSpacing: 0.5 }}>{progress}</span>)}
+          </div>
+        </>)}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {onHelp && (
+          <button onClick={onHelp} style={{ background: 'none', border: `1px solid ${T.border}`, color: T.textMuted, cursor: 'pointer', padding: '6px 10px', borderRadius: 8, fontFamily: T.fontMono, fontSize: 11, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <I.keyboard size={14}/> ?
+          </button>
+        )}
+        {user && <Avatar user={user} onClick={onAvatarClick}/>}
+      </div>
+    </div>
+  );
+}
+
+function DeckThumb({ deck, count, onClick }) {
+  const pal = T.decks[deck.palette];
+  return (
+    <button onClick={onClick} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}>
+      <div style={{ position: 'relative', width: 220, height: 140, marginBottom: 14 }}>
+        <div style={{ position: 'absolute', inset: 0, background: pal.bg, borderRadius: 10, transform: 'translate(6px, 4px) rotate(1.6deg)', opacity: 0.55, filter: 'brightness(0.9)', boxShadow: '0 4px 12px rgba(0,0,0,0.25)' }}/>
+        <div style={{ position: 'absolute', inset: 0, background: pal.bg, borderRadius: 10, transform: 'translate(3px, 2px) rotate(-1deg)', opacity: 0.8, filter: 'brightness(0.95)', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}/>
+        <div style={{ position: 'absolute', inset: 0, background: pal.bg, borderRadius: 10, padding: '22px 24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 1px 2px rgba(0,0,0,0.3), 0 6px 18px rgba(0,0,0,0.35)', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', inset: 0, backgroundImage: PAPER_NOISE, opacity: 0.4, mixBlendMode: 'multiply', pointerEvents: 'none' }}/>
+          <div style={{ fontFamily: T.fontMono, fontSize: 10, color: pal.ink, opacity: 0.5, letterSpacing: 0.8, textTransform: 'uppercase' }}>
+            {count} card{count === 1 ? '' : 's'}
+          </div>
+          <div style={{ fontFamily: T.fontDisplay, fontSize: 26, lineHeight: 1.05, color: pal.ink, letterSpacing: -0.5 }}>{deck.name}</div>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function LibraryScreen({ decks, onOpen, onNewDeck, onHelp, user, onAvatarClick, dropdown }) {
+  return (
+    <div style={{ width: '100%', height: '100%', background: T.bg, color: T.text, fontFamily: T.fontSans, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      <TopBar onHelp={onHelp} user={user} onAvatarClick={onAvatarClick}/>
+      {dropdown}
+      <div style={{ padding: '56px 72px 40px', flex: 1, overflow: 'auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 56 }}>
+          <div>
+            <div style={{ fontFamily: T.fontMono, fontSize: 11, letterSpacing: 1, color: T.textFaint, textTransform: 'uppercase', marginBottom: 10 }}>
+              Your library · {decks.length} decks
+            </div>
+            <h1 style={{ fontFamily: T.fontDisplay, fontSize: 56, fontWeight: 400, margin: 0, letterSpacing: -1, lineHeight: 1 }}>
+              Good evening.<span style={{ color: T.textMuted, fontStyle: 'italic' }}> What are we studying?</span>
+            </h1>
+          </div>
+          <button onClick={onNewDeck} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 999, background: T.text, color: T.bg, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>
+            <I.plus size={16} stroke={2.2}/>New deck
+          </button>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '48px 40px' }}>
+          {decks.map(d => <DeckThumb key={d.id} deck={d} count={d.cards.length} onClick={() => onOpen(d)}/>)}
+          <button onClick={onNewDeck} style={{ background: 'none', cursor: 'pointer', padding: 0, border: `1.5px dashed ${T.borderStrong}`, borderRadius: 10, height: 140, width: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, color: T.textMuted }}>
+            <I.plus size={22} stroke={1.4}/><span style={{ fontSize: 13 }}>New deck</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EmptyScreen({ onNewDeck }) {
+  return (
+    <div style={{ width: '100%', height: '100%', background: T.bg, color: T.text, fontFamily: T.fontSans, display: 'flex', flexDirection: 'column' }}>
+      <TopBar/>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 40, padding: '40px 72px' }}>
+        <div style={{ position: 'relative', width: 260, height: 170 }}>
+          {[3,2,1,0].map(i => (
+            <div key={i} style={{ position: 'absolute', inset: 0, background: i === 0 ? 'transparent' : `rgba(255,255,255,${0.02 + i * 0.005})`, border: `1.5px dashed ${T.borderStrong}`, borderRadius: 12, transform: `translate(${i*4}px, ${i*3}px) rotate(${(i-1.5)*1.3}deg)`, opacity: 1 - i*0.15 }}/>
+          ))}
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.textFaint, fontFamily: T.fontMono, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' }}>
+            nothing here yet
+          </div>
+        </div>
+        <div style={{ textAlign: 'center', maxWidth: 480 }}>
+          <h1 style={{ fontFamily: T.fontDisplay, fontSize: 44, fontWeight: 400, margin: '0 0 14px', letterSpacing: -0.8, lineHeight: 1.05 }}>
+            A blank deck.<br/><span style={{ color: T.textMuted, fontStyle: 'italic' }}>Ready when you are.</span>
+          </h1>
+          <p style={{ fontSize: 15, color: T.textMuted, lineHeight: 1.55, margin: '0 0 32px' }}>
+            Flashcards are the oldest trick in the book for a reason. Start one deck, fill it with questions, come back whenever.
+          </p>
+          <button onClick={onNewDeck} style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '14px 26px', borderRadius: 999, background: T.text, color: T.bg, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}>
+            <I.plus size={18} stroke={2.2}/>Create your first deck
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function KeyHint({ keys, label, primary }) {
+  return (
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 12px', borderRadius: 999, background: primary ? T.bgCard : 'transparent', border: `1px solid ${primary ? T.borderStrong : 'transparent'}` }}>
+      {keys.map(k => (
+        <kbd key={k} style={{ fontSize: 10, padding: '2px 7px', borderRadius: 4, minWidth: 18, textAlign: 'center', border: `1px solid ${T.borderStrong}`, background: T.bgCard, color: T.text }}>{k}</kbd>
+      ))}
+      <span style={{ fontSize: 12, color: T.textMuted }}>{label}</span>
+    </div>
+  );
+}
+
+function HelpOverlay({ onClose }) {
+  const rows = [
+    { keys: ['Space'], label: 'Flip card' },
+    { keys: ['←','→'], label: 'Previous / next card' },
+    { keys: ['N'], label: 'Add new card' },
+    { keys: ['Esc'], label: 'Back to library' },
+    { keys: ['?'], label: 'Toggle this help' },
+  ];
+  return (
+    <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: 420, background: T.bgElev, border: `1px solid ${T.border}`, borderRadius: 16, padding: '28px 32px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 22 }}>
+          <div>
+            <div style={{ fontFamily: T.fontMono, fontSize: 10, letterSpacing: 1, color: T.textFaint, textTransform: 'uppercase', marginBottom: 4 }}>Cheatsheet</div>
+            <h3 style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 400, margin: 0, letterSpacing: -0.5 }}>Keyboard shortcuts</h3>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: T.textMuted, cursor: 'pointer', padding: 6 }}><I.close size={18}/></button>
+        </div>
+        <div>
+          {rows.map((r, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: i < rows.length-1 ? `1px solid ${T.border}` : 'none' }}>
+              <span style={{ fontSize: 14 }}>{r.label}</span>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {r.keys.map(k => <kbd key={k} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 5, minWidth: 20, textAlign: 'center', border: `1px solid ${T.borderStrong}`, background: T.bgCard, color: T.text }}>{k}</kbd>)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NavArrow({ side, onClick, disabled }) {
+  const Ic = side === 'left' ? I.arrowL : I.arrowR;
+  return (
+    <button onClick={disabled ? undefined : onClick} disabled={disabled} style={{
+      position: 'absolute', [side]: 32, top: '50%', transform: 'translateY(-50%)',
+      width: 44, height: 44, borderRadius: 999, background: T.bgCard,
+      border: `1px solid ${T.border}`, color: disabled ? T.textFaint : T.text,
+      cursor: disabled ? 'default' : 'pointer', opacity: disabled ? 0.4 : 1,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <Ic size={18}/>
+    </button>
+  );
+}
+
+function ViewerScreen({ deck, onBack }) {
+  const [idx, setIdx] = useState(0);
+  const [flipped, setFlipped] = useState(false);
+  const [anim, setAnim] = useState(null);
+  const [showHelp, setShowHelp] = useState(false);
+  const pal = T.decks[deck.palette];
+  const cards = deck.cards;
+  const card = cards[idx];
+
+  const next = useCallback(() => {
+    if (idx >= cards.length - 1) return;
+    setAnim('next'); setFlipped(false);
+    setTimeout(() => { setIdx(i => i+1); setAnim(null); }, 280);
+  }, [idx, cards.length]);
+  const prev = useCallback(() => {
+    if (idx <= 0) return;
+    setAnim('prev'); setFlipped(false);
+    setTimeout(() => { setIdx(i => i-1); setAnim(null); }, 280);
+  }, [idx]);
+  const flip = useCallback(() => setFlipped(f => !f), []);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key === ' ') { e.preventDefault(); flip(); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); next(); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
+      else if (e.key === '?') setShowHelp(h => !h);
+      else if (e.key === 'Escape') setShowHelp(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [flip, next, prev]);
+
+  return (
+    <div style={{ width: '100%', height: '100%', background: T.bg, color: T.text, fontFamily: T.fontSans, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      <TopBar deckName={deck.name} progress={`${idx+1} / ${cards.length}`} onBack={onBack} onHelp={() => setShowHelp(h => !h)}/>
+      <div style={{ position: 'absolute', top: 64, left: 0, right: 0, height: 2, background: T.border, zIndex: 2 }}>
+        <div style={{ height: '100%', background: pal.bg, width: `${((idx+1)/cards.length)*100}%`, transition: 'width 300ms ease' }}/>
+      </div>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 80px', position: 'relative', overflow: 'hidden' }}>
+        <div style={{
+          transform: anim === 'next' ? 'translateX(-110%)' : anim === 'prev' ? 'translateX(110%)' : 'translateX(0)',
+          transition: 'transform 280ms cubic-bezier(0.4,0,0.2,1)', opacity: anim ? 0 : 1,
+        }}>
+          <Flashcard deck={pal} question={card.q} answer={card.a} flipped={flipped} onFlip={flip} showHint={!flipped && idx === 0}/>
+        </div>
+        <NavArrow side="left" onClick={prev} disabled={idx === 0}/>
+        <NavArrow side="right" onClick={next} disabled={idx === cards.length - 1}/>
+      </div>
+      <div style={{ padding: '24px 28px 32px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16, borderTop: `1px solid ${T.border}` }}>
+        <KeyHint keys={['←']} label="Prev"/>
+        <KeyHint keys={['Space']} label={flipped ? 'Show question' : 'Show answer'} primary/>
+        <KeyHint keys={['→']} label="Next"/>
+        <div style={{ width: 1, height: 20, background: T.border, margin: '0 8px' }}/>
+        <button style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 8, background: 'none', border: `1px solid ${T.border}`, color: T.textMuted, cursor: 'pointer', fontSize: 12 }}>
+          <I.plus size={14}/>Add card
+        </button>
+      </div>
+      {showHelp && <HelpOverlay onClose={() => setShowHelp(false)}/>}
+    </div>
+  );
+}
+
+function FmtBtn({ icon: Ic, label }) {
+  return (
+    <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: label ? '6px 10px' : 6, borderRadius: 6, background: 'none', border: 'none', color: T.textMuted, cursor: 'pointer', fontSize: 12 }}>
+      <Ic size={15}/>{label}
+    </button>
+  );
+}
+
+function CreateScreen({ deck, onBack }) {
+  const [flipped, setFlipped] = useState(false);
+  const [question, setQuestion] = useState('');
+  const [answer, setAnswer] = useState('');
+  const pal = T.decks[deck.palette];
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.target.tagName === 'TEXTAREA') {
+        if (e.key === 'Tab') { e.preventDefault(); setFlipped(f => !f); }
+        return;
+      }
+      if (e.key === 'Escape') onBack();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onBack]);
+
+  return (
+    <div style={{ width: '100%', height: '100%', background: T.bg, color: T.text, fontFamily: T.fontSans, display: 'flex', flexDirection: 'column' }}>
+      <TopBar deckName={`${deck.name} · New card`} onBack={onBack}/>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '10px 28px', borderBottom: `1px solid ${T.border}` }}>
+        <FmtBtn icon={I.bold}/><FmtBtn icon={I.italic}/><FmtBtn icon={I.list}/>
+        <div style={{ width: 1, height: 16, background: T.border, margin: '0 6px' }}/>
+        <FmtBtn icon={I.code} label="Code"/><FmtBtn icon={I.math} label="Math"/>
+        <div style={{ flex: 1 }}/>
+        <div style={{ fontFamily: T.fontMono, fontSize: 11, color: T.textFaint, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <kbd style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, border: `1px solid ${T.borderStrong}`, background: T.bgCard }}>Tab</kbd>
+          to flip
+        </div>
+      </div>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 80px', position: 'relative' }}>
+        <div style={{ width: 700, height: 460, perspective: 2000, filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3)) drop-shadow(0 24px 60px rgba(0,0,0,0.4))' }}>
+          <div style={{ width: '100%', height: '100%', position: 'relative', transformStyle: 'preserve-3d', transform: `rotateY(${flipped ? 180 : 0}deg)`, transition: 'transform 360ms cubic-bezier(0.4,0,0.2,1)' }}>
+            {[false, true].map(isBack => (
+              <div key={isBack} style={{ position: 'absolute', inset: 0, background: pal.bg, borderRadius: 20, padding: '56px 64px', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: isBack ? 'rotateY(180deg)' : 'none', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.5)' }}>
+                <div style={{ position: 'absolute', inset: 0, backgroundImage: PAPER_NOISE, mixBlendMode: 'multiply', opacity: 0.5, pointerEvents: 'none' }}/>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingBottom: 14, marginBottom: 36, borderBottom: `1px solid ${pal.ink}22` }}>
+                  <div style={{ fontFamily: T.fontMono, fontSize: 11, letterSpacing: 0.8, color: pal.ink, opacity: 0.5, textTransform: 'uppercase' }}>{isBack ? 'Answer' : 'Question'}</div>
+                  <div style={{ fontFamily: T.fontMono, fontSize: 11, color: pal.ink, opacity: 0.45 }}>Draft</div>
+                </div>
+                <textarea
+                  value={isBack ? answer : question}
+                  onChange={e => (isBack ? setAnswer : setQuestion)(e.target.value)}
+                  placeholder={isBack ? 'Write the answer…' : "What's the question?"}
+                  autoFocus={isBack === flipped}
+                  style={{ flex: 1, width: '100%', border: 'none', background: 'transparent', resize: 'none', outline: 'none', fontFamily: T.fontDisplay, color: pal.ink, fontSize: 40, lineHeight: 1.25, letterSpacing: -0.5, textAlign: 'center' }}
+                />
+                <div style={{ position: 'absolute', bottom: 20, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 8, fontFamily: T.fontMono, fontSize: 10, color: pal.ink, opacity: 0.45, letterSpacing: 0.6 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: 999, background: pal.ink, opacity: 0.4, alignSelf: 'center' }}/>Auto-saved
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ position: 'absolute', bottom: 50, display: 'flex', background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: 999, padding: 3 }}>
+          {['Question','Answer'].map((s, i) => (
+            <button key={s} onClick={() => setFlipped(i === 1)} style={{
+              padding: '6px 16px', borderRadius: 999, border: 'none', cursor: 'pointer', fontSize: 12,
+              background: (i === 1) === flipped ? T.text : 'transparent',
+              color: (i === 1) === flipped ? T.bg : T.textMuted,
+            }}>{s}</button>
+          ))}
+        </div>
+      </div>
+      <div style={{ padding: '20px 28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: `1px solid ${T.border}` }}>
+        <div style={{ fontFamily: T.fontMono, fontSize: 11, color: T.textFaint }}>
+          Card #{deck.cards.length + 1} · {deck.name}
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={onBack} style={{ padding: '10px 18px', borderRadius: 8, background: 'none', border: `1px solid ${T.border}`, color: T.textMuted, cursor: 'pointer', fontSize: 13 }}>Cancel</button>
+          <button style={{ padding: '10px 20px', borderRadius: 8, background: T.text, color: T.bg, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8 }}>
+            Save card
+            <kbd style={{ fontSize: 10, padding: '1px 5px', borderRadius: 3, background: 'rgba(0,0,0,0.1)', border: '1px solid rgba(0,0,0,0.2)', color: T.bg }}>⌘↵</kbd>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// MOBILE (iOS frame + screens)
+// ═══════════════════════════════════════════════════════════
+function IOSFrame({ children, width = 390, height = 844 }) {
+  return (
+    <div style={{
+      width, height, borderRadius: 48, overflow: 'hidden', position: 'relative',
+      background: '#000', boxShadow: '0 40px 80px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.08)',
+    }}>
+      <div style={{ position: 'absolute', top: 11, left: '50%', transform: 'translateX(-50%)', width: 126, height: 37, borderRadius: 24, background: '#000', zIndex: 50 }}/>
+      <div style={{ position: 'absolute', top: 16, left: 32, fontSize: 17, fontWeight: 600, color: '#fff', zIndex: 10 }}>9:41</div>
+      <div style={{ position: 'absolute', top: 18, right: 28, display: 'flex', gap: 6, zIndex: 10 }}>
+        <svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="7" width="3" height="5" rx="0.7" fill="#fff"/><rect x="4.5" y="5" width="3" height="7" rx="0.7" fill="#fff"/><rect x="9" y="2.5" width="3" height="9.5" rx="0.7" fill="#fff"/><rect x="13.5" y="0" width="3" height="12" rx="0.7" fill="#fff"/></svg>
+        <svg width="25" height="12" viewBox="0 0 25 12"><rect x="1" y="0.5" width="21" height="11" rx="3" stroke="#fff" strokeOpacity="0.4" fill="none"/><rect x="2.5" y="2" width="18" height="8" rx="1.5" fill="#fff"/></svg>
+      </div>
+      <div style={{ height: '100%', overflow: 'auto' }}>{children}</div>
+      <div style={{ position: 'absolute', bottom: 8, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 60, pointerEvents: 'none' }}>
+        <div style={{ width: 139, height: 5, borderRadius: 100, background: 'rgba(255,255,255,0.7)' }}/>
+      </div>
+    </div>
+  );
+}
+
+function MobileLibrary({ decks, onOpen }) {
+  return (
+    <div style={{ padding: '60px 0 0', background: T.bg, minHeight: '100%', color: T.text }}>
+      <div style={{ padding: '0 20px 20px' }}>
+        <div style={{ fontFamily: T.fontMono, fontSize: 10, letterSpacing: 1, color: T.textFaint, textTransform: 'uppercase', marginBottom: 6 }}>{decks.length} decks</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+          <h1 style={{ fontFamily: T.fontDisplay, fontSize: 36, fontWeight: 400, margin: 0, letterSpacing: -0.8, lineHeight: 1 }}>Library</h1>
+          <button style={{ width: 38, height: 38, borderRadius: 999, background: T.text, color: T.bg, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <I.plus size={18} stroke={2.2}/>
+          </button>
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, padding: '8px 20px 40px' }}>
+        {decks.map(d => {
+          const pal = T.decks[d.palette];
+          return (
+            <button key={d.id} onClick={() => onOpen(d)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', position: 'relative' }}>
+              <div style={{ position: 'relative', aspectRatio: '4/5' }}>
+                <div style={{ position: 'absolute', inset: 0, background: pal.bg, borderRadius: 10, transform: 'translate(3px, 3px) rotate(1.5deg)', opacity: 0.7, filter: 'brightness(0.92)', boxShadow: '0 2px 8px rgba(0,0,0,0.25)' }}/>
+                <div style={{ position: 'absolute', inset: 0, background: pal.bg, borderRadius: 10, padding: 16, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', overflow: 'hidden', boxShadow: '0 2px 10px rgba(0,0,0,0.25)' }}>
+                  <div style={{ position: 'absolute', inset: 0, backgroundImage: PAPER_NOISE, mixBlendMode: 'multiply', opacity: 0.4, pointerEvents: 'none' }}/>
+                  <div style={{ fontFamily: T.fontMono, fontSize: 9, color: pal.ink, opacity: 0.55, letterSpacing: 0.8, textTransform: 'uppercase' }}>
+                    {d.cards.length} card{d.cards.length === 1 ? '' : 's'}
+                  </div>
+                  <div style={{ fontFamily: T.fontDisplay, fontSize: 20, lineHeight: 1.05, color: pal.ink, letterSpacing: -0.3 }}>{d.name}</div>
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function MobileViewer({ deck, onBack }) {
+  const [idx, setIdx] = useState(0);
+  const [flipped, setFlipped] = useState(false);
+  const [dragX, setDragX] = useState(0);
+  const pal = T.decks[deck.palette];
+  const card = deck.cards[idx];
+  const startX = useRef(null);
+
+  const next = () => idx < deck.cards.length - 1 && (setFlipped(false), setIdx(i => i + 1));
+  const prev = () => idx > 0 && (setFlipped(false), setIdx(i => i - 1));
+
+  return (
+    <div style={{ background: T.bg, minHeight: '100%', color: T.text, display: 'flex', flexDirection: 'column', paddingTop: 60 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: `1px solid ${T.border}` }}>
+        <button onClick={onBack} style={{ background: 'none', border: 'none', color: T.textMuted, display: 'flex', alignItems: 'center', fontSize: 14 }}>
+          <I.back size={16}/>
+        </button>
+        <div style={{ fontSize: 13 }}>
+          {deck.name}
+          <span style={{ fontFamily: T.fontMono, fontSize: 10, color: T.textFaint, marginLeft: 10, letterSpacing: 0.5 }}>{idx+1} / {deck.cards.length}</span>
+        </div>
+        <I.more size={18} color={T.textMuted}/>
+      </div>
+      <div style={{ height: 2, background: T.border }}>
+        <div style={{ height: '100%', background: pal.bg, width: `${((idx+1)/deck.cards.length)*100}%`, transition: 'width 300ms ease' }}/>
+      </div>
+      <div
+        onTouchStart={e => startX.current = e.touches[0].clientX}
+        onTouchMove={e => { if (startX.current != null) setDragX(e.touches[0].clientX - startX.current); }}
+        onTouchEnd={() => { if (Math.abs(dragX) > 60) (dragX < 0 ? next() : prev()); setDragX(0); startX.current = null; }}
+        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '30px 24px', overflow: 'hidden' }}
+      >
+        <div style={{ width: 300, height: 400, perspective: 1400, transform: `translateX(${dragX}px) rotate(${dragX * 0.02}deg)`, filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.5))' }}>
+          <div onClick={() => setFlipped(f => !f)} style={{ width: '100%', height: '100%', position: 'relative', transformStyle: 'preserve-3d', transform: `rotateY(${flipped ? 180 : 0}deg)`, transition: 'transform 320ms cubic-bezier(0.4,0,0.2,1)' }}>
+            {[false, true].map(back => (
+              <div key={back} style={{ position: 'absolute', inset: 0, background: pal.bg, borderRadius: 16, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: back ? 'rotateY(180deg)' : 'none', padding: '30px 28px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)' }}>
+                <div style={{ position: 'absolute', inset: 0, backgroundImage: PAPER_NOISE, mixBlendMode: 'multiply', opacity: 0.5, pointerEvents: 'none', borderRadius: 16 }}/>
+                <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 10, marginBottom: 20, borderBottom: `1px solid ${pal.ink}22`, fontFamily: T.fontMono, fontSize: 9, color: pal.ink, opacity: 0.5, letterSpacing: 0.8, textTransform: 'uppercase' }}>
+                  <span>{back ? 'Answer' : 'Question'}</span><span>#{idx+1}</span>
+                </div>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.fontDisplay, color: pal.ink, fontSize: 24, lineHeight: 1.25, textAlign: 'center', letterSpacing: -0.3 }}>
+                  {back ? card.a : card.q}
+                </div>
+                {!back && idx === 0 && (
+                  <div style={{ position: 'absolute', bottom: 16, left: 0, right: 0, textAlign: 'center', fontFamily: T.fontMono, fontSize: 9, color: pal.ink, opacity: 0.45, letterSpacing: 0.8 }}>
+                    TAP TO FLIP · SWIPE TO NAVIGATE
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div style={{ padding: '12px 16px 38px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: `1px solid ${T.border}` }}>
+        <button onClick={prev} disabled={idx === 0} style={{ background: 'none', border: 'none', color: idx === 0 ? T.textFaint : T.text }}><I.arrowL size={20}/></button>
+        <div style={{ padding: '8px 16px', borderRadius: 999, background: T.bgCard, border: `1px solid ${T.border}`, fontSize: 12, color: T.textMuted }}>Tap card to flip</div>
+        <button onClick={next} disabled={idx === deck.cards.length - 1} style={{ background: 'none', border: 'none', color: idx === deck.cards.length - 1 ? T.textFaint : T.text }}><I.arrowR size={20}/></button>
+      </div>
+    </div>
+  );
+}
+
+function MobileCreate({ deck }) {
+  const [flipped, setFlipped] = useState(false);
+  const pal = T.decks[deck.palette];
+  return (
+    <div style={{ background: T.bg, minHeight: '100%', color: T.text, paddingTop: 60, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px' }}>
+        <button style={{ background: 'none', border: 'none', color: T.textMuted, fontSize: 14 }}>Cancel</button>
+        <div style={{ fontSize: 13 }}>New card</div>
+        <button style={{ background: T.text, color: T.bg, border: 'none', borderRadius: 999, padding: '6px 14px', fontSize: 13, fontWeight: 500 }}>Save</button>
+      </div>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px 24px' }}>
+        <div style={{ width: 300, height: 380, perspective: 1400, filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.5))' }}>
+          <div style={{ width: '100%', height: '100%', position: 'relative', transformStyle: 'preserve-3d', transform: `rotateY(${flipped ? 180 : 0}deg)`, transition: 'transform 320ms cubic-bezier(0.4,0,0.2,1)' }}>
+            {[false, true].map(back => (
+              <div key={back} style={{ position: 'absolute', inset: 0, background: pal.bg, borderRadius: 16, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: back ? 'rotateY(180deg)' : 'none', padding: '28px 24px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', inset: 0, backgroundImage: PAPER_NOISE, mixBlendMode: 'multiply', opacity: 0.5, pointerEvents: 'none', borderRadius: 16 }}/>
+                <div style={{ paddingBottom: 10, marginBottom: 18, borderBottom: `1px solid ${pal.ink}22`, fontFamily: T.fontMono, fontSize: 9, color: pal.ink, opacity: 0.5, letterSpacing: 0.8, textTransform: 'uppercase' }}>
+                  {back ? 'Answer' : 'Question'}
+                </div>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.fontDisplay, color: pal.ink, fontSize: 22, lineHeight: 1.3, textAlign: 'center' }}>
+                  {back ? <span style={{ opacity: 0.35, fontStyle: 'italic' }}>Write the answer…</span> : (
+                    <>What's the capital of<span style={{ display: 'inline-block', width: 2, height: '1.2em', verticalAlign: 'middle', background: pal.ink, marginLeft: 2, animation: 'caret 1s step-end infinite' }}/></>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 30 }}>
+        <div style={{ display: 'flex', background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: 999, padding: 3 }}>
+          {['Question','Answer'].map((s, i) => (
+            <button key={s} onClick={() => setFlipped(i === 1)} style={{ padding: '5px 14px', borderRadius: 999, border: 'none', fontSize: 12, background: (i === 1) === flipped ? T.text : 'transparent', color: (i === 1) === flipped ? T.bg : T.textMuted }}>{s}</button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MobileEmpty() {
+  return (
+    <div style={{ background: T.bg, minHeight: '100%', color: T.text, paddingTop: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '100px 28px 40px' }}>
+      <div style={{ position: 'relative', width: 180, height: 130, marginBottom: 28 }}>
+        {[3,2,1,0].map(i => (
+          <div key={i} style={{ position: 'absolute', inset: 0, border: `1.5px dashed ${T.borderStrong}`, borderRadius: 10, transform: `translate(${i*3}px, ${i*2.5}px) rotate(${(i-1.5)*1.3}deg)`, opacity: 1-i*0.2 }}/>
+        ))}
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.textFaint, fontFamily: T.fontMono, fontSize: 9, letterSpacing: 1, textTransform: 'uppercase' }}>
+          nothing here yet
+        </div>
+      </div>
+      <h2 style={{ fontFamily: T.fontDisplay, fontSize: 30, fontWeight: 400, margin: '0 0 10px', letterSpacing: -0.5, textAlign: 'center', lineHeight: 1.1 }}>
+        A blank deck.<br/><span style={{ color: T.textMuted, fontStyle: 'italic' }}>Ready when you are.</span>
+      </h2>
+      <p style={{ fontSize: 13, color: T.textMuted, lineHeight: 1.5, textAlign: 'center', margin: '0 0 24px', maxWidth: 280 }}>
+        Start one deck, fill it with questions, come back whenever.
+      </p>
+      <button style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 22px', borderRadius: 999, background: T.text, color: T.bg, border: 'none', fontSize: 14, fontWeight: 500 }}>
+        <I.plus size={16} stroke={2.2}/>Create your first deck
+      </button>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// AUTH — Sign in / sign up
+// ═══════════════════════════════════════════════════════════
+const GoogleG = ({ size = 18 }) => (
+  <svg width={size} height={size} viewBox="0 0 18 18">
+    <path d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z" fill="#4285F4"/>
+    <path d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z" fill="#34A853"/>
+    <path d="M3.97 10.71A5.41 5.41 0 0 1 3.68 9c0-.6.1-1.17.29-1.71V4.96H.96A9 9 0 0 0 0 9c0 1.45.35 2.82.96 4.04l3.01-2.33z" fill="#FBBC05"/>
+    <path d="M9 3.58c1.32 0 2.5.45 3.44 1.34l2.58-2.58A9 9 0 0 0 9 0 9 9 0 0 0 .96 4.96l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z" fill="#EA4335"/>
+  </svg>
+);
+
+function AuthShell({ children, mode = 'signin', onModeChange }) {
+  return (
+    <div style={{ width: '100%', height: '100%', background: T.bg, color: T.text, fontFamily: T.fontSans, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+      {/* minimal top bar — just the logo */}
+      <div style={{ padding: '24px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 18, height: 22, background: T.text, borderRadius: 2.5, transform: 'rotate(-6deg)' }}/>
+          <div style={{ fontFamily: T.fontDisplay, fontSize: 20, letterSpacing: -0.3 }}>Succinctly</div>
+        </div>
+        <div style={{ fontSize: 13, color: T.textMuted, display: 'flex', alignItems: 'center', gap: 12 }}>
+          {mode === 'signin' ? "Don't have an account?" : 'Already have one?'}
+          <button onClick={() => onModeChange(mode === 'signin' ? 'signup' : 'signin')} style={{
+            background: 'none', border: `1px solid ${T.border}`, color: T.text,
+            cursor: 'pointer', padding: '7px 14px', borderRadius: 8, fontSize: 13, fontFamily: 'inherit',
+          }}>{mode === 'signin' ? 'Sign up' : 'Sign in'}</button>
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function AuthForm({ mode, compact, inkColor }) {
+  const isUp = mode === 'signup';
+  const ink = inkColor || T.text;
+  const muted = inkColor ? `${inkColor}99` : T.textMuted;
+  const faint = inkColor ? `${inkColor}55` : T.textFaint;
+  const inputBg = inkColor ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.04)';
+  const inputBorder = inkColor ? `${inkColor}22` : T.border;
+  const inputBorderFocus = inkColor ? `${inkColor}55` : T.borderStrong;
+
+  return (
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <button style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+        width: '100%', padding: '12px 16px', borderRadius: 10,
+        background: inkColor ? '#fff' : '#fff', color: '#1a1a1a',
+        border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 500,
+      }}>
+        <GoogleG/> Continue with Google
+      </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '4px 0' }}>
+        <div style={{ flex: 1, height: 1, background: inputBorder }}/>
+        <span style={{ fontFamily: T.fontMono, fontSize: 10, color: faint, letterSpacing: 1, textTransform: 'uppercase' }}>or</span>
+        <div style={{ flex: 1, height: 1, background: inputBorder }}/>
+      </div>
+      <Field label="Email" type="email" placeholder="you@studious.io" ink={ink} muted={muted} bg={inputBg} border={inputBorder} borderFocus={inputBorderFocus}/>
+      {isUp && <Field label="Name" type="text" placeholder="Your name" ink={ink} muted={muted} bg={inputBg} border={inputBorder} borderFocus={inputBorderFocus}/>}
+      <Field label="Password" type="password" placeholder="••••••••" ink={ink} muted={muted} bg={inputBg} border={inputBorder} borderFocus={inputBorderFocus} hint={!isUp ? <a style={{ color: muted, fontSize: 11, textDecoration: 'none' }}>Forgot?</a> : null}/>
+      <button style={{
+        width: '100%', padding: '13px 16px', borderRadius: 10,
+        background: ink, color: inkColor ? T.decks.butter.bg : T.bg,
+        border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 500,
+        marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+      }}>
+        {isUp ? 'Create account' : 'Sign in'}
+        <I.arrowR size={14} stroke={2.4}/>
+      </button>
+      {isUp && (
+        <p style={{ fontSize: 11, color: muted, textAlign: 'center', margin: '4px 0 0', lineHeight: 1.5 }}>
+          By signing up you agree to our <a style={{ color: ink, textDecoration: 'underline' }}>Terms</a> and <a style={{ color: ink, textDecoration: 'underline' }}>Privacy Policy</a>.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function Field({ label, type, placeholder, hint, ink, muted, bg, border, borderFocus }) {
+  return (
+    <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+        <span style={{ fontSize: 12, color: muted, fontFamily: T.fontMono, letterSpacing: 0.4, textTransform: 'uppercase' }}>{label}</span>
+        {hint}
+      </div>
+      <input type={type} placeholder={placeholder} style={{
+        padding: '11px 14px', borderRadius: 8,
+        background: bg, border: `1px solid ${border}`, color: ink,
+        fontFamily: T.fontSans, fontSize: 14, outline: 'none',
+      }}
+      onFocus={e => e.target.style.borderColor = borderFocus}
+      onBlur={e => e.target.style.borderColor = border}
+      />
+    </label>
+  );
+}
+
+// V1 — Minimal centered
+function AuthMinimal() {
+  const [mode, setMode] = useState('signin');
+  return (
+    <AuthShell mode={mode} onModeChange={setMode}>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px 32px' }}>
+        <div style={{ width: 380, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ fontFamily: T.fontMono, fontSize: 11, letterSpacing: 1, color: T.textFaint, textTransform: 'uppercase', marginBottom: 12 }}>
+            {mode === 'signin' ? 'Welcome back' : 'Get started'}
+          </div>
+          <h1 style={{ fontFamily: T.fontDisplay, fontSize: 42, fontWeight: 400, margin: '0 0 36px', letterSpacing: -1, lineHeight: 1.05 }}>
+            {mode === 'signin' ? <>The deck is<br/><em style={{ color: T.textMuted }}>where you left it.</em></> : <>One deck, then<br/><em style={{ color: T.textMuted }}>another.</em></>}
+          </h1>
+          <AuthForm mode={mode}/>
+        </div>
+      </div>
+    </AuthShell>
+  );
+}
+
+// V2 — Split with card stack visual
+function AuthSplit() {
+  const [mode, setMode] = useState('signup');
+  return (
+    <AuthShell mode={mode} onModeChange={setMode}>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'stretch' }}>
+        {/* form */}
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px 60px' }}>
+          <div style={{ width: '100%', maxWidth: 360 }}>
+            <div style={{ fontFamily: T.fontMono, fontSize: 11, letterSpacing: 1, color: T.textFaint, textTransform: 'uppercase', marginBottom: 12 }}>
+              {mode === 'signin' ? 'Sign in' : 'Create an account'}
+            </div>
+            <h1 style={{ fontFamily: T.fontDisplay, fontSize: 40, fontWeight: 400, margin: '0 0 32px', letterSpacing: -0.8, lineHeight: 1.05 }}>
+              {mode === 'signup' ? <>Start your<br/><em style={{ color: T.textMuted }}>first deck.</em></> : <>Welcome <em style={{ color: T.textMuted }}>back.</em></>}
+            </h1>
+            <AuthForm mode={mode}/>
+          </div>
+        </div>
+        {/* visual */}
+        <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: 'radial-gradient(ellipse at 50% 40%, #1a1a1f 0%, #0A0A0B 70%)' }}>
+          {/* fanned cards */}
+          {[
+            { pal: 'sky', r: -14, x: -150, y: -20, z: 0, q: 'What is the determinant of\u2026' },
+            { pal: 'coral', r: -6, x: -75, y: 5, z: 1, q: 'Who founded the\nMauryan Empire?' },
+            { pal: 'butter', r: 2, x: 0, y: 0, z: 2, q: 'Binary search is\nO(log n).' },
+            { pal: 'mint', r: 10, x: 80, y: 10, z: 1, q: 'haber\u2014to have' },
+            { pal: 'lilac', r: 18, x: 160, y: 35, z: 0, q: 'epistemology' },
+          ].map((c, i) => {
+            const pal = T.decks[c.pal];
+            return (
+              <div key={i} style={{
+                position: 'absolute', top: '50%', left: '50%',
+                width: 200, height: 260,
+                transform: `translate(-50%, -50%) translate(${c.x}px, ${c.y}px) rotate(${c.r}deg)`,
+                background: pal.bg, borderRadius: 12, padding: '24px 22px',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.3), 0 20px 40px rgba(0,0,0,0.5)',
+                display: 'flex', flexDirection: 'column', overflow: 'hidden',
+                zIndex: c.z,
+              }}>
+                <div style={{ position: 'absolute', inset: 0, backgroundImage: PAPER_NOISE, mixBlendMode: 'multiply', opacity: 0.5, pointerEvents: 'none' }}/>
+                <div style={{ fontFamily: T.fontMono, fontSize: 9, letterSpacing: 0.8, color: pal.ink, opacity: 0.5, textTransform: 'uppercase', paddingBottom: 10, borderBottom: `1px solid ${pal.ink}22` }}>
+                  Question
+                </div>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.fontDisplay, color: pal.ink, fontSize: 20, lineHeight: 1.2, textAlign: 'center', whiteSpace: 'pre-line', letterSpacing: -0.3 }}>
+                  {c.q}
+                </div>
+              </div>
+            );
+          })}
+          <div style={{ position: 'absolute', bottom: 32, left: 0, right: 0, textAlign: 'center', fontFamily: T.fontMono, fontSize: 10, color: T.textFaint, letterSpacing: 1.5, textTransform: 'uppercase' }}>
+            Your library, all the things you know
+          </div>
+        </div>
+      </div>
+    </AuthShell>
+  );
+}
+
+// V3 — Form lives on a flashcard
+function AuthCard() {
+  const [mode, setMode] = useState('signin');
+  const [flipped, setFlipped] = useState(false);
+  const pal = T.decks.butter;
+  return (
+    <AuthShell mode={mode} onModeChange={(m) => { setMode(m); setFlipped(m === 'signup'); }}>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 32px 40px', position: 'relative' }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, textAlign: 'center', fontFamily: T.fontMono, fontSize: 10, letterSpacing: 1, color: T.textFaint, textTransform: 'uppercase' }}>
+          {mode === 'signin' ? 'Tap the card to flip → sign up' : 'Tap to flip back → sign in'}
+        </div>
+        <div style={{ width: 460, height: 580, perspective: 2400, filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3)) drop-shadow(0 30px 70px rgba(0,0,0,0.5))' }}>
+          <div style={{
+            width: '100%', height: '100%', position: 'relative',
+            transformStyle: 'preserve-3d', transform: `rotateY(${flipped ? 180 : 0}deg) rotate(-1.5deg)`,
+            transition: 'transform 480ms cubic-bezier(0.4,0,0.2,1)',
+          }}>
+            {[false, true].map(isBack => (
+              <div key={isBack} style={{
+                position: 'absolute', inset: 0, background: pal.bg, borderRadius: 24,
+                backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden',
+                transform: isBack ? 'rotateY(180deg)' : 'none',
+                padding: '36px 44px 40px', display: 'flex', flexDirection: 'column', overflow: 'hidden',
+                boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.5)',
+              }}>
+                <div style={{ position: 'absolute', inset: 0, backgroundImage: PAPER_NOISE, mixBlendMode: 'multiply', opacity: 0.5, pointerEvents: 'none', borderRadius: 24 }}/>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingBottom: 14, marginBottom: 24, borderBottom: `1px solid ${pal.ink}22` }}>
+                  <div style={{ fontFamily: T.fontMono, fontSize: 11, letterSpacing: 0.8, color: pal.ink, opacity: 0.5, textTransform: 'uppercase' }}>
+                    {isBack ? 'Sign up' : 'Sign in'}
+                  </div>
+                  <div style={{ fontFamily: T.fontMono, fontSize: 11, color: pal.ink, opacity: 0.45 }}>Succinctly</div>
+                </div>
+                <h2 style={{ fontFamily: T.fontDisplay, fontSize: 34, fontWeight: 400, margin: '0 0 22px', letterSpacing: -0.6, color: pal.ink, lineHeight: 1.05 }}>
+                  {isBack ? <>One deck, then <em>another.</em></> : <>The deck is <em>where you left it.</em></>}
+                </h2>
+                <AuthForm mode={isBack ? 'signup' : 'signin'} inkColor={pal.ink}/>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </AuthShell>
+  );
+}
+
+// Mobile auth
+function MobileAuth() {
+  const [mode, setMode] = useState('signup');
+  return (
+    <div style={{ background: T.bg, minHeight: '100%', color: T.text, paddingTop: 60, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ width: 16, height: 20, background: T.text, borderRadius: 2.5, transform: 'rotate(-6deg)' }}/>
+        <div style={{ fontFamily: T.fontDisplay, fontSize: 18, letterSpacing: -0.3 }}>Succinctly</div>
+      </div>
+      <div style={{ flex: 1, padding: '32px 24px 24px', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ fontFamily: T.fontMono, fontSize: 10, letterSpacing: 1, color: T.textFaint, textTransform: 'uppercase', marginBottom: 10 }}>
+          {mode === 'signin' ? 'Welcome back' : 'Get started'}
+        </div>
+        <h1 style={{ fontFamily: T.fontDisplay, fontSize: 34, fontWeight: 400, margin: '0 0 28px', letterSpacing: -0.6, lineHeight: 1.05 }}>
+          {mode === 'signup' ? <>Start your<br/><em style={{ color: T.textMuted }}>first deck.</em></> : <>The deck is<br/><em style={{ color: T.textMuted }}>where you left it.</em></>}
+        </h1>
+        <AuthForm mode={mode}/>
+        <div style={{ flex: 1 }}/>
+        <div style={{ textAlign: 'center', fontSize: 13, color: T.textMuted, paddingTop: 24 }}>
+          {mode === 'signin' ? "Don't have one? " : 'Already have one? '}
+          <a onClick={() => setMode(m => m === 'signin' ? 'signup' : 'signin')} style={{ color: T.text, textDecoration: 'underline', cursor: 'pointer' }}>
+            {mode === 'signin' ? 'Sign up' : 'Sign in'}
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// ACCOUNT — Dropdown + Settings
+// ═══════════════════════════════════════════════════════════
+function AccountDropdown({ user, onClose, onSettings, onSignOut, onHelp }) {
+  const items = [
+    { label: 'Account', sub: 'Profile, password', onClick: onSettings },
+    { label: 'Settings', sub: 'Preferences, theme', onClick: onSettings },
+    { label: 'Keyboard shortcuts', kbd: '?', onClick: onHelp },
+  ];
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'absolute', inset: 0, zIndex: 30 }}/>
+      <div style={{
+        position: 'absolute', top: 60, right: 22, zIndex: 40, width: 260,
+        background: T.bgElev, border: `1px solid ${T.borderStrong}`, borderRadius: 12,
+        padding: 6, boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
+        fontFamily: T.fontSans,
+      }}>
+        {/* header */}
+        <div style={{ padding: '12px 12px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: `1px solid ${T.border}`, marginBottom: 6 }}>
+          <Avatar user={user} size={36}/>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: 13, color: T.text, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user.name}
+            </div>
+            <div style={{ fontSize: 12, color: T.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user.email}
+            </div>
+          </div>
+        </div>
+        {/* items */}
+        {items.map((it, i) => (
+          <button key={i} onClick={it.onClick} style={{
+            display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'space-between',
+            padding: '8px 10px', borderRadius: 7, background: 'none', border: 'none',
+            cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
+          }} onMouseEnter={e => e.currentTarget.style.background = T.bgHover} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+            <span style={{ fontSize: 13, color: T.text }}>{it.label}</span>
+            {it.kbd && (
+              <kbd style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, border: `1px solid ${T.border}`, background: T.bgCard, color: T.textMuted }}>
+                {it.kbd}
+              </kbd>
+            )}
+          </button>
+        ))}
+        <div style={{ height: 1, background: T.border, margin: '6px 0' }}/>
+        <button onClick={onSignOut} style={{
+          display: 'flex', width: '100%', alignItems: 'center',
+          padding: '8px 10px', borderRadius: 7, background: 'none', border: 'none',
+          cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
+          fontSize: 13, color: '#ff9999',
+        }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,80,80,0.08)'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+          Sign out
+        </button>
+      </div>
+    </>
+  );
+}
+
+function SettingsScreen({ user, onBack }) {
+  const [tab, setTab] = useState('profile');
+  const tabs = [
+    { id: 'profile', label: 'Profile' },
+    { id: 'preferences', label: 'Preferences' },
+    { id: 'data', label: 'Data' },
+    { id: 'danger', label: 'Danger zone' },
+  ];
+  return (
+    <div style={{ width: '100%', height: '100%', background: T.bg, color: T.text, fontFamily: T.fontSans, display: 'flex', flexDirection: 'column' }}>
+      <TopBar onBack={onBack} deckName="Settings" user={user}/>
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        {/* side rail */}
+        <div style={{ width: 240, borderRight: `1px solid ${T.border}`, padding: '32px 18px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {tabs.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)} style={{
+              display: 'block', textAlign: 'left', padding: '8px 12px', borderRadius: 7,
+              background: tab === t.id ? T.bgCard : 'none',
+              border: 'none', color: tab === t.id ? T.text : T.textMuted,
+              fontFamily: 'inherit', fontSize: 13, cursor: 'pointer',
+            }}>{t.label}</button>
+          ))}
+        </div>
+        {/* body */}
+        <div style={{ flex: 1, overflow: 'auto', padding: '40px 56px' }}>
+          {tab === 'profile' && <ProfileTab user={user}/>}
+          {tab === 'preferences' && <PreferencesTab/>}
+          {tab === 'data' && <DataTab/>}
+          {tab === 'danger' && <DangerTab/>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SettingsHeader({ eyebrow, title }) {
+  return (
+    <div style={{ marginBottom: 32 }}>
+      <div style={{ fontFamily: T.fontMono, fontSize: 11, letterSpacing: 1, color: T.textFaint, textTransform: 'uppercase', marginBottom: 8 }}>{eyebrow}</div>
+      <h2 style={{ fontFamily: T.fontDisplay, fontSize: 36, fontWeight: 400, margin: 0, letterSpacing: -0.6, lineHeight: 1 }}>{title}</h2>
+    </div>
+  );
+}
+
+function SettingRow({ label, hint, children }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 32, padding: '20px 0', borderTop: `1px solid ${T.border}`, alignItems: 'flex-start' }}>
+      <div>
+        <div style={{ fontSize: 13, color: T.text, marginBottom: 4 }}>{label}</div>
+        {hint && <div style={{ fontSize: 12, color: T.textMuted, lineHeight: 1.5 }}>{hint}</div>}
+      </div>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+function TextInput({ value, type = 'text' }) {
+  return (
+    <input type={type} defaultValue={value} style={{
+      width: '100%', maxWidth: 360, padding: '10px 12px', borderRadius: 8,
+      background: 'rgba(255,255,255,0.04)', border: `1px solid ${T.border}`,
+      color: T.text, fontFamily: T.fontSans, fontSize: 13, outline: 'none',
+    }}/>
+  );
+}
+
+function Toggle({ on }) {
+  const [v, setV] = useState(on);
+  return (
+    <button onClick={() => setV(!v)} style={{
+      width: 38, height: 22, borderRadius: 999, border: 'none', cursor: 'pointer',
+      background: v ? T.text : 'rgba(255,255,255,0.12)',
+      position: 'relative', padding: 0, transition: 'background 150ms',
+    }}>
+      <div style={{
+        position: 'absolute', top: 2, left: v ? 18 : 2,
+        width: 18, height: 18, borderRadius: 999,
+        background: v ? T.bg : '#ddd', transition: 'left 150ms',
+      }}/>
+    </button>
+  );
+}
+
+function Seg2({ value, options, onChange }) {
+  return (
+    <div style={{ display: 'inline-flex', background: T.bgCard, border: `1px solid ${T.border}`, borderRadius: 8, padding: 2 }}>
+      {options.map(o => (
+        <button key={o.v} onClick={() => onChange(o.v)} style={{
+          padding: '6px 14px', borderRadius: 6, border: 'none',
+          background: value === o.v ? T.text : 'transparent',
+          color: value === o.v ? T.bg : T.textMuted,
+          fontFamily: 'inherit', fontSize: 12, cursor: 'pointer',
+        }}>{o.l}</button>
+      ))}
+    </div>
+  );
+}
+
+function ProfileTab({ user }) {
+  return (
+    <div>
+      <SettingsHeader eyebrow="Your account" title="Profile"/>
+      <SettingRow label="Avatar" hint="Used across the app and in shared decks.">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <Avatar user={user} size={56}/>
+          <button style={{ padding: '7px 12px', borderRadius: 7, background: 'none', border: `1px solid ${T.border}`, color: T.text, cursor: 'pointer', fontSize: 12, fontFamily: 'inherit' }}>Upload photo</button>
+        </div>
+      </SettingRow>
+      <SettingRow label="Name"><TextInput value={user.name}/></SettingRow>
+      <SettingRow label="Email" hint="We'll send a confirmation if you change this."><TextInput value={user.email} type="email"/></SettingRow>
+      <SettingRow label="Password"><button style={{ padding: '8px 14px', borderRadius: 7, background: 'none', border: `1px solid ${T.border}`, color: T.text, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>Change password…</button></SettingRow>
+    </div>
+  );
+}
+
+function PreferencesTab() {
+  const [theme, setTheme] = useState('dark');
+  const [flip, setFlip] = useState('fast');
+  return (
+    <div>
+      <SettingsHeader eyebrow="How it feels" title="Preferences"/>
+      <SettingRow label="Theme" hint="The chrome is monochrome; decks keep their color either way."><Seg2 value={theme} onChange={setTheme} options={[{v:'dark', l:'Dark'},{v:'light', l:'Light'},{v:'auto', l:'Auto'}]}/></SettingRow>
+      <SettingRow label="Flip speed" hint="How quickly cards rotate when you press space."><Seg2 value={flip} onChange={setFlip} options={[{v:'slow', l:'Weighty'},{v:'medium', l:'Medium'},{v:'fast', l:'Crisp'}]}/></SettingRow>
+      <SettingRow label="Sound on flip" hint="A subtle paper rustle."><Toggle on={false}/></SettingRow>
+      <SettingRow label="Show keyboard hints" hint="The little ←/Space/→ pills under cards."><Toggle on={true}/></SettingRow>
+      <SettingRow label="Tactile tilt" hint="A small randomized rotation on each card."><Toggle on={true}/></SettingRow>
+    </div>
+  );
+}
+
+function DataTab() {
+  return (
+    <div>
+      <SettingsHeader eyebrow="Your decks" title="Data"/>
+      <SettingRow label="Export decks" hint="Download all your decks as JSON or CSV.">
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button style={{ padding: '8px 14px', borderRadius: 7, background: 'none', border: `1px solid ${T.border}`, color: T.text, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>Export JSON</button>
+          <button style={{ padding: '8px 14px', borderRadius: 7, background: 'none', border: `1px solid ${T.border}`, color: T.text, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>Export CSV</button>
+        </div>
+      </SettingRow>
+      <SettingRow label="Import" hint="Anki, Quizlet, or our own export format."><button style={{ padding: '8px 14px', borderRadius: 7, background: 'none', border: `1px solid ${T.border}`, color: T.text, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>Choose file…</button></SettingRow>
+    </div>
+  );
+}
+
+function DangerTab() {
+  return (
+    <div>
+      <SettingsHeader eyebrow="Careful" title="Danger zone"/>
+      <SettingRow label="Delete all decks" hint="Wipes every card you've made. This cannot be undone.">
+        <button style={{ padding: '8px 14px', borderRadius: 7, background: 'none', border: `1px solid rgba(255,100,100,0.4)`, color: '#ff9999', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>Delete decks…</button>
+      </SettingRow>
+      <SettingRow label="Delete account" hint="Permanently removes your account and all data after 30 days.">
+        <button style={{ padding: '8px 14px', borderRadius: 7, background: 'rgba(255,80,80,0.1)', border: `1px solid rgba(255,100,100,0.4)`, color: '#ff9999', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>Delete account…</button>
+      </SettingRow>
+    </div>
+  );
+}
+
+const SAMPLE_USER = { name: 'Asha Bhatt', email: 'asha@studious.io', avatarColor: T.decks.butter.bg };
+
+// ═══════════════════════════════════════════════════════════
+// PROTOTYPE ROUTER (each artboard is a mini-app)
+// ═══════════════════════════════════════════════════════════
+function Proto({ mode = 'desktop', startRoute = 'library', decksOverride, startDeck = 0 }) {
+  const decks = decksOverride || DECKS;
+  const [route, setRoute] = useState(startRoute);
+  const [deckIdx, setDeckIdx] = useState(startDeck);
+  const deck = decks[deckIdx] || decks[0];
+  const [showHelp, setShowHelp] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(startRoute === 'library-dropdown');
+
+  const openDeck = (d) => { setDeckIdx(decks.indexOf(d)); setRoute('view'); };
+  const home = () => setRoute('library');
+  const user = SAMPLE_USER;
+
+  if (mode === 'desktop') {
+    if (route === 'auth-minimal') return <AuthMinimal/>;
+    if (route === 'auth-split') return <AuthSplit/>;
+    if (route === 'auth-card') return <AuthCard/>;
+    if (route === 'settings') return <SettingsScreen user={user} onBack={home}/>;
+    if (route === 'library' || route === 'library-dropdown') return <>
+      <LibraryScreen
+        decks={decks}
+        onOpen={openDeck}
+        onNewDeck={() => setRoute('create')}
+        onHelp={() => setShowHelp(true)}
+        user={user}
+        onAvatarClick={() => setShowDropdown(d => !d)}
+        dropdown={showDropdown && (
+          <AccountDropdown
+            user={user}
+            onClose={() => setShowDropdown(false)}
+            onSettings={() => { setShowDropdown(false); setRoute('settings'); }}
+            onSignOut={() => { setShowDropdown(false); setRoute('auth-minimal'); }}
+            onHelp={() => { setShowDropdown(false); setShowHelp(true); }}
+          />
+        )}
+      />
+      {showHelp && <HelpOverlay onClose={() => setShowHelp(false)}/>}
+    </>;
+    if (route === 'empty') return <EmptyScreen onNewDeck={() => {}}/>;
+    if (route === 'view' && deck) return <ViewerScreen deck={deck} onBack={home}/>;
+    if (route === 'create' && deck) return <CreateScreen deck={deck} onBack={home}/>;
+  } else {
+    if (route === 'auth') return <MobileAuth/>;
+    if (route === 'library') return <MobileLibrary decks={decks} onOpen={openDeck}/>;
+    if (route === 'empty') return <MobileEmpty/>;
+    if (route === 'view' && deck) return <MobileViewer deck={deck} onBack={home}/>;
+    if (route === 'create' && deck) return <MobileCreate deck={deck}/>;
+  }
+  return null;
+}
+
+// ═══════════════════════════════════════════════════════════
+// DESIGN CANVAS (pan/zoom)
+// ═══════════════════════════════════════════════════════════
+function DesignCanvas({ children }) {
+  const vpRef = useRef(null);
+  const worldRef = useRef(null);
+  const tf = useRef({ x: 0, y: 0, scale: 1 });
+
+  const apply = () => {
+    const { x, y, scale } = tf.current;
+    if (worldRef.current) worldRef.current.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+  };
+
+  useEffect(() => {
+    const vp = vpRef.current; if (!vp) return;
+    const zoomAt = (cx, cy, factor) => {
+      const r = vp.getBoundingClientRect();
+      const px = cx - r.left, py = cy - r.top;
+      const t = tf.current;
+      const next = Math.min(4, Math.max(0.1, t.scale * factor));
+      const k = next / t.scale;
+      t.x = px - (px - t.x) * k; t.y = py - (py - t.y) * k; t.scale = next;
+      apply();
+    };
+    const onWheel = (e) => {
+      e.preventDefault();
+      if (e.ctrlKey) zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.01));
+      else { tf.current.x -= e.deltaX; tf.current.y -= e.deltaY; apply(); }
+    };
+    let drag = null;
+    const onDown = (e) => {
+      const onBg = e.target === vp || e.target === worldRef.current;
+      if (!(e.button === 1 || (e.button === 0 && onBg))) return;
+      e.preventDefault(); vp.setPointerCapture(e.pointerId);
+      drag = { id: e.pointerId, lx: e.clientX, ly: e.clientY };
+      vp.style.cursor = 'grabbing';
+    };
+    const onMove = (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      tf.current.x += e.clientX - drag.lx; tf.current.y += e.clientY - drag.ly;
+      drag.lx = e.clientX; drag.ly = e.clientY; apply();
+    };
+    const onUp = (e) => { if (!drag) return; vp.releasePointerCapture(e.pointerId); drag = null; vp.style.cursor = ''; };
+    vp.addEventListener('wheel', onWheel, { passive: false });
+    vp.addEventListener('pointerdown', onDown); vp.addEventListener('pointermove', onMove);
+    vp.addEventListener('pointerup', onUp); vp.addEventListener('pointercancel', onUp);
+    return () => {
+      vp.removeEventListener('wheel', onWheel);
+      vp.removeEventListener('pointerdown', onDown); vp.removeEventListener('pointermove', onMove);
+      vp.removeEventListener('pointerup', onUp); vp.removeEventListener('pointercancel', onUp);
+    };
+  }, []);
+
+  const gridSvg = `url("data:image/svg+xml,%3Csvg width='120' height='120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M120 0H0v120' fill='none' stroke='rgba(0,0,0,0.06)' stroke-width='1'/%3E%3C/svg%3E")`;
+  return (
+    <div ref={vpRef} style={{ height: '100vh', width: '100vw', background: '#f0eee9', overflow: 'hidden', overscrollBehavior: 'none', touchAction: 'none', position: 'relative' }}>
+      <div ref={worldRef} style={{ position: 'absolute', top: 0, left: 0, transformOrigin: '0 0', willChange: 'transform', width: 'max-content', minWidth: '100%', minHeight: '100%', padding: '60px 0 80px', backgroundImage: gridSvg, backgroundSize: '120px 120px' }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function Section({ title, subtitle, children }) {
+  return (
+    <div style={{ marginBottom: 80 }}>
+      <div style={{ padding: '0 60px 36px' }}>
+        <div style={{ fontSize: 22, fontWeight: 600, color: 'rgba(40,30,20,0.85)', letterSpacing: -0.3, marginBottom: 4 }}>{title}</div>
+        {subtitle && <div style={{ fontSize: 14, color: 'rgba(60,50,40,0.6)' }}>{subtitle}</div>}
+      </div>
+      <div style={{ display: 'flex', gap: 48, padding: '0 60px', alignItems: 'flex-start', width: 'max-content' }}>{children}</div>
+    </div>
+  );
+}
+
+function Artboard({ label, width, height, children, radius = 12 }) {
+  return (
+    <div style={{ position: 'relative', flexShrink: 0 }}>
+      <div style={{ position: 'absolute', bottom: '100%', left: 0, paddingBottom: 8, fontSize: 12, fontWeight: 500, color: 'rgba(60,50,40,0.7)', whiteSpace: 'nowrap', fontFamily: T.fontMono, letterSpacing: 0.3 }}>{label}</div>
+      <div style={{ borderRadius: radius, boxShadow: '0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)', overflow: 'hidden', width, height, background: '#fff' }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function PostIt({ children, top, right, rotate = -2, width = 230 }) {
+  return (
+    <div style={{ position: 'absolute', top, right, width, background: '#fef4a8', padding: '14px 16px', fontFamily: '"Comic Sans MS", "Marker Felt", cursive', fontSize: 14, lineHeight: 1.4, color: '#5a4a2a', boxShadow: '0 2px 8px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)', transform: `rotate(${rotate}deg)`, zIndex: 5 }}>
+      {children}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// APP
+// ═══════════════════════════════════════════════════════════
+function App() {
+  return (
+    <DesignCanvas>
+      <div style={{ padding: '40px 60px 40px', maxWidth: 1400, position: 'relative' }}>
+        <div style={{ fontFamily: T.fontMono, fontSize: 12, letterSpacing: 1, color: 'rgba(60,50,40,0.6)', textTransform: 'uppercase', marginBottom: 10 }}>
+          Flashcards · Interactive prototype
+        </div>
+        <h1 style={{ fontFamily: T.fontDisplay, fontSize: 64, fontWeight: 400, margin: '0 0 18px', letterSpacing: -1.5, color: 'rgba(40,30,20,0.92)', lineHeight: 1 }}>
+          Succinctly<span style={{ color: 'rgba(60,50,40,0.5)', fontStyle: 'italic' }}> — a flashcards app</span>
+        </h1>
+        <p style={{ fontSize: 16, color: 'rgba(60,50,40,0.7)', margin: 0, maxWidth: 720, lineHeight: 1.55 }}>
+          Dark-mode-first, monochrome chrome, paper-toned decks. Click into any frame to interact — arrow keys navigate, space flips, tap on mobile.
+        </p>
+        <PostIt top={40} right={80} rotate={-3}>
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>Note on mobile</div>
+          Tap = flip, swipe L/R = prev/next. Vertical stays reserved for scrolling long answers.
+        </PostIt>
+      </div>
+
+      <Section title="Gated experience — auth & account" subtitle="Three directions for sign in / sign up, plus the account dropdown and settings.">
+        <Artboard label="01 · AUTH — Minimal centered" width={1280} height={800}>
+          <Proto mode="desktop" startRoute="auth-minimal"/>
+        </Artboard>
+        <Artboard label="02 · AUTH — Hero split with card stack" width={1280} height={800}>
+          <Proto mode="desktop" startRoute="auth-split"/>
+        </Artboard>
+        <Artboard label="03 · AUTH — Form on a flashcard (signature)" width={1280} height={800}>
+          <Proto mode="desktop" startRoute="auth-card"/>
+        </Artboard>
+        <Artboard label="04 · LIBRARY w/ avatar dropdown open" width={1280} height={800}>
+          <Proto mode="desktop" startRoute="library-dropdown"/>
+        </Artboard>
+        <Artboard label="05 · SETTINGS — Profile / Preferences / Data" width={1280} height={800}>
+          <Proto mode="desktop" startRoute="settings"/>
+        </Artboard>
+        <Artboard label="06 · MOBILE — Auth" width={390} height={844} radius={48}>
+          <IOSFrame width={390} height={844}><Proto mode="mobile" startRoute="auth"/></IOSFrame>
+        </Artboard>
+      </Section>
+
+      <Section title="Desktop — full app flow" subtitle="Live prototypes. Each frame has its own state.">
+        <Artboard label="01 · LIBRARY (with decks)" width={1280} height={800}>
+          <Proto mode="desktop" startRoute="library"/>
+        </Artboard>
+        <Artboard label="02 · EMPTY LIBRARY" width={1280} height={800}>
+          <Proto mode="desktop" startRoute="empty" decksOverride={[]}/>
+        </Artboard>
+        <Artboard label="03 · VIEW CARD — click, or SPACE · ←/→ for navigate" width={1280} height={800}>
+          <Proto mode="desktop" startRoute="view"/>
+        </Artboard>
+        <Artboard label="04 · CREATE CARD — Tab to flip, auto-save" width={1280} height={800}>
+          <Proto mode="desktop" startRoute="create"/>
+        </Artboard>
+      </Section>
+
+      <Section title="Mobile — tap to flip, swipe to navigate" subtitle="Same IA, reuses the card component.">
+        <Artboard label="01 · LIBRARY" width={390} height={844} radius={48}>
+          <IOSFrame width={390} height={844}><Proto mode="mobile" startRoute="library"/></IOSFrame>
+        </Artboard>
+        <Artboard label="02 · EMPTY STATE" width={390} height={844} radius={48}>
+          <IOSFrame width={390} height={844}><Proto mode="mobile" startRoute="empty"/></IOSFrame>
+        </Artboard>
+        <Artboard label="03 · VIEW / FLIP" width={390} height={844} radius={48}>
+          <IOSFrame width={390} height={844}><Proto mode="mobile" startRoute="view"/></IOSFrame>
+        </Artboard>
+        <Artboard label="04 · CREATE" width={390} height={844} radius={48}>
+          <IOSFrame width={390} height={844}><Proto mode="mobile" startRoute="create"/></IOSFrame>
+        </Artboard>
+      </Section>
+
+      <Section title="System — tokens & rationale" subtitle="The visual language in one frame.">
+        <Artboard label="PALETTE — decks are the color" width={560} height={320}>
+          <div style={{ width: '100%', height: '100%', padding: 28, background: T.bgCard, color: T.text }}>
+            <div style={{ fontFamily: T.fontMono, fontSize: 10, letterSpacing: 1, color: T.textFaint, textTransform: 'uppercase', marginBottom: 14 }}>Deck palette</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
+              {Object.entries(T.decks).map(([k, p]) => (
+                <div key={k}>
+                  <div style={{ width: '100%', aspectRatio: '4/3', background: p.bg, borderRadius: 6, boxShadow: '0 2px 6px rgba(0,0,0,0.3)' }}/>
+                  <div style={{ fontSize: 11, marginTop: 6, color: T.textMuted }}>{p.name}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Artboard>
+        <Artboard label="TYPOGRAPHY — serif + sans + mono" width={560} height={320}>
+          <div style={{ padding: 28, background: T.bgCard, color: T.text, height: '100%' }}>
+            <div style={{ fontFamily: T.fontDisplay, fontSize: 40, lineHeight: 1, letterSpacing: -0.5 }}>
+              Instrument Serif
+              <div style={{ fontSize: 12, fontFamily: T.fontMono, color: T.textFaint, marginTop: 4, letterSpacing: 0.5 }}>DISPLAY · CARD CONTENT</div>
+            </div>
+            <div style={{ height: 1, background: T.border, margin: '18px 0' }}/>
+            <div style={{ fontSize: 20, fontWeight: 500 }}>Inter Tight
+              <div style={{ fontSize: 12, fontFamily: T.fontMono, color: T.textFaint, marginTop: 4, letterSpacing: 0.5 }}>UI · LABELS · BODY</div>
+            </div>
+            <div style={{ height: 1, background: T.border, margin: '18px 0' }}/>
+            <div style={{ fontFamily: T.fontMono, fontSize: 14 }}>JetBrains Mono
+              <div style={{ fontSize: 12, color: T.textFaint, marginTop: 4, letterSpacing: 0.5 }}>META · KBD · MICRO-COPY</div>
+            </div>
+          </div>
+        </Artboard>
+        <Artboard label="INTERACTION MODEL" width={560} height={320}>
+          <div style={{ padding: 28, background: T.bgCard, color: T.text, fontSize: 13, lineHeight: 1.7, height: '100%' }}>
+            <div style={{ fontFamily: T.fontMono, fontSize: 10, letterSpacing: 1, color: T.textFaint, textTransform: 'uppercase', marginBottom: 14 }}>Input → action</div>
+            {[['Space', 'Flip current card (~320ms)'], ['← / →', 'Prev / next card'], ['Tap card (mobile)', 'Flip'], ['Swipe L/R (mobile)', 'Next / prev'], ['N', 'New card'], ['?', 'Toggle cheatsheet']].map(([k, v]) => (
+              <div key={k} style={{ display: 'flex', gap: 16, padding: '4px 0' }}>
+                <kbd style={{ minWidth: 140, fontSize: 11, color: T.text, fontFamily: T.fontMono }}>{k}</kbd>
+                <span style={{ color: T.textMuted }}>{v}</span>
+              </div>
+            ))}
+          </div>
+        </Artboard>
+      </Section>
+
+      <div style={{ height: 80 }}/>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
