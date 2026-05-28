@@ -1,8 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
-import { signInWithEmail, signUpWithEmail, signInWithGoogle } from '@/app/actions/auth'
-import GoogleButton from './GoogleButton'
+import { signInWithEmail, signUpWithEmail } from '@/app/actions/auth'
 
 const INK = '#3A2E0A'
 
@@ -23,18 +22,6 @@ export default function AuthForm({ mode, onToggle }: { mode: Mode; onToggle: () 
         <h1 className="font-display text-[26px] leading-tight" style={{ color: INK }}>
           {mode === 'signin' ? 'The deck is where\nyou left it.' : 'One deck,\nthen another.'}
         </h1>
-      </div>
-
-      {/* Google */}
-      <form action={signInWithGoogle} className="mb-4">
-        <GoogleButton inkColor={INK} />
-      </form>
-
-      {/* Divider */}
-      <div className="flex items-center gap-3 mb-4">
-        <div className="flex-1 h-px opacity-20" style={{ background: INK }} />
-        <span className="font-mono text-[10px] uppercase tracking-[0.8px] opacity-40" style={{ color: INK }}>or</span>
-        <div className="flex-1 h-px opacity-20" style={{ background: INK }} />
       </div>
 
       {/* Email/password form */}
