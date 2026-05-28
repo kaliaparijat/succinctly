@@ -157,6 +157,17 @@ Based on SM-2 algorithm:
 
 ---
 
+## Code Review Checklist
+
+When reviewing any PR (especially from unfamiliar contributors), always check:
+
+1. **`package.json` scripts** — verify `build`, `dev`, `lint`, `test` don't contain unexpected commands. `.claude/settings.json` auto-approves `npm run build` etc., so a malicious script here runs without a prompt.
+2. **`.claude/settings.json` changes** — any PR that widens the allowlist (adds wildcards, new commands) needs explicit justification.
+3. **`app/actions/` and API routes** — ensure no new server-side code makes unexpected external calls or leaks env vars.
+4. **New dependencies** — check for typosquatting or suspicious packages before `npm install`.
+
+---
+
 ## Key Engineering Principles
 
 1. **AI provider is always abstracted.** No provider SDK is imported outside
