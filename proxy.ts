@@ -1,6 +1,9 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+const PROTECTED = ['/library', '/decks', '/settings']
+const AUTH_ROUTES = ['/signin', '/signup']
+
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
@@ -26,7 +29,27 @@ export async function proxy(request: NextRequest) {
   )
 
   // Must call getUser() to refresh the session — do not add logic before this
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { pathname } = request.nextUrl
+
+  const isProtected = PROTECTED.some(p => pathname === p || pathname.startsWith(p + '/'))
+  const isAuthRoute = AUTH_ROUTES.some(p => pathname.startsWith(p))
+
+  if (!user && isProtected) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/signin'
+    url.searchParams.set('next', pathname)
+    return NextResponse.redirect(url)
+  }
+
+  if (user && isAuthRoute) {
+    const next = request.nextUrl.searchParams.get('next') ?? '/library'
+    const url = request.nextUrl.clone()
+    url.pathname = next
+    url.search = ''
+    return NextResponse.redirect(url)
+  }
 
   return supabaseResponse
 }

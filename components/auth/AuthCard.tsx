@@ -5,7 +5,7 @@ import AuthForm from './AuthForm'
 
 const PAPER_NOISE = `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='4'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")`
 
-export default function AuthCard() {
+export default function AuthCard({ next }: { next: string }) {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const flipped = mode === 'signup'
 
@@ -35,7 +35,7 @@ export default function AuthCard() {
             className="absolute inset-0 pointer-events-none"
             style={{ backgroundImage: PAPER_NOISE, mixBlendMode: 'multiply', opacity: 0.5 }}
           />
-          <AuthForm mode="signin" onToggle={() => setMode('signup')} />
+          <AuthForm mode="signin" next={next} onToggle={() => setMode('signup')} />
         </div>
 
         {/* Back face — sign up */}
@@ -53,7 +53,7 @@ export default function AuthCard() {
             className="absolute inset-0 pointer-events-none"
             style={{ backgroundImage: PAPER_NOISE, mixBlendMode: 'multiply', opacity: 0.5 }}
           />
-          <AuthForm mode="signup" onToggle={() => setMode('signin')} />
+          <AuthForm mode="signup" next={next} onToggle={() => setMode('signin')} />
         </div>
       </div>
     </div>

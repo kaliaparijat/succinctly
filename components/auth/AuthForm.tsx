@@ -8,7 +8,7 @@ const INK = '#3A2E0A'
 type Mode = 'signin' | 'signup'
 type State = { error?: string } | null
 
-export default function AuthForm({ mode, onToggle }: { mode: Mode; onToggle: () => void }) {
+export default function AuthForm({ mode, next, onToggle }: { mode: Mode; next: string; onToggle: () => void }) {
   const action = mode === 'signin' ? signInWithEmail : signUpWithEmail
   const [state, formAction, pending] = useActionState<State, FormData>(action, null)
 
@@ -26,6 +26,7 @@ export default function AuthForm({ mode, onToggle }: { mode: Mode; onToggle: () 
 
       {/* Email/password form */}
       <form action={formAction} className="flex flex-col gap-3">
+        <input type="hidden" name="next" value={next} />
         {mode === 'signup' && (
           <input
             name="name"

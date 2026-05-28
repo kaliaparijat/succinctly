@@ -15,7 +15,7 @@ export async function signInWithEmail(_prevState: AuthState, formData: FormData)
 
   if (error) return { error: error.message }
 
-  redirect('/library')
+  redirect((formData.get('next') as string) || '/library')
 }
 
 export async function signUpWithEmail(_prevState: AuthState, formData: FormData): Promise<AuthState> {
@@ -31,7 +31,7 @@ export async function signUpWithEmail(_prevState: AuthState, formData: FormData)
 
   if (error) return { error: error.message }
 
-  redirect('/library')
+  redirect((formData.get('next') as string) || '/library')
 }
 
 export async function signInWithGoogle(_formData: FormData): Promise<void> {
