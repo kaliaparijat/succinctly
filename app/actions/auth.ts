@@ -3,7 +3,9 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
-export async function signInWithEmail(formData: FormData) {
+type AuthState = { error?: string } | null
+
+export async function signInWithEmail(_prevState: AuthState, formData: FormData): Promise<AuthState> {
   const supabase = await createClient()
 
   const { error } = await supabase.auth.signInWithPassword({
@@ -16,7 +18,7 @@ export async function signInWithEmail(formData: FormData) {
   redirect('/library')
 }
 
-export async function signUpWithEmail(formData: FormData) {
+export async function signUpWithEmail(_prevState: AuthState, formData: FormData): Promise<AuthState> {
   const supabase = await createClient()
 
   const { error } = await supabase.auth.signUp({
@@ -32,7 +34,7 @@ export async function signUpWithEmail(formData: FormData) {
   redirect('/library')
 }
 
-export async function signInWithGoogle() {
+export async function signInWithGoogle(_formData: FormData): Promise<void> {
   const supabase = await createClient()
 
   const { data, error } = await supabase.auth.signInWithOAuth({
@@ -42,8 +44,8 @@ export async function signInWithGoogle() {
     },
   })
 
-  if (error) return { error: error.message }
-  if (data.url) redirect(data.url)
+  if (error || !data.url) return
+  redirect(data.url)
 }
 
 export async function signOut() {
