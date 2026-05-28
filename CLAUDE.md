@@ -123,20 +123,20 @@ Based on SM-2 algorithm:
 - [x] Task 7: Deck server actions — `createDeck`, `listDecks`, `deleteDeck`
 - [x] Task 8: DeckThumb component — stacked paper card visual, palette-aware, stable tilt
 - [x] Task 9: TopBar component — all variants (library, viewer, create, settings) + Avatar
-- [ ] Task 10: Library screen — populated state (grid, greeting, "New deck" button)
-- [ ] Task 11: Empty library state — dashed card frames, first-run copy, CTA
-- [ ] Task 12: New deck modal — name input + palette picker (8 swatches)
-- [ ] Task 13: Avatar dropdown — account rows, settings link, sign out
+- [x] Task 10: Library screen — populated state (grid, greeting, "New deck" button)
+- [x] Task 11: Empty library state — dashed card frames, first-run copy, CTA
+- [x] Task 12: New deck modal — name input + palette picker (8 swatches)
+- [x] Task 13: Avatar dropdown — account rows, settings link, sign out
 
 ### Phase 3: Cards + Study
-- [ ] Task 14: Card server actions — `createCard`, `listCards`, `updateCard`, `deleteCard`
-- [ ] Task 15: Create card screen — flippable card editor, Tab to flip, Q/A textareas, save
-- [ ] Task 16: Study viewer screen — flashcard viewer, flip animation, prev/next, progress rail
-- [ ] Task 17: Keyboard shortcuts — Space, ←/→, ?, Esc bindings for desktop
-- [ ] Task 18: Keyboard shortcuts overlay modal
+- [x] Task 14: Card server actions — `createCard`, `listCards`, `updateCard`, `deleteCard`
+- [x] Task 15: Create card screen — flippable card editor, Tab to flip, Q/A textareas, save
+- [x] Task 16: Study viewer screen — flashcard viewer, flip animation, prev/next, progress rail
+- [x] Task 17: Keyboard shortcuts — Space, ←/→, ?, Esc bindings for desktop
+- [x] Task 18: Keyboard shortcuts overlay modal
 
 ### Phase 4: Polish
-- [ ] Task 19: Mobile gestures — tap to flip, swipe left/right (60px threshold)
+- [x] Task 19: Mobile gestures — tap to flip, swipe left/right (60px threshold)
 - [ ] Task 20: Settings screen — Profile tab (name), Preferences tab (flip speed, tilt, hints)
 - [ ] Task 21: Responsive polish + Vercel deploy
 
