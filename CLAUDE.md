@@ -115,14 +115,14 @@ Based on SM-2 algorithm:
 - [ ] Task 3: Supabase schema + RLS — `profiles`, `decks`, `cards` tables
 
 ### Phase 1: Auth
-- [ ] Task 4: Supabase Auth server wiring — session middleware, `getUser()`, sign-in/up/out actions
-- [ ] Task 5: V3 Auth screen — flashcard flips between sign-in and sign-up (480ms, Butter palette)
-- [ ] Task 6: Route protection middleware — gate `/library` and below, `?next=` redirect
+- [x] Task 4: Supabase Auth server wiring — session middleware, `getUser()`, sign-in/up/out actions
+- [x] Task 5: V3 Auth screen — flashcard flips between sign-in and sign-up (480ms, Butter palette)
+- [x] Task 6: Route protection middleware — gate `/library` and below, `?next=` redirect
 
 ### Phase 2: Library + Decks
-- [ ] Task 7: Deck server actions — `createDeck`, `listDecks`, `deleteDeck`
-- [ ] Task 8: DeckThumb component — stacked paper card visual, palette-aware, stable tilt
-- [ ] Task 9: TopBar component — all variants (library, viewer, create, settings) + Avatar
+- [x] Task 7: Deck server actions — `createDeck`, `listDecks`, `deleteDeck`
+- [x] Task 8: DeckThumb component — stacked paper card visual, palette-aware, stable tilt
+- [x] Task 9: TopBar component — all variants (library, viewer, create, settings) + Avatar
 - [ ] Task 10: Library screen — populated state (grid, greeting, "New deck" button)
 - [ ] Task 11: Empty library state — dashed card frames, first-run copy, CTA
 - [ ] Task 12: New deck modal — name input + palette picker (8 swatches)
