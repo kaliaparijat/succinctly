@@ -2,21 +2,18 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { fetchDeck, fetchDecks } from '@/lib/data/decks'
 
 export type Palette =
   | 'butter' | 'sky' | 'coral' | 'mint'
   | 'lilac' | 'paper' | 'terracotta' | 'sage'
 
+export async function getDeck(id: string) {
+  return fetchDeck(id)
+}
+
 export async function listDecks() {
-  const supabase = await createClient()
-
-  const { data, error } = await supabase
-    .from('decks')
-    .select('*, cards(count)')
-    .order('created_at', { ascending: false })
-
-  if (error) throw new Error(error.message)
-  return data
+  return fetchDecks()
 }
 
 export async function createDeck(formData: FormData) {

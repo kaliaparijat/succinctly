@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getUser } from '@/lib/auth'
-import { createClient } from '@/lib/supabase/server'
+import { getDeck } from '@/app/actions/decks'
 import { listCards } from '@/app/actions/cards'
 import StudyViewer from '@/components/cards/StudyViewer'
 
@@ -13,13 +13,7 @@ export default async function DeckPage({ params }: Props) {
   if (!user) redirect('/signin')
 
   const { id } = await params
-  const supabase = await createClient()
-
-  const { data: deck } = await supabase
-    .from('decks')
-    .select('id, title, palette')
-    .eq('id', id)
-    .single()
+  const deck = await getDeck(id)
 
   if (!deck) redirect('/library')
 
