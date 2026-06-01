@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ViewerBar } from '@/components/layout/TopBar'
 import HelpOverlay from '@/components/ui/HelpOverlay'
 import { PALETTES, PAPER_NOISE, stableTilt, type Palette } from '@/lib/palette'
@@ -20,25 +21,43 @@ interface Deck {
   palette: string
 }
 
-export default function StudyViewer({ deck, cards }: { deck: Deck; cards: Card[] }) {
+interface Props {
+  deck: Deck
+  cards: Card[]
+  tiltEnabled?: boolean
+  flipDuration?: number
+  hintsEnabled?: boolean
+}
+
+export default function StudyViewer({
+  deck,
+  cards,
+  tiltEnabled = true,
+  flipDuration = 320,
+  hintsEnabled = true,
+}: Props) {
   const [idx, setIdx] = useState(0)
   const [flipped, setFlipped] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const [dir, setDir] = useState<'next' | 'prev' | null>(null)
 
+  const router = useRouter()
   const { bg, ink } = PALETTES[deck.palette as Palette] ?? PALETTES.butter
   const card = cards[idx]
-  const tilt = stableTilt(card.question)
+  const tilt = tiltEnabled ? stableTilt(card.question) : 0
   const progress = (idx / (cards.length - 1)) * 100
 
   const flip = useCallback(() => setFlipped(f => !f), [])
 
   const goNext = useCallback(() => {
-    if (idx >= cards.length - 1) return
+    if (idx >= cards.length - 1) {
+      router.push(`/decks/${deck.id}/cards/new`)
+      return
+    }
     setDir('next')
     setFlipped(false)
     setTimeout(() => { setIdx(i => i + 1); setDir(null) }, 140)
-  }, [idx, cards.length])
+  }, [idx, cards.length, deck.id, router])
 
   const goPrev = useCallback(() => {
     if (idx <= 0) return
@@ -100,10 +119,9 @@ export default function StudyViewer({ deck, cards }: { deck: Deck; cards: Card[]
             style={{
               transformStyle: 'preserve-3d',
               transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
-              transition: 'transform 320ms cubic-bezier(0.4,0,0.2,1)',
+              transition: `transform ${flipDuration}ms cubic-bezier(0.4,0,0.2,1)`,
             }}
           >
-            {/* Front — Question */}
             <CardFace
               label="Question"
               text={card.question}
@@ -111,11 +129,9 @@ export default function StudyViewer({ deck, cards }: { deck: Deck; cards: Card[]
               bg={bg}
               ink={ink}
               tilt={tilt}
-              showHint={idx === 0 && !flipped}
+              showHint={hintsEnabled && idx === 0 && !flipped}
               back={false}
             />
-
-            {/* Back — Answer */}
             <CardFace
               label="Answer"
               text={card.reference_answer}
@@ -129,27 +145,37 @@ export default function StudyViewer({ deck, cards }: { deck: Deck; cards: Card[]
           </div>
         </div>
 
-        {/* Nav arrows */}
+        {/* Nav arrows + edit link */}
         <div className="flex items-center justify-between w-full max-w-[700px] mt-6">
           <NavArrow direction="left" onClick={goPrev} disabled={idx === 0} />
-          <NavArrow direction="right" onClick={goNext} disabled={idx === cards.length - 1} />
+          <Link
+            href={`/decks/${deck.id}/cards/${card.id}/edit`}
+            className="font-mono text-[10px] uppercase tracking-[0.8px] text-tertiary hover:text-secondary transition-colors"
+          >
+            Edit
+          </Link>
+          {idx === cards.length - 1 ? (
+            <Link
+              href={`/decks/${deck.id}/cards/new`}
+              className="w-11 h-11 rounded-full bg-surface-card flex items-center justify-center text-xl text-secondary hover:text-primary hover:bg-surface-hover transition-colors"
+              aria-label="Add card"
+            >
+              +
+            </Link>
+          ) : (
+            <NavArrow direction="right" onClick={goNext} disabled={false} />
+          )}
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="flex items-center justify-between px-7 py-4 border-t border-divider">
-        <div className="flex items-center gap-2">
+      {/* Footer — keyboard hints, desktop only, gated on hintsEnabled */}
+      {hintsEnabled && (
+        <footer className="hidden md:flex items-center px-7 py-4 border-t border-divider">
           <KeyPill label="←" />
           <KeyPill label="Space" highlight />
           <KeyPill label="→" />
-        </div>
-        <Link
-          href={`/decks/${deck.id}/cards/new`}
-          className="text-sm font-sans text-secondary hover:text-primary transition-colors"
-        >
-          + Add card
-        </Link>
-      </footer>
+        </footer>
+      )}
 
       {helpOpen && <HelpOverlay onClose={() => setHelpOpen(false)} />}
     </div>
@@ -175,13 +201,11 @@ function CardFace({
     >
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: PAPER_NOISE, mixBlendMode: 'multiply', opacity: 0.5 }} />
 
-      {/* Header strip */}
       <div className="relative flex items-center justify-between px-5 py-3 shrink-0" style={{ borderBottom: `1px solid ${ink}20` }}>
         <span className="font-mono text-[10px] uppercase tracking-[0.8px]" style={{ color: ink, opacity: 0.5 }}>{label}</span>
         <span className="font-sans text-[11px]" style={{ color: ink, opacity: 0.4 }}>{deckName}</span>
       </div>
 
-      {/* Content */}
       <div className="flex-1 flex items-center justify-center px-10 py-6 relative">
         <p
           className="font-display text-center leading-snug"

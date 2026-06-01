@@ -59,13 +59,13 @@ interface ViewerBarProps {
 export function ViewerBar({ deckName, current, total, onHelpClick }: ViewerBarProps) {
   return (
     <header className="flex items-center justify-between px-7 h-16 border-b border-divider shrink-0">
-      <div className="flex items-center gap-3">
-        <Link href="/library" className="text-secondary hover:text-primary text-sm font-sans transition-colors">
+      <div className="flex items-center gap-3 min-w-0">
+        <Link href="/library" className="text-secondary hover:text-primary text-sm font-sans transition-colors shrink-0">
           ← Library
         </Link>
-        <span className="text-divider-strong">|</span>
-        <span className="text-primary text-sm font-sans truncate max-w-[200px]">{deckName}</span>
-        <span className="font-mono text-[11px] text-tertiary uppercase tracking-[0.8px]">
+        <span className="text-divider-strong shrink-0">|</span>
+        <span className="text-primary text-sm font-sans truncate max-w-[120px] md:max-w-[200px]">{deckName}</span>
+        <span className="font-mono text-[11px] text-tertiary uppercase tracking-[0.8px] shrink-0">
           {current} / {total}
         </span>
       </div>
@@ -78,9 +78,10 @@ export function ViewerBar({ deckName, current, total, onHelpClick }: ViewerBarPr
 interface CreateBarProps {
   deckId: string
   deckName: string
+  label?: string
 }
 
-export function CreateBar({ deckId, deckName }: CreateBarProps) {
+export function CreateBar({ deckId, deckName, label = 'New card' }: CreateBarProps) {
   return (
     <header className="flex items-center px-7 h-16 border-b border-divider shrink-0">
       <Link href={`/decks/${deckId}`} className="text-secondary hover:text-primary text-sm font-sans transition-colors">
@@ -88,7 +89,7 @@ export function CreateBar({ deckId, deckName }: CreateBarProps) {
       </Link>
       <span className="ml-3 text-primary text-sm font-sans">
         {deckName}
-        <span className="text-tertiary"> · New card</span>
+        <span className="text-tertiary"> · {label}</span>
       </span>
     </header>
   )

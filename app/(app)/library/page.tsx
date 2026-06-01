@@ -3,13 +3,7 @@ import { getUser } from '@/lib/auth'
 import { listDecks } from '@/app/actions/decks'
 import { getProfile } from '@/app/actions/profiles'
 import LibraryScreen from '@/components/library/LibraryScreen'
-
-function greeting() {
-  const h = new Date().getHours()
-  if (h < 12) return 'Good morning.'
-  if (h < 17) return 'Good afternoon.'
-  return 'Good evening.'
-}
+import { greeting } from '@/lib/greeting'
 
 export default async function LibraryPage() {
   const user = await getUser()

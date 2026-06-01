@@ -1,5 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
 
+export async function updateDeckData(id: string, data: { title: string; palette: string }) {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('decks')
+    .update(data)
+    .eq('id', id)
+  if (error) throw new Error(error.message)
+}
+
 export async function fetchDeck(id: string) {
   const supabase = await createClient()
   const { data } = await supabase

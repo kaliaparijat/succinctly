@@ -21,5 +21,5 @@ export function stableTilt(seed: string): number {
   for (let i = 0; i < seed.length; i++) {
     h = (Math.imul(31, h) + seed.charCodeAt(i)) | 0
   }
-  return ((h % 100) / 100) * 1.2 - 0.6
+  return ((Math.abs(h) % 100) / 100) * 1.2 - 0.6
 }

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { fetchDeck, fetchDecks } from '@/lib/data/decks'
+import { fetchDeck, fetchDecks, updateDeckData } from '@/lib/data/decks'
 
 export type Palette =
   | 'butter' | 'sky' | 'coral' | 'mint'
@@ -30,6 +30,15 @@ export async function createDeck(formData: FormData) {
 
   if (error) throw new Error(error.message)
 
+  revalidatePath('/library')
+}
+
+export async function updateDeck(_prevState: unknown, formData: FormData) {
+  const id = formData.get('id') as string
+  await updateDeckData(id, {
+    title: formData.get('title') as string,
+    palette: formData.get('palette') as string,
+  })
   revalidatePath('/library')
 }
 

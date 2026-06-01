@@ -110,9 +110,9 @@ Based on SM-2 algorithm:
 ## MVP Scope (Iteration 1)
 
 ### Phase 0: Foundation
-- [ ] Task 1: Project scaffold — Next.js App Router, TypeScript, Tailwind, Supabase client
-- [ ] Task 2: Design system tokens — Tailwind config with all colors, fonts, spacing from spec
-- [ ] Task 3: Supabase schema + RLS — `profiles`, `decks`, `cards` tables
+- [x] Task 1: Project scaffold — Next.js App Router, TypeScript, Tailwind, Supabase client
+- [x] Task 2: Design system tokens — Tailwind config with all colors, fonts, spacing from spec
+- [x] Task 3: Supabase schema + RLS — `profiles`, `decks`, `cards` tables
 
 ### Phase 1: Auth
 - [x] Task 4: Supabase Auth server wiring — session middleware, `getUser()`, sign-in/up/out actions
@@ -137,8 +137,28 @@ Based on SM-2 algorithm:
 
 ### Phase 4: Polish
 - [x] Task 19: Mobile gestures — tap to flip, swipe left/right (60px threshold)
-- [ ] Task 20: Settings screen — Profile tab (name), Preferences tab (flip speed, tilt, hints)
-- [ ] Task 21: Responsive polish + Vercel deploy
+- [x] Task 20: Settings screen — Profile tab (name), Preferences tab (flip speed, tilt, hints)
+- [x] Task 21: Wrap `createClient()` in `React.cache()` in `lib/supabase/server.ts` — deduplicates client instantiation within a single request (multiple server actions on one page each call `createClient()`; cache ensures one instance per render pass, not one per call)
+- [x] Task 22: Card editor save UX — the "Auto-saved" indicator in `CardEditor.tsx` is fake (cosmetic timer only, no data is written). Decision: remove the fake indicator and keep the explicit "Save card" button as the single save action; the button already hints `⌘↵` but that shortcut is not wired up — wire it.
+- [x] Task 23: Contextual card insertion — append at end of deck.
+  - The `→` NavArrow transforms into a `+` button instead of going disabled at the last card. The `→` keyboard shortcut at the last card also navigates to `/decks/:id/cards/new`. The existing `+ Add card` footer link becomes redundant and should be removed.
+- [x] Task 24: Deck management — `⋯` overflow menu on `DeckThumb` for edit and delete.
+  - Convert `DeckThumb` from a plain `<Link>` to a `<div>` with a separate tappable area for navigation, so a `⋯` button can live in the top-right corner without triggering navigation (`e.stopPropagation()`).
+  - `⋯` button: visible on hover (desktop), always visible (mobile).
+  - Clicking `⋯` opens an **Edit Deck modal** — reuse/extend `NewDeckModal` with the current title and palette pre-populated. Submitting calls new `updateDeck(id, { title, palette })` server action.
+  - Modal also contains a **Delete** button (destructive, red). Requires a confirmation step before calling the existing `deleteDeck` action.
+  - New server action: `updateDeck(id, { title, palette })` in `app/actions/decks.ts` and `lib/data/decks.ts`.
+- [x] Task 25: Card editing — make `CardEditor` dual-mode (create and edit).
+  - Add route `/decks/:id/cards/:cardId/edit` with a page that fetches the card via a new `fetchCard(cardId)` in `lib/data/cards.ts` and passes it to `CardEditor`.
+  - `CardEditor` accepts an optional `card` prop (`{ id, question, reference_answer }`). When present: pre-populate both textareas, call `updateCard` instead of `createCard` on submit, and change the submit button label to "Save changes".
+  - Add an **Edit** button in the study viewer linking to `/decks/:id/cards/:cardId/edit` for the currently visible card. Small, unobtrusive — icon or text link near the nav arrows or in `ViewerBar`.
+  - `updateCard` server action already exists in `app/actions/cards.ts` — no new server action needed.
+- [x] Task 26: Bare-bones test suite — Vitest + React Testing Library.
+  - Install and configure Vitest with Next.js App Router (no Jest).
+  - **Pure functions** — `lib/palette.ts`: `stableTilt()` determinism and boundary values; extract `greeting()` from `library/page.tsx` into `lib/greeting.ts` so it's testable, then test all three time bands.
+  - **Component logic** — `CardEditor`: Tab-to-flip face switching, form submits `createCard` in create mode and `updateCard` in edit mode; `StudyViewer`: keyboard shortcut boundaries (prev disabled at idx 0, `+` navigates at last card).
+  - **Skip:** purely presentational components (`DeckThumb`, `TopBar` variants, `HelpOverlay`), snapshot tests, E2E.
+- [ ] Task 27: Responsive polish + Vercel deploy
 
 ---
 
@@ -148,6 +168,7 @@ Based on SM-2 algorithm:
 - Dashboard: cards due today, review history
 
 ## Post-MVP Ideas (Do Not Build Yet)
+- Mid-deck card insertion — show a `+` button near the progress rail while studying; inserts a blank card after the current position. Requires a Postgres RPC function to atomically shift `position` on subsequent cards and insert in one transaction (Supabase JS has no native transaction support). New migration + `insertCard(deckId, afterPosition)` server action calling `supabase.rpc()`.
 - AI-generated flashcard decks from a topic or URL
 - Adaptive card difficulty based on review history
 - Social decks / shared decks

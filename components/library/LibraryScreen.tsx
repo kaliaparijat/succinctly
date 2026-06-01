@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { LibraryBar } from '@/components/layout/TopBar'
 import DeckThumb from '@/components/decks/DeckThumb'
 import NewDeckModal from '@/components/decks/NewDeckModal'
+import EditDeckModal from '@/components/decks/EditDeckModal'
 import AccountDropdown from '@/components/layout/AccountDropdown'
 import HelpOverlay from '@/components/ui/HelpOverlay'
 import type { Palette } from '@/lib/palette'
@@ -23,6 +24,7 @@ interface Props {
 
 export default function LibraryScreen({ decks, cardCounts, userName, greeting }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
+  const [editingDeck, setEditingDeck] = useState<Deck | null>(null)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
 
@@ -64,7 +66,7 @@ export default function LibraryScreen({ decks, cardCounts, userName, greeting }:
             </div>
 
             {/* Deck grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-10 gap-y-12">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-5 md:gap-x-10 gap-y-8 md:gap-y-12">
               {decks.map((deck, i) => (
                 <DeckThumb
                   key={deck.id}
@@ -72,14 +74,15 @@ export default function LibraryScreen({ decks, cardCounts, userName, greeting }:
                   title={deck.title}
                   palette={deck.palette as Palette}
                   cardCount={cardCounts[i] ?? 0}
+                  onEdit={() => setEditingDeck(deck)}
                 />
               ))}
 
               {/* Ghost new deck slot */}
               <button
                 onClick={() => setModalOpen(true)}
-                className="flex flex-col items-center justify-center gap-2 rounded-thumb border-2 border-dashed border-divider-strong text-tertiary hover:text-secondary hover:border-secondary transition-colors"
-                style={{ width: 220, height: 140 }}
+                className="w-full rounded-thumb border-2 border-dashed border-divider-strong text-tertiary hover:text-secondary hover:border-secondary transition-colors flex flex-col items-center justify-center gap-2"
+                style={{ aspectRatio: '220/140' }}
               >
                 <span className="text-2xl leading-none">+</span>
                 <span className="font-mono text-[10px] uppercase tracking-[0.8px]">New deck</span>
@@ -90,6 +93,12 @@ export default function LibraryScreen({ decks, cardCounts, userName, greeting }:
       </main>
 
       {modalOpen && <NewDeckModal onClose={() => setModalOpen(false)} />}
+      {editingDeck && (
+        <EditDeckModal
+          deck={editingDeck}
+          onClose={() => setEditingDeck(null)}
+        />
+      )}
       {dropdownOpen && (
         <AccountDropdown
           userName={userName}
