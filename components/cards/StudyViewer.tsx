@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ViewerBar } from '@/components/layout/TopBar'
@@ -8,6 +8,7 @@ import HelpOverlay from '@/components/ui/HelpOverlay'
 import { PALETTES, PAPER_NOISE, stableTilt, type Palette } from '@/lib/palette'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useSwipeGesture } from '@/hooks/useSwipeGesture'
+import { updateCardInline } from '@/app/actions/cards'
 
 interface Card {
   id: string
@@ -40,6 +41,9 @@ export default function StudyViewer({
   const [flipped, setFlipped] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const [dir, setDir] = useState<'next' | 'prev' | null>(null)
+  const [editingFace, setEditingFace] = useState<'question' | 'answer' | null>(null)
+  const editRef = useRef<HTMLDivElement>(null)
+  const [isPending, startTransition] = useTransition()
 
   const router = useRouter()
   const { bg, ink } = PALETTES[deck.palette as Palette] ?? PALETTES.butter
@@ -66,11 +70,59 @@ export default function StudyViewer({
     setTimeout(() => { setIdx(i => i - 1); setDir(null) }, 140)
   }, [idx])
 
+  // Focus the contenteditable and place cursor at end when entering edit mode
+  useEffect(() => {
+    if (!editingFace || !editRef.current) return
+    const text = editingFace === 'question' ? card.question : card.reference_answer
+    editRef.current.innerText = text
+    editRef.current.focus()
+    const range = document.createRange()
+    const sel = window.getSelection()
+    if (sel) {
+      range.selectNodeContents(editRef.current)
+      range.collapse(false)
+      sel.removeAllRanges()
+      sel.addRange(range)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingFace]) // intentionally omit card to avoid resetting mid-edit
+
+  const handleEditSave = useCallback(() => {
+    if (!editRef.current || !editingFace) return
+    const text = editRef.current.innerText.trim()
+    if (!text) return
+    const question = editingFace === 'question' ? text : card.question
+    const referenceAnswer = editingFace === 'answer' ? text : card.reference_answer
+    setEditingFace(null)
+    startTransition(async () => {
+      await updateCardInline(card.id, deck.id, question, referenceAnswer)
+      router.refresh()
+    })
+  }, [editingFace, card, deck.id, router])
+
+  const handleEditKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      setEditingFace(null)
+    } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault()
+      handleEditSave()
+    }
+  }, [handleEditSave])
+
+  const handleDoubleClick = useCallback(() => {
+    if (editingFace) return
+    // After a double-click, both preceding click events have already fired and
+    // flipped the card twice — net effect: card is back on the original face.
+    setEditingFace(flipped ? 'answer' : 'question')
+  }, [editingFace, flipped])
+
   useKeyboardShortcuts({
     onFlip: flip,
     onNext: goNext,
     onPrev: goPrev,
     onHelp: () => setHelpOpen(h => !h),
+    disabled: editingFace !== null,
   })
 
   const swipeRef = useSwipeGesture({ onSwipeLeft: goNext, onSwipeRight: goPrev })
@@ -106,20 +158,23 @@ export default function StudyViewer({
       >
         {/* The card with slide + flip */}
         <div
-          className="relative w-full max-w-[700px] cursor-pointer"
+          className="relative w-full max-w-[700px]"
           style={{
             height: 'clamp(300px, 40vw, 460px)',
             ...slideStyle,
+            cursor: editingFace ? 'default' : 'pointer',
             transition: dir ? 'transform 280ms cubic-bezier(0.4,0,0.2,1), opacity 280ms cubic-bezier(0.4,0,0.2,1)' : undefined,
           }}
-          onClick={flip}
+          onClick={editingFace ? undefined : flip}
+          onDoubleClick={editingFace ? undefined : handleDoubleClick}
         >
           <div
             className="absolute inset-0"
             style={{
               transformStyle: 'preserve-3d',
               transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
-              transition: `transform ${flipDuration}ms cubic-bezier(0.4,0,0.2,1)`,
+              transition: `transform ${flipDuration}ms cubic-bezier(0.4,0,0.2,1), opacity 200ms ease`,
+              opacity: isPending ? 0.6 : 1,
             }}
           >
             <CardFace
@@ -129,8 +184,11 @@ export default function StudyViewer({
               bg={bg}
               ink={ink}
               tilt={tilt}
-              showHint={hintsEnabled && idx === 0 && !flipped}
+              showHint={hintsEnabled && idx === 0 && !flipped && !editingFace}
               back={false}
+              isEditing={editingFace === 'question'}
+              editRef={editRef}
+              onEditKeyDown={handleEditKeyDown}
             />
             <CardFace
               label="Answer"
@@ -141,19 +199,16 @@ export default function StudyViewer({
               tilt={tilt}
               showHint={false}
               back={true}
+              isEditing={editingFace === 'answer'}
+              editRef={editRef}
+              onEditKeyDown={handleEditKeyDown}
             />
           </div>
         </div>
 
-        {/* Nav arrows + edit link */}
+        {/* Nav arrows */}
         <div className="flex items-center justify-between w-full max-w-[700px] mt-6">
           <NavArrow direction="left" onClick={goPrev} disabled={idx === 0} />
-          <Link
-            href={`/decks/${deck.id}/cards/${card.id}/edit`}
-            className="font-mono text-[10px] uppercase tracking-[0.8px] text-tertiary hover:text-secondary transition-colors"
-          >
-            Edit
-          </Link>
           {idx === cards.length - 1 ? (
             <Link
               href={`/decks/${deck.id}/cards/new`}
@@ -184,9 +239,13 @@ export default function StudyViewer({
 
 function CardFace({
   label, text, deckName, bg, ink, tilt, showHint, back,
+  isEditing, editRef, onEditKeyDown,
 }: {
   label: string; text: string; deckName: string; bg: string; ink: string
   tilt: number; showHint: boolean; back: boolean
+  isEditing: boolean
+  editRef: React.RefObject<HTMLDivElement | null>
+  onEditKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void
 }) {
   return (
     <div
@@ -197,6 +256,7 @@ function CardFace({
         background: bg,
         transform: `rotate(${tilt}deg)${back ? ' rotateY(180deg)' : ''}`,
         boxShadow: '0 1px 2px rgba(0,0,0,0.3), 0 24px 60px rgba(0,0,0,0.4)',
+        ...(isEditing ? { outline: `2px solid ${ink}25`, outlineOffset: '-2px' } : {}),
       }}
     >
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: PAPER_NOISE, mixBlendMode: 'multiply', opacity: 0.5 }} />
@@ -207,12 +267,24 @@ function CardFace({
       </div>
 
       <div className="flex-1 flex items-center justify-center px-10 py-6 relative">
-        <p
-          className="font-display text-center leading-snug"
-          style={{ color: ink, fontSize: 'clamp(20px, 3vw, 40px)', letterSpacing: '-0.5px' }}
+        <div
+          ref={isEditing ? editRef : null}
+          contentEditable={isEditing ? 'plaintext-only' : 'false'}
+          suppressContentEditableWarning
+          onKeyDown={isEditing ? onEditKeyDown : undefined}
+          className="font-display text-center leading-snug outline-none w-full"
+          style={{
+            color: ink,
+            fontSize: 'clamp(20px, 3vw, 40px)',
+            letterSpacing: '-0.5px',
+            cursor: isEditing ? 'text' : 'inherit',
+            borderBottom: isEditing ? `1px solid ${ink}35` : undefined,
+            paddingBottom: isEditing ? '4px' : undefined,
+            minHeight: '1em',
+          }}
         >
-          {text}
-        </p>
+          {!isEditing && text}
+        </div>
 
         {showHint && (
           <div
@@ -220,6 +292,15 @@ function CardFace({
             style={{ color: ink, opacity: 0.4, borderColor: `${ink}30` }}
           >
             Space to flip
+          </div>
+        )}
+
+        {isEditing && (
+          <div
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-pill border font-mono text-[10px] uppercase tracking-[0.8px] whitespace-nowrap"
+            style={{ color: ink, opacity: 0.45, borderColor: `${ink}30` }}
+          >
+            ⌘↵ save · Esc cancel
           </div>
         )}
       </div>

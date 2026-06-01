@@ -5,13 +5,16 @@ interface Shortcuts {
   onNext: () => void
   onPrev: () => void
   onHelp: () => void
+  disabled?: boolean
 }
 
-export function useKeyboardShortcuts({ onFlip, onNext, onPrev, onHelp }: Shortcuts) {
+export function useKeyboardShortcuts({ onFlip, onNext, onPrev, onHelp, disabled }: Shortcuts) {
   useEffect(() => {
     function handler(e: KeyboardEvent) {
-      const tag = (e.target as HTMLElement).tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      if (disabled) return
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
+      if (target.isContentEditable) return
 
       switch (e.key) {
         case ' ':
@@ -32,5 +35,5 @@ export function useKeyboardShortcuts({ onFlip, onNext, onPrev, onHelp }: Shortcu
 
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [onFlip, onNext, onPrev, onHelp])
+  }, [onFlip, onNext, onPrev, onHelp, disabled])
 }

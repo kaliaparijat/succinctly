@@ -158,7 +158,14 @@ Based on SM-2 algorithm:
   - **Pure functions** — `lib/palette.ts`: `stableTilt()` determinism and boundary values; extract `greeting()` from `library/page.tsx` into `lib/greeting.ts` so it's testable, then test all three time bands.
   - **Component logic** — `CardEditor`: Tab-to-flip face switching, form submits `createCard` in create mode and `updateCard` in edit mode; `StudyViewer`: keyboard shortcut boundaries (prev disabled at idx 0, `+` navigates at last card).
   - **Skip:** purely presentational components (`DeckThumb`, `TopBar` variants, `HelpOverlay`), snapshot tests, E2E.
-- [ ] Task 27: Responsive polish + Vercel deploy
+- [x] Task 27: Inline card editing in study viewer — double-click (desktop) / double-tap (mobile) on a card face transitions it to edit mode in place, with no navigation.
+  - Replace the centered `<p>` in the card face with a `contenteditable` div (not a textarea — divs support flexbox centering, textareas do not). In view mode it is `contentEditable=false`; on double-click it becomes `contentEditable=true`. Same wrapper, same centering, same font — text stays in the same position, no layout jump.
+  - `Escape` → discard changes, revert to original text, back to view mode.
+  - `⌘↵` → call `updateCard` with the edited content, back to view mode.
+  - A subtle visual cue (e.g. faint border or reduced card opacity) indicates edit mode is active.
+  - Mobile entry point: double-tap, or trigger inline edit from the `⋯` deck menu (Task 24).
+  - The separate edit route (`/decks/:id/cards/:cardId/edit`) added in Task 25 can be removed — it is superseded by this approach.
+- [ ] Task 28: Responsive polish + Vercel deploy
 
 ---
 

@@ -3,12 +3,16 @@ import { render, screen } from '@testing-library/react'
 import StudyViewer from '@/components/cards/StudyViewer'
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
 }))
 
 vi.mock('next/link', () => ({
   default: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) =>
     <a href={href} {...props}>{children}</a>,
+}))
+
+vi.mock('@/app/actions/cards', () => ({
+  updateCardInline: vi.fn().mockResolvedValue(undefined),
 }))
 
 const deck = { id: 'deck-1', title: 'Test Deck', palette: 'butter' }

@@ -59,6 +59,21 @@ export async function updateCard(formData: FormData) {
   revalidatePath(`/decks/${deckId}`)
 }
 
+export async function updateCardInline(
+  id: string,
+  deckId: string,
+  question: string,
+  referenceAnswer: string
+): Promise<void> {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('cards')
+    .update({ question, reference_answer: referenceAnswer })
+    .eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath(`/decks/${deckId}`)
+}
+
 export async function deleteCard(id: string, deckId: string) {
   const supabase = await createClient()
 
