@@ -1,29 +1,31 @@
 # Succinctly
 
-A flashcard app built for active recall and spaced repetition. The core differentiator is AI-graded free-text answers — instead of self-grading, you type/speak your recall response and an AI evaluates it for conceptual correctness. Spaced repitition is enhanced using AI by framing questions made by the user differently. This removes self-grading bias and makes spaced repetition intervals more accurate.
+I have always found that learning new topics is best achieved using active recall, deliberate practice and spaced repetition. Flashcards are one of the best tools to help achieve that and this is my spin on this tool, in the age of AI! 
+
+The core differentiator is AI-graded free-text answers — instead of self-grading, a user types/speaks their recall response and the AI evaluates it for conceptual correctness. Spaced repetition is enhanced using AI by framing questions made by the user differently. This removes self-grading bias and makes spaced repetition intervals more accurate.
+
+Overtime, succinctly will learn just how accurately a user needs spaced repetiton to ensure whether they have recalled a concept well enough and tailor the app to their needs. More ideas are in the pipeline if I can get significant traction to make this learning a social and cross learning experience to see how well similar concepts. 
 
 ## Status: Prototype → MVP
 
-The current state of this project is a **prototype**, built to validate the foundation: auth, deck and card management, a study viewer with flip animations, keyboard shortcuts, and mobile gestures.
+The current state of this project is a **prototype**, built to validate the foundation: auth, deck and card management, a study viewer, keyboard shortcuts, and mobile gestures.  The aim is to quickly iterate away the friction in the core experience of creating and reviewing flashcards. 
 
-It was built rapidly using [Claude Code](https://claude.ai/code) and AI-assisted design — deliberately, as an experiment in how far AI tooling can take a solo developer in a short sprint. The honest answer: pretty far on scaffolding, but the fun begins now, as I learn more about my own project and turn to more deliberate spec driven development
+I deliberately **vibe-coded** the prototype using Claude Code with a mix of known technologies (React, Typescript) and unknown technologies (NextJS, Supabase). Now, I am leveraging Claude to learn more about the new technologies introduced within the app and some of the decisions it takes, a perfect way for me to dog food my own app!
 
-**The prototype is missing its own reason to exist.** The core differentiator — AI-graded free-text answers — hasn't been built yet. Without it, this is just a CRUD flashcard app. The next phase is building that, correctly.
+## What's next: Delivering the MVP with AI graded reviews. 
 
-## What's next
+The project is moving from **vibe-coded prototype** to a more deliberate **spec driven development** for the MVP. That means:
 
-The project is moving from vibe-coded prototype to deliberate product. That means:
-
-- **Dogfooding first** — using the app daily to surface real bugs and friction before building new features. All of which are recorded as Github issues. 
+- **Dogfooding first** — using the app daily with a small set of trusted users to remove the friction involved in the core experience 
 - **Spec-driven development** — every non-trivial change starts as a written spec in `docs/specs/` before any code is touched
-- **Iteration 2** — AI grading layer (Claude as the default provider, abstracted behind a swappable interface) + SM-2 spaced repetition scheduling
+- **Iteration 2** — AI grading layer (Claude as the default provider, abstracted behind a swappable interface) + spaced repetition scheduling
 
 Issues are tracked on [GitHub Issues](https://github.com/kaliaparijat/succinctly/issues).
 
 ## Tech stack
 
 - **Framework:** Next.js (App Router) + TypeScript
-- **Styling:** Tailwind CSS — mobile-first
+- **Styling:** Tailwind CSS, Mobile first 
 - **Database + Auth:** Supabase (Postgres + Supabase Auth)
 - **AI grading:** Claude (Anthropic) — abstracted behind a provider interface, swappable via `AI_PROVIDER` env var
 - **Tests:** Vitest + React Testing Library
@@ -35,14 +37,11 @@ Issues are tracked on [GitHub Issues](https://github.com/kaliaparijat/succinctly
 npm install
 npm run dev
 ```
-
 Requires a Supabase project. Set the following environment variables:
-
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ```
 
-## Design
-
+## Design:
 Design tokens, screen specs, and component breakdown: `design_handoff_succinctly/README.md`
