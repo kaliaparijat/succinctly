@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef, useEffect, useTransition } from 'react'
+import { useState, useCallback, useRef, useEffect, startTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ViewerBar } from '@/components/layout/TopBar'
@@ -9,6 +9,7 @@ import { PALETTES, PAPER_NOISE, stableTilt, type Palette } from '@/lib/palette'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useSwipeGesture } from '@/hooks/useSwipeGesture'
 import { updateCardInline } from '@/app/actions/cards'
+import QAToggle from '@/components/ui/QAToggle'
 
 interface Card {
   id: string
@@ -43,7 +44,7 @@ export default function StudyViewer({
   const [dir, setDir] = useState<'next' | 'prev' | null>(null)
   const [editingFace, setEditingFace] = useState<'question' | 'answer' | null>(null)
   const editRef = useRef<HTMLDivElement>(null)
-  const [isPending, startTransition] = useTransition()
+  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const router = useRouter()
   const { bg, ink } = PALETTES[deck.palette as Palette] ?? PALETTES.butter
@@ -87,18 +88,24 @@ export default function StudyViewer({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editingFace]) // intentionally omit card to avoid resetting mid-edit
 
-  const handleEditSave = useCallback(() => {
+  const handleEditSave = useCallback((nextFace: 'question' | 'answer' | null = null) => {
     if (!editRef.current || !editingFace) return
     const text = editRef.current.innerText.trim()
     if (!text) return
     const question = editingFace === 'question' ? text : card.question
     const referenceAnswer = editingFace === 'answer' ? text : card.reference_answer
-    setEditingFace(null)
+    setEditingFace(nextFace)
     startTransition(async () => {
       await updateCardInline(card.id, deck.id, question, referenceAnswer)
       router.refresh()
     })
   }, [editingFace, card, deck.id, router])
+
+  const handleToggleFace = useCallback((newFace: 'question' | 'answer') => {
+    if (newFace === editingFace) return
+    handleEditSave(newFace)
+    setFlipped(newFace === 'answer')
+  }, [editingFace, handleEditSave])
 
   const handleEditKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Escape') {
@@ -106,14 +113,25 @@ export default function StudyViewer({
       setEditingFace(null)
     } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault()
-      handleEditSave()
+      handleEditSave(null)
     }
   }, [handleEditSave])
 
+  const handleClick = useCallback(() => {
+    if (editingFace) return
+    if (clickTimer.current) clearTimeout(clickTimer.current)
+    clickTimer.current = setTimeout(() => {
+      flip()
+      clickTimer.current = null
+    }, 220)
+  }, [editingFace, flip])
+
   const handleDoubleClick = useCallback(() => {
     if (editingFace) return
-    // After a double-click, both preceding click events have already fired and
-    // flipped the card twice — net effect: card is back on the original face.
+    if (clickTimer.current) {
+      clearTimeout(clickTimer.current)
+      clickTimer.current = null
+    }
     setEditingFace(flipped ? 'answer' : 'question')
   }, [editingFace, flipped])
 
@@ -165,7 +183,7 @@ export default function StudyViewer({
             cursor: editingFace ? 'default' : 'pointer',
             transition: dir ? 'transform 280ms cubic-bezier(0.4,0,0.2,1), opacity 280ms cubic-bezier(0.4,0,0.2,1)' : undefined,
           }}
-          onClick={editingFace ? undefined : flip}
+          onClick={editingFace ? undefined : handleClick}
           onDoubleClick={editingFace ? undefined : handleDoubleClick}
         >
           <div
@@ -173,8 +191,7 @@ export default function StudyViewer({
             style={{
               transformStyle: 'preserve-3d',
               transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
-              transition: `transform ${flipDuration}ms cubic-bezier(0.4,0,0.2,1), opacity 200ms ease`,
-              opacity: isPending ? 0.6 : 1,
+              transition: `transform ${flipDuration}ms cubic-bezier(0.4,0,0.2,1)`,
             }}
           >
             <CardFace
@@ -184,11 +201,12 @@ export default function StudyViewer({
               bg={bg}
               ink={ink}
               tilt={tilt}
-              showHint={hintsEnabled && idx === 0 && !flipped && !editingFace}
+              showHint={hintsEnabled && !editingFace}
               back={false}
               isEditing={editingFace === 'question'}
               editRef={editRef}
               onEditKeyDown={handleEditKeyDown}
+              onToggleFace={handleToggleFace}
             />
             <CardFace
               label="Answer"
@@ -197,11 +215,12 @@ export default function StudyViewer({
               bg={bg}
               ink={ink}
               tilt={tilt}
-              showHint={false}
+              showHint={hintsEnabled && !editingFace}
               back={true}
               isEditing={editingFace === 'answer'}
               editRef={editRef}
               onEditKeyDown={handleEditKeyDown}
+              onToggleFace={handleToggleFace}
             />
           </div>
         </div>
@@ -239,13 +258,14 @@ export default function StudyViewer({
 
 function CardFace({
   label, text, deckName, bg, ink, tilt, showHint, back,
-  isEditing, editRef, onEditKeyDown,
+  isEditing, editRef, onEditKeyDown, onToggleFace,
 }: {
   label: string; text: string; deckName: string; bg: string; ink: string
   tilt: number; showHint: boolean; back: boolean
   isEditing: boolean
   editRef: React.RefObject<HTMLDivElement | null>
   onEditKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void
+  onToggleFace: (face: 'question' | 'answer') => void
 }) {
   return (
     <div
@@ -278,13 +298,17 @@ function CardFace({
             fontSize: 'clamp(20px, 3vw, 40px)',
             letterSpacing: '-0.5px',
             cursor: isEditing ? 'text' : 'inherit',
-            borderBottom: isEditing ? `1px solid ${ink}35` : undefined,
-            paddingBottom: isEditing ? '4px' : undefined,
             minHeight: '1em',
           }}
         >
           {!isEditing && text}
         </div>
+
+        {isEditing && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
+            <QAToggle face={back ? 'answer' : 'question'} onChange={onToggleFace} />
+          </div>
+        )}
 
         {showHint && (
           <div
@@ -295,14 +319,6 @@ function CardFace({
           </div>
         )}
 
-        {isEditing && (
-          <div
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-pill border font-mono text-[10px] uppercase tracking-[0.8px] whitespace-nowrap"
-            style={{ color: ink, opacity: 0.45, borderColor: `${ink}30` }}
-          >
-            ⌘↵ save · Esc cancel
-          </div>
-        )}
       </div>
     </div>
   )
