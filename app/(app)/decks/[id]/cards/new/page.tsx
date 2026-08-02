@@ -23,6 +23,7 @@ export default async function NewCardPage({ params }: Props) {
     <CardEditor
       deck={deck}
       cardNumber={cards.length + 1}
+      previousCardId={cards.at(-1)?.id ?? null}
     />
   )
 }
