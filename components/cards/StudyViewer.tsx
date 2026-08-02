@@ -35,12 +35,16 @@ interface Props {
 export default function StudyViewer({
   deck,
   cards,
-  initialCardId: _initialCardId,
+  initialCardId,
   tiltEnabled = true,
   flipDuration = 320,
   hintsEnabled = true,
 }: Props) {
-  const [idx, setIdx] = useState(0)
+  const [idx, setIdx] = useState(() => {
+    if (!initialCardId) return 0
+    const i = cards.findIndex(c => c.id === initialCardId)
+    return i >= 0 ? i : 0
+  })
   const [flipped, setFlipped] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const [dir, setDir] = useState<'next' | 'prev' | null>(null)
@@ -49,6 +53,15 @@ export default function StudyViewer({
   const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const router = useRouter()
+  const hasMounted = useRef(false)
+
+  useEffect(() => {
+    if (!hasMounted.current) { hasMounted.current = true; return }
+    router.replace(`/decks/${deck.id}/cards/${cards[idx].id}`)
+  // deck.id and cards are stable server props; idx is the only trigger
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idx])
+
   const { bg, ink } = PALETTES[deck.palette as Palette] ?? PALETTES.butter
   const card = cards[idx]
   const tilt = tiltEnabled ? stableTilt(card.question) : 0
