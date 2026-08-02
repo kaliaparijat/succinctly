@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import CardEditor from '@/components/cards/CardEditor'
 
+const mockPush = vi.fn()
+
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: mockPush }),
 }))
 
 vi.mock('next/link', () => ({
@@ -12,12 +14,14 @@ vi.mock('next/link', () => ({
 }))
 
 vi.mock('@/app/actions/cards', () => ({
-  createCard: vi.fn().mockResolvedValue(undefined),
+  createCard: vi.fn().mockResolvedValue({ id: 'new-card-id', deck_id: 'deck-1' }),
   updateCard: vi.fn().mockResolvedValue(undefined),
 }))
 
 const mockDeck = { id: 'deck-1', title: 'Test Deck', palette: 'butter' }
 const mockCard = { id: 'card-1', question: 'What is React?', reference_answer: 'A UI library' }
+
+beforeEach(() => mockPush.mockClear())
 
 describe('CardEditor — create mode', () => {
   it('shows "Save card" on the submit button', () => {
@@ -71,5 +75,37 @@ describe('CardEditor — Tab to flip', () => {
 
     const [, answerTextarea] = screen.getAllByRole('textbox')
     expect(answerTextarea).toHaveFocus()
+  })
+})
+
+describe('CardEditor — Cancel navigation', () => {
+  it('navigates to the previous card when previousCardId is provided', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={2} previousCardId="card-0" />)
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(mockPush).toHaveBeenCalledWith('/decks/deck-1/cards/card-0')
+  })
+
+  it('navigates to /library when previousCardId is null', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} previousCardId={null} />)
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(mockPush).toHaveBeenCalledWith('/library')
+  })
+
+  it('navigates to /library when previousCardId is omitted', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(mockPush).toHaveBeenCalledWith('/library')
+  })
+})
+
+describe('CardEditor — Save navigation (create mode)', () => {
+  it('navigates to the new card URL after successful save', async () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /save card/i }))
+    })
+
+    expect(mockPush).toHaveBeenCalledWith('/decks/deck-1/cards/new-card-id')
   })
 })

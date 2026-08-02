@@ -26,9 +26,10 @@ interface Props {
   deck: Deck
   card?: CardData
   cardNumber?: number
+  previousCardId?: string | null
 }
 
-export default function CardEditor({ deck, card, cardNumber }: Props) {
+export default function CardEditor({ deck, card, cardNumber, previousCardId }: Props) {
   const isEdit = !!card
   const [face, setFace] = useState<Face>('question')
   const questionRef = useRef<HTMLTextAreaElement>(null)
@@ -44,10 +45,11 @@ export default function CardEditor({ deck, card, cardNumber }: Props) {
       try {
         if (isEdit) {
           await updateCard(formData)
+          router.push(`/decks/${deck.id}`)
         } else {
-          await createCard(formData)
+          const newCard = await createCard(formData)
+          router.push(`/decks/${deck.id}/cards/${newCard.id}`)
         }
-        router.push(`/decks/${deck.id}`)
         return null
       } catch (e) {
         return { error: (e as Error).message }
@@ -176,7 +178,10 @@ export default function CardEditor({ deck, card, cardNumber }: Props) {
               {state?.error && <span className="text-red-400 text-xs font-sans">{state.error}</span>}
               <button
                 type="button"
-                onClick={() => router.push(`/decks/${deck.id}`)}
+                onClick={() => previousCardId
+                  ? router.push(`/decks/${deck.id}/cards/${previousCardId}`)
+                  : router.push('/library')
+                }
                 className="px-4 py-2 rounded-btn text-sm font-sans text-secondary border border-divider hover:border-divider-strong hover:text-primary transition-colors"
               >
                 Cancel
