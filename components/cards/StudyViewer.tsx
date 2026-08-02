@@ -26,6 +26,7 @@ interface Deck {
 interface Props {
   deck: Deck
   cards: Card[]
+  initialCardId?: string
   tiltEnabled?: boolean
   flipDuration?: number
   hintsEnabled?: boolean
@@ -34,6 +35,7 @@ interface Props {
 export default function StudyViewer({
   deck,
   cards,
+  initialCardId: _initialCardId,
   tiltEnabled = true,
   flipDuration = 320,
   hintsEnabled = true,
