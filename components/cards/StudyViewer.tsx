@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ViewerBar } from '@/components/layout/TopBar'
 import HelpOverlay from '@/components/ui/HelpOverlay'
+import KeyPill from '@/components/ui/KeyPill'
 import { PALETTES, PAPER_NOISE, stableTilt, type Palette } from '@/lib/palette'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useSwipeGesture } from '@/hooks/useSwipeGesture'
@@ -349,20 +350,5 @@ function NavArrow({ direction, onClick, disabled }: { direction: 'left' | 'right
     >
       {direction === 'left' ? '←' : '→'}
     </button>
-  )
-}
-
-function KeyPill({ label, highlight }: { label: string; highlight?: boolean }) {
-  return (
-    <div
-      className="px-3 py-1 rounded-pill border font-mono text-[10px] uppercase tracking-[0.8px]"
-      style={{
-        background: highlight ? 'rgba(245,245,247,0.08)' : 'transparent',
-        borderColor: 'rgba(255,255,255,0.14)',
-        color: highlight ? '#F5F5F7' : 'rgba(245,245,247,0.38)',
-      }}
-    >
-      {label}
-    </div>
   )
 }
