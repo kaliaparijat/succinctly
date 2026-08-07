@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ViewerBar } from '@/components/layout/TopBar'
 import HelpOverlay from '@/components/ui/HelpOverlay'
+import KeyPill from '@/components/ui/KeyPill'
 import { PALETTES, PAPER_NOISE, stableTilt, type Palette } from '@/lib/palette'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useSwipeGesture } from '@/hooks/useSwipeGesture'
@@ -26,6 +27,7 @@ interface Deck {
 interface Props {
   deck: Deck
   cards: Card[]
+  initialCardId?: string
   tiltEnabled?: boolean
   flipDuration?: number
   hintsEnabled?: boolean
@@ -34,11 +36,16 @@ interface Props {
 export default function StudyViewer({
   deck,
   cards,
+  initialCardId,
   tiltEnabled = true,
   flipDuration = 320,
   hintsEnabled = true,
 }: Props) {
-  const [idx, setIdx] = useState(0)
+  const [idx, setIdx] = useState(() => {
+    if (!initialCardId) return 0
+    const i = cards.findIndex(c => c.id === initialCardId)
+    return i >= 0 ? i : 0
+  })
   const [flipped, setFlipped] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const [dir, setDir] = useState<'next' | 'prev' | null>(null)
@@ -47,6 +54,15 @@ export default function StudyViewer({
   const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const router = useRouter()
+  const hasMounted = useRef(false)
+
+  useEffect(() => {
+    if (!hasMounted.current) { hasMounted.current = true; return }
+    router.replace(`/decks/${deck.id}/cards/${cards[idx].id}`)
+  // deck.id and cards are stable server props; idx is the only trigger
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idx])
+
   const { bg, ink } = PALETTES[deck.palette as Palette] ?? PALETTES.butter
   const card = cards[idx]
   const tilt = tiltEnabled ? stableTilt(card.question) : 0
@@ -334,20 +350,5 @@ function NavArrow({ direction, onClick, disabled }: { direction: 'left' | 'right
     >
       {direction === 'left' ? '←' : '→'}
     </button>
-  )
-}
-
-function KeyPill({ label, highlight }: { label: string; highlight?: boolean }) {
-  return (
-    <div
-      className="px-3 py-1 rounded-pill border font-mono text-[10px] uppercase tracking-[0.8px]"
-      style={{
-        background: highlight ? 'rgba(245,245,247,0.08)' : 'transparent',
-        borderColor: 'rgba(255,255,255,0.14)',
-        color: highlight ? '#F5F5F7' : 'rgba(245,245,247,0.38)',
-      }}
-    >
-      {label}
-    </div>
   )
 }

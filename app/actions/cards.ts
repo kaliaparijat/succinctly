@@ -28,16 +28,17 @@ export async function createCard(formData: FormData) {
     .eq('deck_id', deckId)
     .then(r => ({ count: r.count ?? 0 }))
 
-  const { error } = await supabase.from('cards').insert({
+  const { data, error } = await supabase.from('cards').insert({
     deck_id: deckId,
     question: formData.get('question') as string,
     reference_answer: formData.get('reference_answer') as string,
     position: count,
-  })
+  }).select().single()
 
   if (error) throw new Error(error.message)
 
   revalidatePath(`/decks/${deckId}`)
+  return data
 }
 
 export async function updateCard(formData: FormData) {

@@ -6,6 +6,7 @@ import { createCard, updateCard } from '@/app/actions/cards'
 import { CreateBar } from '@/components/layout/TopBar'
 import { PALETTES, PAPER_NOISE, type Palette } from '@/lib/palette'
 import QAToggle from '@/components/ui/QAToggle'
+import KeyPill from '@/components/ui/KeyPill'
 
 interface Deck {
   id: string
@@ -26,9 +27,10 @@ interface Props {
   deck: Deck
   card?: CardData
   cardNumber?: number
+  previousCardId?: string | null
 }
 
-export default function CardEditor({ deck, card, cardNumber }: Props) {
+export default function CardEditor({ deck, card, cardNumber, previousCardId }: Props) {
   const isEdit = !!card
   const [face, setFace] = useState<Face>('question')
   const questionRef = useRef<HTMLTextAreaElement>(null)
@@ -44,10 +46,11 @@ export default function CardEditor({ deck, card, cardNumber }: Props) {
       try {
         if (isEdit) {
           await updateCard(formData)
+          router.push(`/decks/${deck.id}`)
         } else {
-          await createCard(formData)
+          const newCard = await createCard(formData)
+          router.push(`/decks/${deck.id}/cards/${newCard.id}`)
         }
-        router.push(`/decks/${deck.id}`)
         return null
       } catch (e) {
         return { error: (e as Error).message }
@@ -86,24 +89,6 @@ export default function CardEditor({ deck, card, cardNumber }: Props) {
         deckName={deck.title}
         label={isEdit ? 'Edit card' : 'New card'}
       />
-
-      {/* Formatting toolbar stub */}
-      <div className="flex items-center justify-between px-7 h-10 border-b border-divider">
-        <div className="flex items-center gap-1">
-          {['B', 'I', '≡', '</>'].map(label => (
-            <button
-              key={label}
-              type="button"
-              className="px-2 py-1 rounded text-[12px] font-mono text-tertiary hover:text-secondary hover:bg-surface-hover transition-colors"
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        <span className="font-mono text-[10px] uppercase tracking-[0.8px] text-tertiary">
-          Tab to flip
-        </span>
-      </div>
 
       {/* Card stage */}
       <div className="flex-1 flex items-center justify-center p-6 [perspective:1200px]">
@@ -176,7 +161,10 @@ export default function CardEditor({ deck, card, cardNumber }: Props) {
               {state?.error && <span className="text-red-400 text-xs font-sans">{state.error}</span>}
               <button
                 type="button"
-                onClick={() => router.push(`/decks/${deck.id}`)}
+                onClick={() => previousCardId
+                  ? router.push(`/decks/${deck.id}/cards/${previousCardId}`)
+                  : router.push('/library')
+                }
                 className="px-4 py-2 rounded-btn text-sm font-sans text-secondary border border-divider hover:border-divider-strong hover:text-primary transition-colors"
               >
                 Cancel
@@ -193,6 +181,12 @@ export default function CardEditor({ deck, card, cardNumber }: Props) {
           </div>
         </form>
       </div>
+
+      {/* Footer — keyboard hint, desktop only, mirrors StudyViewer's footer height */}
+      <footer className="hidden md:flex items-center gap-2 px-7 py-4 border-t border-divider">
+        <KeyPill label="Tab" highlight />
+        <span className="font-mono text-[10px] uppercase tracking-[0.8px] text-tertiary">to flip</span>
+      </footer>
     </div>
   )
 }
