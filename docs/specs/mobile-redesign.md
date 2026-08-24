@@ -20,24 +20,30 @@ one small addition, see below).
 ## Non-Goals
 - No desktop visual or behavioral changes beyond the two explicitly listed
   in "Shared changes" below.
-- No deck rename/edit affordance on mobile (desktop-only, via existing
-  `EditDeckModal`).
+- No palette-change affordance on mobile (rename only — see Library section).
+  Changing a deck's palette stays desktop-only, via existing `EditDeckModal`.
 - No autosave in `CardEditor` — stays explicit-save on both breakpoints.
   Autosave is a deferred idea: `docs/ideas/autosave-card-editor.md`.
-- No cleanup of abandoned/empty decks or cards — matches existing behavior
-  (nothing is created until an explicit save; an empty deck is just a deck
-  with 0 cards).
+- No cleanup of abandoned/empty cards — matches existing behavior (nothing
+  is created until an explicit save). Decks no longer need this: mobile
+  deck creation now requires a confirmed name before the deck exists at all
+  (see Library section), so there's no "abandoned untitled deck" case to
+  clean up.
 
 ## Architecture: Breakpoint Strategy
 `if breakpoint <= 768px render mobile UI else render desktop UI`, sharing
 component state/logic wherever the behavior doesn't itself diverge. Per
 component:
 
-- **`LibraryScreen`** — shares data/props entirely. One real logic fork: the
-  "new deck" action (open `NewDeckModal` vs. instant-create with an unused
-  palette + `navigateWithTransition` straight into that deck's new-card
-  editor). Everything else is breakpoint-driven render choice (flat rows vs.
-  thumbnail grid, bottom tab bar vs. none).
+- **`LibraryScreen`** — shares data/props entirely. Two real logic forks:
+  (1) the "new deck" action (open `NewDeckModal` vs. an inline editable row,
+  see Library section below), and (2) the per-row secondary action (open
+  `EditDeckModal` for rename+palette on desktop, vs. inline rename-only on
+  mobile). Both mobile inline flows share one interaction pattern (editable
+  text + checkmark-to-confirm) — build it as a single small shared piece
+  (e.g. `InlineDeckNameField`) rather than duplicating the state machine for
+  create vs. rename. Everything else is breakpoint-driven render choice
+  (flat rows vs. thumbnail grid, bottom tab bar vs. none).
 - **`StudyViewer`** — shares almost everything. `useSwipeGesture` gets
   *extended*, not forked: return `{ ref, dragX }` instead of just `ref`, so
   mobile can drive a live `translateX(dragX)` during the gesture while
@@ -70,15 +76,35 @@ These two are the only approved changes to current desktop behavior:
    this closed** — this is a hypothesis, not a confirmed root cause.
 
 ## Screen: Library (mobile, ≤768px)
-Per the design doc's Screen 1 section for exact tokens/spacing. Behavior:
+Per the design doc's Screen 1 section for exact tokens/spacing, **except**
+the two interaction changes below (superseding the original mockup, per
+review on issue #7).
+
 - Pinned dashed "New deck" row, always first in the scroll list.
 - Deck rows: full width, tap opens the deck's first card
-  (`navigateWithTransition`, `forward`). Per-row `+` button `stopPropagation`s
-  and navigates to that deck's `/cards/new`.
-- "New deck" row: creates a deck (title "Untitled deck", next unused
-  palette — reuse the same palette-rotation logic `NewDeckModal` uses today)
-  and navigates straight into that new deck's card editor. No modal, no
-  naming step.
+  (`navigateWithTransition`, `forward`).
+- **New deck row — inline creation.** Tapping the row's `+` icon transitions
+  the row itself into an editable text input (palette for the new deck is
+  still picked via the existing rotation logic — reuse whatever
+  `NewDeckModal` uses today — just not shown/chosen inline), with a
+  checkmark CTA. The deck is **not created** until the checkmark is tapped
+  with a non-empty (trimmed) name — `createDeck` fires at that point, then
+  navigates to that deck's `/cards/new` (`navigateWithTransition`,
+  `forward`). Tapping outside the row (blur) while editing cancels — reverts
+  to the plain dashed row, no deck created, whatever was typed is discarded.
+  Tapping the checkmark with an empty/whitespace-only name is a no-op (stays
+  in edit state, doesn't submit).
+- **Per-row secondary button — inline rename**, replacing the old
+  quick-add-card affordance entirely (that action no longer exists on
+  mobile Library). Icon changes from `+` to a pencil (matching the edit
+  idiom already used elsewhere, e.g. `StudyViewer`'s edit button) to avoid
+  implying "add" for what's now a rename action. Tapping it turns that row's
+  title into an editable input pre-filled with the current name, using the
+  same inline-field pattern and checkmark-to-confirm as new-deck creation
+  above (same blur-cancels, empty-rejects rules). Confirms via the existing
+  `updateDeck` action, passing the deck's current `palette` through
+  unchanged — mobile inline-edit only ever touches the name, never the
+  palette (see Non-Goals).
 - Bottom tab bar: Library / Settings. Settings tab routes to the existing
   `/settings` route.
 - No avatar/account-menu entry point on mobile Library (see Settings change
@@ -133,8 +159,14 @@ otherwise have no way to sign out.
 - [ ] Library → card navigation on mobile morphs via shared
       `view-transition-name`; desktop navigation is unchanged (no shared
       element, no morph)
-- [ ] Mobile "New deck" creates with default name/palette and navigates
-      directly into new-card editor, no modal
+- [ ] Mobile "New deck" is inline (no modal): editable row + checkmark;
+      nothing is created until confirm with a non-empty name; blur while
+      editing cancels with no deck created; confirming navigates directly
+      into that deck's new-card editor
+- [ ] Mobile per-row secondary button is inline rename (pencil icon, not
+      `+`); the old quick-add-card-from-Library action no longer exists on
+      mobile; rename uses the same inline-field/blur-cancel/empty-reject
+      rules as new-deck creation, and never changes the deck's palette
 - [ ] `CardEditor` save/cancel behavior (including the newly-created-card
       navigation) is identical on both breakpoints — same server actions,
       same navigation calls, only different JSX
@@ -149,6 +181,6 @@ otherwise have no way to sign out.
 
 ## Not Doing
 - Autosave in `CardEditor` (see `docs/ideas/autosave-card-editor.md`)
-- Deck rename/edit or empty-deck/empty-card cleanup on mobile
+- Palette change from mobile (rename only); empty-card cleanup on mobile
 - Any change to Auth screens
 - Any desktop visual change beyond the two shared changes listed above

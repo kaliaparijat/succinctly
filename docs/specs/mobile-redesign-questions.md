@@ -40,6 +40,9 @@ accident. Say if any of these should be reconsidered.
    - [Y] Agreed, deck editing is desktop-only for now
    - [N] Needs a mobile entry point — describe where: Not needed. I may actually lean more towards the mobile UX here for desktop eventually, but we need not stress right now. 
 
+**SUPERSEDED (2026-08-24)** — see the note under C.4. Mobile now gets
+inline rename (name only) via review on issue #7.
+
 ---
 
 ## C. Open questions — need your answer before I can spec this precisely
@@ -120,6 +123,14 @@ mobile at all.
 editor without saving anything is acceptable, same as any deck with 0
 cards. No cleanup logic needed. Renaming/deleting it later goes through
 existing desktop deck-editing (per B.2).
+
+**SUPERSEDED (2026-08-24), via review on issue #7:** Both this and B.2 no
+longer hold. Mobile "New deck" is now inline creation — a name is required
+and confirmed before the deck exists at all, so there's no more untitled/
+abandoned-deck case to reason about. Mobile also gets an inline
+deck-rename affordance (name only, not palette), replacing the per-row
+quick-add-card button. See `docs/specs/mobile-redesign.md`'s Library
+section for the current spec.
 
 Your answer:
 
