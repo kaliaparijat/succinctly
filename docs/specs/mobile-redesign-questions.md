@@ -1,5 +1,10 @@
 # Mobile Redesign — Discovery Notes & Open Questions
 
+**The resolutions below now live in focused specs** —
+`mobile-foundation.md`, `mobile-library.md`, `mobile-study-viewer.md`,
+`mobile-card-editor.md` (see `mobile-redesign.md` for the index). This
+file is kept as the decision history / "why," not as the current spec.
+
 Source: `design_handoff_succinctly/design_handoff_succinctly_mobile 2/`
 Confirmed so far: mobile UI applies at viewport ≤768px only; desktop UI and all
 currently-coded behavior are retained unchanged and take precedence over any
