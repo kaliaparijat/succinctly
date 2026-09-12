@@ -34,11 +34,13 @@ with no viewport awareness — confirmed by reading all three route files:
 `app/(app)/library/page.tsx`, `.../decks/[id]/cards/[cardId]/page.tsx`,
 `.../decks/[id]/cards/new/page.tsx` — none pass or could pass a viewport
 signal), the server-rendered/pre-hydration state defaults to desktop.
-**Accepted tradeoff**: a true mobile device sees a brief flash of desktop
-layout on cold load, before the client corrects it post-hydration. Every
-route in scope sits behind auth (`getUser()` → redirect), not a public/SEO
-page, so this is judged acceptable rather than worth the complexity of a
-blocking pre-hydration script.
+**Known bug, accepted for this version**: a true mobile device sees a
+brief flash of desktop layout on cold load, before the client corrects it
+post-hydration. Every route in scope sits behind auth (`getUser()` →
+redirect), not a public/SEO page, so this is judged acceptable to ship
+with rather than worth the complexity of a blocking pre-hydration script
+up front — but it's a real, user-visible bug, not just a footnote, and is
+tracked as one: `docs/ideas/mobile-ssr-flash.md`.
 
 Known edge case, accepted rather than solved: Tailwind's breakpoints are
 defined in `rem`; this hook's query is in `px`. At non-default browser
@@ -90,9 +92,9 @@ the one current call site, not a breaking change to it.
 - [ ] `npm test` and `npm run build` pass
 
 ## Not Doing
-- A pre-hydration blocking script to eliminate the SSR flash (documented
-  tradeoff, not solved here — revisit only if it proves visually bad in
-  practice)
+- A pre-hydration blocking script to eliminate the SSR flash. Tracked as a
+  known bug to fix later, not solved here:
+  `docs/ideas/mobile-ssr-flash.md`.
 - A CSS-only dual-render-and-hide approach as an alternative to the
   breakpoint hook (rejected: the components in scope share live state
   across the fork — drag position, flip state, form submission — not just
