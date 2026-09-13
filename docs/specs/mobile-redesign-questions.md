@@ -67,10 +67,10 @@ pill in the top bar. Desktop's `CardEditor` is pure explicit-save
 model for both breakpoints. Remove the "Auto-saved" indicator from the
 mobile design; reintroduce a "Save card" button matching desktop's behavior
 (including navigating to the newly-created card on save). Autosave is a
-real idea worth pursuing later, captured separately in
-`docs/ideas/autosave-card-editor.md` rather than solved mid-redesign — it
-had two open problems (new-card creation timing, and what should trigger
-the save) that don't need to block this redesign.
+real idea worth pursuing later — it had two open problems (new-card
+creation timing, and what should trigger the save) that don't need to
+block this redesign, so it's deferred rather than solved mid-redesign; see
+`docs/specs/mobile-card-editor.md`'s Non-Goals for the writeup.
 
 Your answer:
 

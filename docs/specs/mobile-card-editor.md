@@ -21,8 +21,15 @@ tokens/spacing.
 ## Non-Goals
 - No autosave. Stays explicit-save on both breakpoints, same
   `useActionState`/`createCard` mechanism as desktop today — only the
-  rendered JSX differs. (Autosave is a deferred idea, not part of this
-  redesign: `docs/ideas/autosave-card-editor.md`.)
+  rendered JSX differs. Considered and deferred: the mobile mockup's first
+  draft showed both an "Auto-saved" indicator and a "Save" pill at once,
+  a sign the model wasn't settled. Real autosave would need to decide (a)
+  when the underlying row is created — on mount, which then needs a new
+  delete-if-abandoned-empty cleanup path that doesn't exist today, since
+  currently nothing is created until a successful explicit save — and (b)
+  what actually triggers the save (debounced keystroke vs. blur/face-toggle,
+  matching `StudyViewer`'s existing `updateCardInline` pattern). Worth
+  revisiting later, not solved here.
 - No edit-mode work of any kind (see Problem, above).
 
 ## Behavior

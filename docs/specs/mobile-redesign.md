@@ -48,7 +48,8 @@ need its own spec.
       sign-out is untouched
 
 ## Not Doing (project-wide)
-- Autosave in `CardEditor` (deferred idea: `docs/ideas/autosave-card-editor.md`)
+- Autosave in `CardEditor` — considered and deferred; see
+  `docs/specs/mobile-card-editor.md`'s Non-Goals for why
 - Any change to Auth screens
 - Any desktop visual or behavioral change beyond the two shared changes in
   the foundation spec

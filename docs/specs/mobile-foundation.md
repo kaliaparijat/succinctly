@@ -39,8 +39,13 @@ brief flash of desktop layout on cold load, before the client corrects it
 post-hydration. Every route in scope sits behind auth (`getUser()` →
 redirect), not a public/SEO page, so this is judged acceptable to ship
 with rather than worth the complexity of a blocking pre-hydration script
-up front — but it's a real, user-visible bug, not just a footnote, and is
-tracked as one: `docs/ideas/mobile-ssr-flash.md`.
+up front — but it's a real, user-visible bug, not just a footnote. If
+revisited: a blocking inline `<script>` in `app/layout.tsx`, run before
+hydration, reading `matchMedia` synchronously and setting a
+`data-viewport` attribute on `<html>`; the hook's `getServerSnapshot`
+would read that attribute instead of hardcoding `false`, so the first
+client render already matches the corrected DOM instead of mismatching
+and then flashing.
 
 Known edge case, accepted rather than solved: Tailwind's breakpoints are
 defined in `rem`; this hook's query is in `px`. At non-default browser
@@ -92,9 +97,9 @@ the one current call site, not a breaking change to it.
 - [ ] `npm test` and `npm run build` pass
 
 ## Not Doing
-- A pre-hydration blocking script to eliminate the SSR flash. Tracked as a
-  known bug to fix later, not solved here:
-  `docs/ideas/mobile-ssr-flash.md`.
+- A pre-hydration blocking script to eliminate the SSR flash (see the
+  known-bug callout above for the fix direction if revisited) — known bug,
+  not solved here.
 - A CSS-only dual-render-and-hide approach as an alternative to the
   breakpoint hook (rejected: the components in scope share live state
   across the fork — drag position, flip state, form submission — not just
