@@ -28,9 +28,10 @@ interface Props {
   card?: CardData
   cardNumber?: number
   previousCardId?: string | null
+  flipDuration?: number
 }
 
-export default function CardEditor({ deck, card, cardNumber, previousCardId }: Props) {
+export default function CardEditor({ deck, card, cardNumber, previousCardId, flipDuration = 380 }: Props) {
   const isEdit = !!card
   const [face, setFace] = useState<Face>('question')
   const questionRef = useRef<HTMLTextAreaElement>(null)
@@ -98,16 +99,19 @@ export default function CardEditor({ deck, card, cardNumber, previousCardId }: P
 
           {/* The flipping card — palette CSS vars scoped here */}
           <div
-            className="relative w-full max-w-[700px] h-[clamp(300px,40vw,460px)] [transform-style:preserve-3d] transition-transform duration-[320ms] ease-in-out"
+            data-testid="flip-card"
+            className="relative w-full max-w-[700px] h-[clamp(300px,40vw,460px)] [transform-style:preserve-3d] transition-transform ease-in-out"
             style={{
               '--card-bg': bg,
               '--card-ink': ink,
               '--card-ink-subtle': `${ink}20`,
               transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+              transitionDuration: `${flipDuration}ms`,
+              willChange: 'transform',
             } as React.CSSProperties}
           >
             {/* Front — Question */}
-            <div className="absolute inset-0 rounded-card overflow-hidden flex flex-col backface-hidden bg-[var(--card-bg)] shadow-[0_1px_2px_rgba(0,0,0,0.3),0_24px_60px_rgba(0,0,0,0.4)]">
+            <div className="absolute inset-0 rounded-card overflow-hidden flex flex-col backface-hidden will-change-transform bg-[var(--card-bg)] shadow-[0_1px_2px_rgba(0,0,0,0.3),0_24px_60px_rgba(0,0,0,0.4)]">
               <div
                 className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-50"
                 style={{ backgroundImage: PAPER_NOISE }}
@@ -129,7 +133,7 @@ export default function CardEditor({ deck, card, cardNumber, previousCardId }: P
             </div>
 
             {/* Back — Answer */}
-            <div className="absolute inset-0 rounded-card overflow-hidden flex flex-col backface-hidden [transform:rotateY(180deg)] bg-[var(--card-bg)] shadow-[0_1px_2px_rgba(0,0,0,0.3),0_24px_60px_rgba(0,0,0,0.4)]">
+            <div className="absolute inset-0 rounded-card overflow-hidden flex flex-col backface-hidden will-change-transform [transform:rotateY(180deg)] bg-[var(--card-bg)] shadow-[0_1px_2px_rgba(0,0,0,0.3),0_24px_60px_rgba(0,0,0,0.4)]">
               <div
                 className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-50"
                 style={{ backgroundImage: PAPER_NOISE }}
