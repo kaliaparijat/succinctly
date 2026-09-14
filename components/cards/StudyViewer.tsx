@@ -159,7 +159,7 @@ export default function StudyViewer({
     disabled: editingFace !== null,
   })
 
-  const swipeRef = useSwipeGesture({ onSwipeLeft: goNext, onSwipeRight: goPrev })
+  const { ref: swipeRef } = useSwipeGesture({ onSwipeLeft: goNext, onSwipeRight: goPrev })
 
   const slideStyle = dir === 'next'
     ? { transform: 'translateX(-110%)', opacity: 0 }
@@ -208,6 +208,7 @@ export default function StudyViewer({
               transformStyle: 'preserve-3d',
               transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
               transition: `transform ${flipDuration}ms cubic-bezier(0.4,0,0.2,1)`,
+              willChange: 'transform',
             }}
           >
             <CardFace
@@ -292,6 +293,7 @@ function CardFace({
         background: bg,
         transform: `rotate(${tilt}deg)${back ? ' rotateY(180deg)' : ''}`,
         boxShadow: '0 1px 2px rgba(0,0,0,0.3), 0 24px 60px rgba(0,0,0,0.4)',
+        willChange: 'transform',
         ...(isEditing ? { outline: `2px solid ${ink}25`, outlineOffset: '-2px' } : {}),
       }}
     >

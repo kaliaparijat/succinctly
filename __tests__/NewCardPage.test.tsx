@@ -5,6 +5,7 @@ import NewCardPage from '@/app/(app)/decks/[id]/cards/new/page'
 const mockGetUser = vi.fn()
 const mockGetDeck = vi.fn()
 const mockListCards = vi.fn()
+const mockGetProfile = vi.fn()
 const mockRedirect = vi.fn((path: string) => {
   throw new Error(`REDIRECT:${path}`)
 })
@@ -21,14 +22,18 @@ vi.mock('@/app/actions/cards', () => ({
   listCards: (id: string) => mockListCards(id),
 }))
 
+vi.mock('@/app/actions/profiles', () => ({
+  getProfile: (id: string) => mockGetProfile(id),
+}))
+
 vi.mock('next/navigation', () => ({
   redirect: (path: string) => mockRedirect(path),
 }))
 
 vi.mock('@/components/cards/CardEditor', () => ({
-  default: (props: { cardNumber?: number; previousCardId?: string | null }) => (
+  default: (props: { cardNumber?: number; previousCardId?: string | null; flipDuration?: number }) => (
     <div data-testid="card-editor">
-      {props.cardNumber}:{String(props.previousCardId)}
+      {props.cardNumber}:{String(props.previousCardId)}:{props.flipDuration}
     </div>
   ),
 }))
@@ -40,8 +45,10 @@ beforeEach(() => {
   mockGetUser.mockReset()
   mockGetDeck.mockReset()
   mockListCards.mockReset()
+  mockGetProfile.mockReset()
   mockRedirect.mockClear()
   mockGetUser.mockResolvedValue({ id: 'user-1' })
+  mockGetProfile.mockResolvedValue(null)
 })
 
 describe('NewCardPage', () => {
@@ -69,5 +76,22 @@ describe('NewCardPage', () => {
     const result = await NewCardPage({ params })
     render(result)
     expect(screen.getByTestId('card-editor')).toHaveTextContent('3:card-2')
+  })
+
+  it('defaults flipDuration to 380ms when no preference is set', async () => {
+    mockGetDeck.mockResolvedValue(deck)
+    mockListCards.mockResolvedValue([])
+    const result = await NewCardPage({ params })
+    render(result)
+    expect(screen.getByTestId('card-editor')).toHaveTextContent('1:null:380')
+  })
+
+  it('resolves flipDuration from the flipSpeed preference', async () => {
+    mockGetDeck.mockResolvedValue(deck)
+    mockListCards.mockResolvedValue([])
+    mockGetProfile.mockResolvedValue({ preferences: { flipSpeed: 'fast' } })
+    const result = await NewCardPage({ params })
+    render(result)
+    expect(screen.getByTestId('card-editor')).toHaveTextContent('1:null:190')
   })
 })

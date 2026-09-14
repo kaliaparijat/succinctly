@@ -5,6 +5,7 @@ import { listCards } from '@/app/actions/cards'
 import { getProfile } from '@/app/actions/profiles'
 import StudyViewer from '@/components/cards/StudyViewer'
 import type { Preferences } from '@/lib/data/profiles'
+import { resolveFlipDuration } from '@/lib/flipSpeed'
 
 interface Props {
   params: Promise<{ id: string; cardId: string }>
@@ -27,8 +28,7 @@ export default async function CardPage({ params }: Props) {
   if (!cardExists) redirect(`/decks/${id}/cards/${cards[0].id}`)
 
   const prefs = (profile?.preferences ?? {}) as Preferences
-  const FLIP_MS = { slow: 480, normal: 320, fast: 160 } as const
-  const flipDuration = FLIP_MS[prefs.flipSpeed ?? 'normal']
+  const flipDuration = resolveFlipDuration(prefs.flipSpeed)
 
   return (
     <StudyViewer

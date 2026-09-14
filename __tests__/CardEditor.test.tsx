@@ -109,3 +109,15 @@ describe('CardEditor — Save navigation (create mode)', () => {
     expect(mockPush).toHaveBeenCalledWith('/decks/deck-1/cards/new-card-id')
   })
 })
+
+describe('CardEditor — flip duration', () => {
+  it('defaults the flip transition duration to 380ms', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    expect(screen.getByTestId('flip-card')).toHaveStyle({ transitionDuration: '380ms' })
+  })
+
+  it('uses the flipDuration prop when provided', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} flipDuration={570} />)
+    expect(screen.getByTestId('flip-card')).toHaveStyle({ transitionDuration: '570ms' })
+  })
+})

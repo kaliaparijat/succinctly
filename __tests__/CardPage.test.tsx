@@ -31,8 +31,8 @@ vi.mock('next/navigation', () => ({
 }))
 
 vi.mock('@/components/cards/StudyViewer', () => ({
-  default: (props: { initialCardId?: string }) => (
-    <div data-testid="study-viewer">{props.initialCardId}</div>
+  default: (props: { initialCardId?: string; flipDuration?: number }) => (
+    <div data-testid="study-viewer">{props.initialCardId}:{props.flipDuration}</div>
   ),
 }))
 
@@ -84,5 +84,23 @@ describe('CardPage', () => {
     const result = await CardPage({ params: paramsFor('card-2') })
     render(result)
     expect(screen.getByTestId('study-viewer')).toHaveTextContent('card-2')
+  })
+
+  it('defaults flipDuration to 380ms when no preference is set', async () => {
+    mockGetDeck.mockResolvedValue(deck)
+    mockListCards.mockResolvedValue(cards)
+    mockGetProfile.mockResolvedValue(null)
+    const result = await CardPage({ params: paramsFor('card-2') })
+    render(result)
+    expect(screen.getByTestId('study-viewer')).toHaveTextContent('card-2:380')
+  })
+
+  it('resolves flipDuration from the flipSpeed preference', async () => {
+    mockGetDeck.mockResolvedValue(deck)
+    mockListCards.mockResolvedValue(cards)
+    mockGetProfile.mockResolvedValue({ preferences: { flipSpeed: 'slow' } })
+    const result = await CardPage({ params: paramsFor('card-2') })
+    render(result)
+    expect(screen.getByTestId('study-viewer')).toHaveTextContent('card-2:570')
   })
 })
