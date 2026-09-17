@@ -60,7 +60,7 @@ describe('LibraryScreen — mobile (useIsMobile true)', () => {
     render(
       <LibraryScreen decks={mockDecks} cardCounts={mockCardCounts} userName="Ada" greeting="Good evening." />
     )
-    const row = screen.getByText('Algorithms').closest('button')
+    const row = screen.getByText('Algorithms').closest('[role="button"]')
     expect(row?.getAttribute('style')).toContain('view-transition-name: card-deck-1')
   })
 
