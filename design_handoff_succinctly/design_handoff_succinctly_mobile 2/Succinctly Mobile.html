@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Succinctly — Mobile</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;padding:0;background:#0A0A0B;color:#F5F5F7;font-family:'Inter Tight',system-ui,sans-serif;overflow:hidden}
+*{box-sizing:border-box}
+#root{width:100vw;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}
+button{font-family:inherit}
+textarea{font-family:inherit}
+::-webkit-scrollbar{width:0;height:0}
+::view-transition-old(*),::view-transition-new(*){animation-duration:360ms;animation-timing-function:cubic-bezier(.4,0,.2,1)}
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="env,react">
+const { useState, useEffect, useCallback, useRef, useMemo } = React;
+
+const T = {
+  bg: '#0A0A0B', bgElev: '#111113', bgCard: '#17171A', bgHover: '#1D1D21',
+  border: 'rgba(255,255,255,0.08)', borderStrong: 'rgba(255,255,255,0.14)',
+  text: '#F5F5F7', textMuted: 'rgba(245,245,247,0.6)', textFaint: 'rgba(245,245,247,0.38)',
+  fontSans: '"Inter Tight", -apple-system, system-ui, sans-serif',
+  fontDisplay: '"Instrument Serif", Georgia, serif',
+  fontMono: '"JetBrains Mono", ui-monospace, monospace',
+};
+const PALETTES = {
+  butter: { bg: '#F5D96B', ink: '#3A2E0A' },
+  sky: { bg: '#A8C8E8', ink: '#0F2940' },
+  coral: { bg: '#F2A68F', ink: '#3A1509' },
+  mint: { bg: '#B8DFC4', ink: '#0F3320' },
+  lilac: { bg: '#D4BFE8', ink: '#2C1840' },
+  sage: { bg: '#C5D4B0', ink: '#1F2B10' },
+};
+const PAPER_NOISE = `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='4'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")`;
+
+const DECKS = [
+  { id: 'algos', name: 'Algorithms', palette: 'butter', cards: [
+    { q: 'What is the time complexity of binary search?', a: 'O(log n) — halves the search space each iteration.' },
+    { q: 'When would you pick a hash table over a balanced BST?', a: 'When you need O(1) average lookup and don\u2019t need ordered traversal.' },
+    { q: 'Quicksort worst-case complexity?', a: 'O(n\u00b2), when the pivot choice is consistently bad.' },
+  ]},
+  { id: 'linalg', name: 'Linear Algebra', palette: 'sky', cards: [
+    { q: 'What does the determinant represent geometrically?', a: 'The signed scaling factor of volume under the linear map.' },
+    { q: 'Eigenvectors of the identity matrix?', a: 'Every nonzero vector — all eigenvalues equal 1.' },
+  ]},
+  { id: 'ind-history', name: 'Indian History', palette: 'coral', cards: [
+    { q: 'Who founded the Mauryan Empire?', a: 'Chandragupta Maurya, around 322 BCE.' },
+    { q: 'In what year was the Indian National Congress founded?', a: '1885, in Bombay.' },
+  ]},
+  { id: 'spanish', name: 'Spanish Verbs', palette: 'mint', cards: [
+    { q: 'haber (to have)', a: 'he, has, ha, hemos, hab\u00e9is, han' },
+  ]},
+  { id: 'philosophy', name: 'Philosophy 101', palette: 'lilac', cards: [
+    { q: 'What is epistemology?', a: 'The study of knowledge — its nature, sources, and limits.' },
+  ]},
+];
+
+function stableTilt(s) {
+  s = String(s || '').slice(0, 20);
+  let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return ((h % 100) / 100 - 0.5) * 1.2;
+}
+
+// ── icons ──
+const Icon = ({ d, size = 20, stroke = 1.7, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round">{d}</svg>
+);
+const I = {
+  back: (p) => <Icon {...p} d={<path d="M15 6l-6 6 6 6"/>} />,
+  chevronDown: (p) => <Icon {...p} d={<path d="M6 9l6 6 6-6"/>} />,
+  chevronR: (p) => <Icon {...p} d={<path d="M9 6l6 6-6 6"/>} />,
+  plus: (p) => <Icon {...p} d={<><path d="M12 5v14M5 12h14"/></>} />,
+  pencil: (p) => <Icon {...p} d={<><path d="M17 3l4 4L7 21H3v-4L17 3z"/></>} />,
+  grid: (p) => <Icon {...p} d={<><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></>} />,
+  gear: (p) => <Icon {...p} d={<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.34 1.87l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.34 1.7 1.7 0 00-1 1.55V21a2 2 0 01-4 0v-.09A1.7 1.7 0 009 19.4a1.7 1.7 0 00-1.87.34l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.7 1.7 0 004.6 15a1.7 1.7 0 00-1.55-1H3a2 2 0 010-4h.09A1.7 1.7 0 004.6 9a1.7 1.7 0 00-.34-1.87l-.06-.06a2 2 0 112.83-2.83l.06.06A1.7 1.7 0 009 4.6a1.7 1.7 0 001-1.55V3a2 2 0 014 0v.09a1.7 1.7 0 001 1.55 1.7 1.7 0 001.87-.34l.06-.06a2 2 0 112.83 2.83l-.06.06A1.7 1.7 0 0019.4 9a1.7 1.7 0 001.55 1H21a2 2 0 010 4h-.09a1.7 1.7 0 00-1.55 1z"/></>} />,
+};
+
+// ═══ Accordion library ═══
+function DeckRow({ deck, onOpen, onAddCard }) {
+  const pal = PALETTES[deck.palette];
+  return (
+    <button onClick={() => onOpen(deck, 0)} style={{
+      width: '100%', border: 'none', cursor: 'pointer', padding: '18px 20px', marginBottom: 10,
+      borderRadius: 16, background: pal.bg, position: 'relative', overflow: 'hidden',
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      boxShadow: '0 1px 2px rgba(0,0,0,0.25), 0 4px 14px rgba(0,0,0,0.25)',
+      viewTransitionName: `card-${deck.id}`,
+    }}>
+      <div style={{ position: 'absolute', inset: 0, backgroundImage: PAPER_NOISE, mixBlendMode: 'multiply', opacity: 0.5, pointerEvents: 'none' }}/>
+      <div style={{ position: 'relative', textAlign: 'left' }}>
+        <div style={{ fontFamily: T.fontDisplay, fontSize: 22, color: pal.ink, letterSpacing: -0.3, lineHeight: 1.1 }}>{deck.name}</div>
+        <div style={{ fontFamily: T.fontMono, fontSize: 10, color: pal.ink, opacity: 0.55, letterSpacing: 0.6, textTransform: 'uppercase', marginTop: 4 }}>
+          {deck.cards.length} card{deck.cards.length === 1 ? '' : 's'}
+        </div>
+      </div>
+      <div onClick={(e) => { e.stopPropagation(); onAddCard(deck); }} style={{ position: 'relative', width: 30, height: 30, borderRadius: 999, background: `${pal.ink}14`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <I.plus size={15} color={pal.ink} stroke={2} />
+      </div>
+    </button>
+  );
+}
+
+function LibraryScreen({ onOpenCard, onAddCard, onNewDeck }) {
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '4px 20px 14px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 14, height: 18, background: T.text, borderRadius: 2, transform: 'rotate(-6deg)' }}/>
+            <div style={{ fontFamily: T.fontDisplay, fontSize: 17, letterSpacing: -0.2 }}>Succinctly</div>
+          </div>
+
+        </div>
+        <div style={{ fontFamily: T.fontMono, fontSize: 10, letterSpacing: 0.8, color: T.textFaint, textTransform: 'uppercase', marginBottom: 6 }}>
+          Your library · {DECKS.length} decks
+        </div>
+        <h1 style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 400, margin: 0, letterSpacing: -0.5, lineHeight: 1.08 }}>
+          Good evening. <em style={{ color: T.textMuted, fontStyle: 'italic' }}>What are we studying?</em>
+        </h1>
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '4px 12px 16px' }}>
+        <button onClick={onNewDeck} style={{
+            width: '100%', border: `1.5px dashed ${T.border}`, cursor: 'pointer', padding: '16px 20px', marginBottom: 10,
+            borderRadius: 16, background: 'transparent', display: 'flex', alignItems: 'center', gap: 10,
+          }}>
+            <div style={{ width: 30, height: 30, borderRadius: 999, background: T.bgCard, border: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <I.plus size={14} color={T.text} stroke={2} />
+            </div>
+          <span style={{ fontFamily: T.fontSans, fontSize: 14, fontWeight: 500, color: T.textMuted }}>New deck</span>
+        </button>
+        {DECKS.map(d => (
+          <DeckRow key={d.id} deck={d} onOpen={onOpenCard} onAddCard={onAddCard} />
+        ))}
+      </div>
+
+    </div>
+  );
+}
+
+// ═══ Full-bleed study viewer (iOS Notes style) ═══
+function ViewerScreen({ deck, idx, setIdx, onBack, onEdit, onAddCard, landscape }) {
+  const [flipped, setFlipped] = useState(false);
+  const [dragX, setDragX] = useState(0);
+  const [anim, setAnim] = useState(null);
+  const touchStart = useRef(null);
+  const pal = PALETTES[deck.palette];
+  const card = deck.cards[idx];
+  const tilt = 0;
+
+  useEffect(() => { setFlipped(false); }, [idx]);
+
+  const commitNext = useCallback(() => {
+    if (idx >= deck.cards.length - 1) return;
+    setAnim('next'); setTimeout(() => { setIdx(i => i + 1); setAnim(null); setDragX(0); }, 220);
+  }, [idx, deck.cards.length, setIdx]);
+  const commitPrev = useCallback(() => {
+    if (idx <= 0) return;
+    setAnim('prev'); setTimeout(() => { setIdx(i => i - 1); setAnim(null); setDragX(0); }, 220);
+  }, [idx, setIdx]);
+
+  const onTouchStart = (e) => { touchStart.current = e.touches[0].clientX; };
+  const onTouchMove = (e) => {
+    if (touchStart.current == null) return;
+    setDragX(e.touches[0].clientX - touchStart.current);
+  };
+  const onTouchEnd = () => {
+    if (Math.abs(dragX) > 60) { dragX < 0 ? commitNext() : commitPrev(); }
+    else setDragX(0);
+    touchStart.current = null;
+  };
+
+  const slideTransform = anim === 'next' ? 'translateX(-100%)' : anim === 'prev' ? 'translateX(100%)' : `translateX(${dragX}px)`;
+  const isLast = idx === deck.cards.length - 1;
+
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', background: T.bg }}>
+      <div style={{ position: 'relative', zIndex: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: landscape ? '0px 16px 6px' : '2px 16px 10px', flexShrink: 0 }}>
+        <button onClick={onBack} style={{ width: 34, height: 34, borderRadius: 999, background: T.bgCard, border: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.text, cursor: 'pointer' }}>
+          <I.back size={16} />
+        </button>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontFamily: T.fontSans, fontSize: 12, color: T.textMuted }}>{deck.name}</div>
+          <div style={{ fontFamily: T.fontMono, fontSize: 10, color: T.textFaint, marginTop: 1 }}>{idx + 1} / {deck.cards.length}</div>
+        </div>
+        <button onClick={() => onEdit(deck, idx)} style={{ width: 34, height: 34, borderRadius: 999, background: T.bgCard, border: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.text, cursor: 'pointer' }}>
+          <I.pencil size={15} />
+        </button>
+      </div>
+
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', padding: landscape ? '0 20px 4px' : '0 12px 8px' }}
+        onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
+        <div style={{ width: '100%', height: '100%', perspective: 1800, transition: anim || dragX === 0 ? 'transform 220ms cubic-bezier(0.4,0,0.2,1)' : 'none', transform: slideTransform }}>
+          <div onClick={() => setFlipped(f => !f)} style={{
+            width: '100%', height: '100%', position: 'relative', cursor: 'pointer',
+            transformStyle: 'preserve-3d', transform: `rotateY(${flipped ? 180 : 0}deg)`,
+            transition: 'transform 380ms cubic-bezier(0.4,0,0.2,1)',
+          }}>
+            {[false, true].map(isBack => (
+              <div key={isBack} style={{
+                position: 'absolute', inset: 0, borderRadius: 22, background: pal.bg,
+                backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden',
+                transform: isBack ? 'rotateY(180deg)' : 'none',
+                display: 'flex', flexDirection: 'column', overflow: 'hidden',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.25), 0 18px 40px rgba(0,0,0,0.35)',
+                viewTransitionName: !isBack ? `card-${deck.id}` : undefined,
+              }}>
+                <div style={{ position: 'absolute', inset: 0, backgroundImage: PAPER_NOISE, mixBlendMode: 'multiply', opacity: 0.5, pointerEvents: 'none' }}/>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 22px 14px', borderBottom: `1px solid ${pal.ink}1c` }}>
+                  <span style={{ fontFamily: T.fontMono, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', color: pal.ink, opacity: 0.5 }}>{isBack ? 'Answer' : 'Question'}</span>
+                  <span style={{ fontFamily: T.fontSans, fontSize: 11, color: pal.ink, opacity: 0.4 }}>{deck.name}</span>
+                </div>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: landscape ? '6px 40px' : '18px 26px' }}>
+                  <div style={{ fontFamily: T.fontDisplay, fontSize: landscape ? 24 : 27, lineHeight: 1.28, letterSpacing: -0.3, textAlign: 'center', color: pal.ink, textWrap: 'pretty' }}>
+                    {isBack ? card.a : card.q}
+                  </div>
+                </div>
+                {!isBack && idx === 0 && (
+                  <div style={{ position: 'absolute', bottom: 18, left: '50%', transform: 'translateX(-50%)', fontFamily: T.fontMono, fontSize: 10, color: pal.ink, opacity: 0.45, letterSpacing: 0.5, padding: '5px 12px', borderRadius: 999, background: `${pal.ink}12` }}>
+                    Tap to flip
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: landscape ? '2px 20px 8px' : '6px 20px 14px', flexShrink: 0 }}>
+        <button onClick={commitPrev} disabled={idx === 0} style={{ width: 40, height: 40, borderRadius: 999, background: T.bgCard, border: `1px solid ${T.border}`, color: T.text, opacity: idx === 0 ? 0.3 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: idx === 0 ? 'default' : 'pointer' }}>
+          <I.back size={16} />
+        </button>
+        <div style={{ fontFamily: T.fontMono, fontSize: 10, color: T.textFaint, letterSpacing: 0.5 }}>{isLast ? 'last card' : 'swipe or tap to flip'}</div>
+        <button onClick={isLast ? () => onAddCard(deck) : commitNext} style={{ width: 40, height: 40, borderRadius: 999, background: isLast ? pal.bg : T.bgCard, border: `1px solid ${isLast ? 'transparent' : T.border}`, color: isLast ? pal.ink : T.text, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          {isLast ? <I.plus size={16} stroke={2} /> : <I.chevronR size={16} />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ═══ Full-bleed create / edit screen ═══
+function CreateScreen({ deck, card, onBack, landscape }) {
+  const [flipped, setFlipped] = useState(false);
+  const [q, setQ] = useState(card ? card.q : '');
+  const [a, setA] = useState(card ? card.a : '');
+  const pal = PALETTES[deck.palette];
+  const frontRef = useRef(null);
+  useEffect(() => { if (!card && frontRef.current) frontRef.current.focus(); }, [card]);
+
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: T.bg }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 16px 10px', flexShrink: 0 }}>
+        <button onClick={onBack} style={{ width: 34, height: 34, borderRadius: 999, background: T.bgCard, border: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.text, cursor: 'pointer' }}>
+          <I.back size={16} />
+        </button>
+        <div style={{ fontFamily: T.fontSans, fontSize: 12, color: T.textMuted }}>{deck.name} · {card ? 'Edit card' : 'New card'}</div>
+        <button onClick={onBack} style={{ padding: '7px 14px', borderRadius: 999, background: T.text, color: T.bg, border: 'none', fontFamily: T.fontSans, fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>Save</button>
+      </div>
+
+      <div style={{ flex: 1, position: 'relative', padding: landscape ? '0 20px 4px' : '0 12px 8px' }}>
+        <div style={{ width: '100%', height: '100%', perspective: 1800 }}>
+          <div style={{ width: '100%', height: '100%', position: 'relative', transformStyle: 'preserve-3d', transform: `rotateY(${flipped ? 180 : 0}deg)`, transition: 'transform 380ms cubic-bezier(0.4,0,0.2,1)' }}>
+            {[false, true].map(isBack => (
+              <div key={isBack} style={{
+                position: 'absolute', inset: 0, borderRadius: 22, background: pal.bg,
+                backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden',
+                transform: isBack ? 'rotateY(180deg)' : 'none',
+                display: 'flex', flexDirection: 'column', overflow: 'hidden',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.25), 0 18px 40px rgba(0,0,0,0.35)',
+              }}>
+                <div style={{ position: 'absolute', inset: 0, backgroundImage: PAPER_NOISE, mixBlendMode: 'multiply', opacity: 0.5, pointerEvents: 'none' }}/>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 22px 14px', borderBottom: `1px solid ${pal.ink}1c` }}>
+                  <span style={{ fontFamily: T.fontMono, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', color: pal.ink, opacity: 0.5 }}>{isBack ? 'Answer' : 'Question'}</span>
+                  <span style={{ fontFamily: T.fontSans, fontSize: 11, color: pal.ink, opacity: 0.4 }}>Draft</span>
+                </div>
+                <div style={{ flex: 1, padding: landscape ? '4px 40px' : '10px 26px', display: 'flex' }}>
+                  <textarea
+                    ref={!isBack ? frontRef : null}
+                    value={isBack ? a : q}
+                    onChange={e => isBack ? setA(e.target.value) : setQ(e.target.value)}
+                    placeholder={isBack ? 'Write the answer…' : "What's the question?"}
+                    style={{
+                      flex: 1, width: '100%', border: 'none', outline: 'none', resize: 'none', background: 'transparent',
+                      fontFamily: T.fontDisplay, fontSize: landscape ? 22 : 26, lineHeight: 1.3, letterSpacing: -0.3, textAlign: 'center',
+                      color: pal.ink, caretColor: pal.ink,
+                    }}
+                  />
+                </div>
+                <div style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 6, fontFamily: T.fontMono, fontSize: 9, color: pal.ink, opacity: 0.4 }}>
+                  <div style={{ width: 5, height: 5, borderRadius: 999, background: pal.ink }}/>Auto-saved
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 20px 16px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', padding: 3, borderRadius: 999, background: T.bgCard, border: `1px solid ${T.border}` }}>
+          {['Question', 'Answer'].map((label, i) => (
+            <button key={label} onClick={() => setFlipped(i === 1)} style={{
+              padding: '7px 18px', borderRadius: 999, border: 'none', cursor: 'pointer',
+              fontFamily: T.fontSans, fontSize: 12, fontWeight: 500,
+              background: (flipped ? 1 : 0) === i ? T.text : 'transparent',
+              color: (flipped ? 1 : 0) === i ? T.bg : T.textMuted,
+            }}>{label}</button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SettingsScreen({ onBack }) {
+  const rows = ['Profile', 'Preferences', 'Data', 'Danger zone'];
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '4px 20px 18px', flexShrink: 0 }}>
+        <div style={{ fontFamily: T.fontDisplay, fontSize: 26, letterSpacing: -0.4 }}>Settings</div>
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px' }}>
+        {rows.map((r, i) => (
+          <div key={r} style={{ padding: '16px 6px', borderBottom: i < rows.length - 1 ? `1px solid ${T.border}` : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: 15 }}>{r}</span>
+            <I.chevronR size={15} color={T.textFaint} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TabBar({ tab, setTab }) {
+  const items = [{ id: 'library', label: 'Library', Ic: I.grid }, { id: 'settings', label: 'Settings', Ic: I.gear }];
+  return (
+    <div style={{ display: 'flex', borderTop: `1px solid ${T.border}`, background: 'rgba(10,10,11,0.92)', backdropFilter: 'blur(12px)', flexShrink: 0, paddingBottom: 6 }}>
+      {items.map(it => (
+        <button key={it.id} onClick={() => setTab(it.id)} style={{
+          flex: 1, background: 'none', border: 'none', cursor: 'pointer', padding: '9px 0 4px',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+          color: tab === it.id ? T.text : T.textFaint,
+        }}>
+          <it.Ic size={20} stroke={tab === it.id ? 2 : 1.6} />
+          <span style={{ fontFamily: T.fontSans, fontSize: 10 }}>{it.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ═══ App shell ═══
+function App() {
+  const [navPattern, setNavPattern] = useState('tabs');
+  const [orientation, setOrientation] = useState('portrait');
+  const [tab, setTab] = useState('library');
+  const [screen, setScreen] = useState('home'); // home | viewer | create
+  const [activeDeck, setActiveDeck] = useState(null);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [editingCard, setEditingCard] = useState(null);
+
+  const navigate = (fn) => {
+    if (document.startViewTransition) document.startViewTransition(() => ReactDOM.flushSync(fn));
+    else fn();
+  };
+
+  const openCard = (deck, idx) => navigate(() => { setActiveDeck(deck); setActiveIdx(idx); setScreen('viewer'); });
+  const newDeck = () => navigate(() => {
+    const usedPals = new Set(DECKS.map(d => d.palette));
+    const palette = Object.keys(PALETTES).find(p => !usedPals.has(p)) || Object.keys(PALETTES)[DECKS.length % Object.keys(PALETTES).length];
+    const deck = { id: `deck-${Date.now()}`, name: 'Untitled deck', palette, cards: [] };
+    DECKS.unshift(deck);
+    setActiveDeck(deck); setEditingCard(null); setScreen('create');
+  });
+  const addCard = (deck) => navigate(() => { setActiveDeck(deck); setEditingCard(null); setScreen('create'); });
+  const editCard = (deck, idx) => navigate(() => { setActiveDeck(deck); setEditingCard(deck.cards[idx]); setScreen('create'); });
+  const goHome = () => navigate(() => setScreen('home'));
+
+  const immersive = screen === 'viewer' || screen === 'create';
+  const effectiveOrientation = screen === 'home' ? 'portrait' : orientation;
+
+  return (
+    <React.Fragment>
+      <div style={{ display: 'flex', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 10, background: T.bgElev, border: `1px solid ${T.border}`, borderRadius: 999, padding: 4 }}>
+          {[['tabs', 'Bottom tab bar'], ['topbar', 'Top bar only']].map(([id, label]) => (
+            <button key={id} onClick={() => setNavPattern(id)} style={{
+              padding: '7px 16px', borderRadius: 999, border: 'none', cursor: 'pointer',
+              fontFamily: T.fontSans, fontSize: 12, fontWeight: 500,
+              background: navPattern === id ? T.text : 'transparent', color: navPattern === id ? T.bg : T.textMuted,
+            }}>{label}</button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 10, background: T.bgElev, border: `1px solid ${T.border}`, borderRadius: 999, padding: 4, opacity: screen === 'home' ? 0.4 : 1 }} title={screen === 'home' ? 'Landscape only applies while viewing or editing a card' : ''}>
+          {[['portrait', 'Portrait'], ['landscape', 'Landscape']].map(([id, label]) => (
+            <button key={id} disabled={screen === 'home'} onClick={() => setOrientation(id)} style={{
+              padding: '7px 16px', borderRadius: 999, border: 'none', cursor: screen === 'home' ? 'default' : 'pointer',
+              fontFamily: T.fontSans, fontSize: 12, fontWeight: 500,
+              background: orientation === id ? T.text : 'transparent', color: orientation === id ? T.bg : T.textMuted,
+            }}>{label}</button>
+          ))}
+        </div>
+      </div>
+      <IOSDevice dark width={effectiveOrientation === 'landscape' ? 844 : 390} height={effectiveOrientation === 'landscape' ? 390 : 844}>
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: T.bg, color: T.text, fontFamily: T.fontSans, paddingTop: effectiveOrientation === 'landscape' ? 22 : 46 }}>
+          {navPattern === 'topbar' && !immersive && tab !== 'library' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '2px 20px 10px', flexShrink: 0 }}>
+              <button onClick={() => setTab('library')} style={{ width: 34, height: 34, borderRadius: 999, background: T.bgCard, border: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.text, cursor: 'pointer' }}><I.back size={16} /></button>
+              <span style={{ fontSize: 13, color: T.textMuted }}>Library</span>
+            </div>
+          )}
+          <div style={{ flex: 1, minHeight: 0 }}>
+            {screen === 'home' && tab === 'library' && (
+              <LibraryScreen onOpenCard={openCard} onAddCard={addCard}
+                onNewDeck={newDeck} />
+            )}
+            {screen === 'home' && tab === 'settings' && <SettingsScreen />}
+            {screen === 'viewer' && <ViewerScreen deck={activeDeck} idx={activeIdx} setIdx={setActiveIdx} onBack={goHome} onEdit={editCard} onAddCard={addCard} landscape={effectiveOrientation === 'landscape'} />}
+            {screen === 'create' && <CreateScreen deck={activeDeck} card={editingCard} onBack={goHome} landscape={effectiveOrientation === 'landscape'} />}
+          </div>
+          {navPattern === 'tabs' && !immersive && <TabBar tab={tab} setTab={setTab} />}
+          {navPattern === 'topbar' && !immersive && tab === 'library' && (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 10px', flexShrink: 0 }}>
+              <button onClick={() => setTab('settings')} style={{ fontFamily: T.fontMono, fontSize: 10, letterSpacing: 0.6, color: T.textFaint, background: 'none', border: 'none', cursor: 'pointer' }}>Settings →</button>
+            </div>
+          )}
+        </div>
+      </IOSDevice>
+    </React.Fragment>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
