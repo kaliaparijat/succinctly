@@ -3,10 +3,12 @@
 import { useState } from 'react'
 import { LibraryBar } from '@/components/layout/TopBar'
 import DeckThumb from '@/components/decks/DeckThumb'
+import MobileDeckRow from '@/components/library/MobileDeckRow'
 import NewDeckModal from '@/components/decks/NewDeckModal'
 import EditDeckModal from '@/components/decks/EditDeckModal'
 import AccountDropdown from '@/components/layout/AccountDropdown'
 import HelpOverlay from '@/components/ui/HelpOverlay'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import type { Palette } from '@/lib/palette'
 
 interface Deck {
@@ -27,6 +29,7 @@ export default function LibraryScreen({ decks, cardCounts, userName, greeting }:
   const [editingDeck, setEditingDeck] = useState<Deck | null>(null)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
+  const isMobile = useIsMobile()
 
   const isEmpty = decks.length === 0
 
@@ -65,29 +68,44 @@ export default function LibraryScreen({ decks, cardCounts, userName, greeting }:
               </button>
             </div>
 
-            {/* Deck grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-5 md:gap-x-10 gap-y-8 md:gap-y-12">
-              {decks.map((deck, i) => (
-                <DeckThumb
-                  key={deck.id}
-                  id={deck.id}
-                  title={deck.title}
-                  palette={deck.palette as Palette}
-                  cardCount={cardCounts[i] ?? 0}
-                  onEdit={() => setEditingDeck(deck)}
-                />
-              ))}
+            {isMobile ? (
+              /* Mobile deck row list */
+              <div>
+                {decks.map((deck, i) => (
+                  <MobileDeckRow
+                    key={deck.id}
+                    id={deck.id}
+                    title={deck.title}
+                    palette={deck.palette as Palette}
+                    cardCount={cardCounts[i] ?? 0}
+                  />
+                ))}
+              </div>
+            ) : (
+              /* Deck grid */
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-x-5 md:gap-x-10 gap-y-8 md:gap-y-12">
+                {decks.map((deck, i) => (
+                  <DeckThumb
+                    key={deck.id}
+                    id={deck.id}
+                    title={deck.title}
+                    palette={deck.palette as Palette}
+                    cardCount={cardCounts[i] ?? 0}
+                    onEdit={() => setEditingDeck(deck)}
+                  />
+                ))}
 
-              {/* Ghost new deck slot */}
-              <button
-                onClick={() => setModalOpen(true)}
-                className="w-full rounded-thumb border-2 border-dashed border-divider-strong text-tertiary hover:text-secondary hover:border-secondary transition-colors flex flex-col items-center justify-center gap-2"
-                style={{ aspectRatio: '220/140' }}
-              >
-                <span className="text-2xl leading-none">+</span>
-                <span className="font-mono text-[10px] uppercase tracking-[0.8px]">New deck</span>
-              </button>
-            </div>
+                {/* Ghost new deck slot */}
+                <button
+                  onClick={() => setModalOpen(true)}
+                  className="w-full rounded-thumb border-2 border-dashed border-divider-strong text-tertiary hover:text-secondary hover:border-secondary transition-colors flex flex-col items-center justify-center gap-2"
+                  style={{ aspectRatio: '220/140' }}
+                >
+                  <span className="text-2xl leading-none">+</span>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.8px]">New deck</span>
+                </button>
+              </div>
+            )}
           </>
         )}
       </main>
