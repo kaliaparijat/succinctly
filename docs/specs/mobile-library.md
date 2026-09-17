@@ -84,23 +84,26 @@ transition). This spec owns the row's half of the wiring; the study viewer
 spec owns the card-face half — they must use the same id format.
 
 ## Acceptance Criteria
-- [ ] At ≤768px, Library renders per the design doc's tokens/layout,
+- [x] At ≤768px, Library renders per the design doc's tokens/layout,
       except the two changes below
-- [ ] "New deck" is inline (no modal): editable row + checkmark; nothing
+- [x] "New deck" is inline (no modal): editable row + checkmark; nothing
       is created until confirm with a non-empty name; blur while editing
       cancels with no deck created; a failed create keeps the typed text
       and stays in edit state; confirming navigates directly into that
       deck's new-card editor
-- [ ] New decks rotate through all 8 palettes in `lib/palette.ts` (same
+- [x] New decks rotate through all 8 palettes in `lib/palette.ts` (same
       set desktop's `NewDeckModal`/`EditDeckModal` offer) based on what the
       user's existing decks already use, not a hardcoded default
-- [ ] Per-row secondary button is inline rename (pencil icon, not `+`);
+- [x] Per-row secondary button is inline rename (pencil icon, not `+`);
       the old quick-add-card-from-Library action no longer exists on
       mobile; rename uses the same inline-field rules as creation, and
       never changes the deck's palette
-- [ ] Library → card navigation on mobile morphs via shared
+- [x] Library → card navigation on mobile morphs via shared
       `view-transition-name`; desktop navigation is unchanged (no shared
-      element, no morph)
-- [ ] At >768px, `LibraryScreen` is visually and behaviorally unchanged
+      element, no morph). This spec's half (the row's `view-transition-name`
+      + `navigateWithTransition` call) is done; the actual morph also needs
+      the card face's matching name from `mobile-study-viewer.md`, not yet
+      built — until then this degrades gracefully to a plain navigation.
+- [x] At >768px, `LibraryScreen` is visually and behaviorally unchanged
       from current production
-- [ ] `npm test` and `npm run build` pass
+- [x] `npm test` and `npm run build` pass
