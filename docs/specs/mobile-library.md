@@ -42,10 +42,16 @@ the create call itself fails, stay in edit state with the typed text
 preserved (not discarded) so the user can retry or cancel manually.
 
 **Palette selection.** The next palette not currently used by any of this
-user's decks, cycling through the design doc's 6-palette set — `butter,
-sky, coral, mint, lilac, sage` (not all 8 palettes defined in
-`lib/palette.ts`, which also has `paper`/`terracotta` that the design
-doesn't document). Once all 6 are in use, cycle back to the start.
+user's decks, cycling through all 8 palettes defined in `lib/palette.ts`
+— `butter, sky, coral, mint, lilac, paper, terracotta, sage`, in that
+declaration order. (The design handoff's mockup only shows 6 — `butter,
+sky, coral, mint, lilac, sage` — because it predates `paper`/`terracotta`
+being added to the palette; mobile should have the same palette
+availability as desktop's `NewDeckModal`/`EditDeckModal`, so the design
+doc's set is extended rather than followed literally here. `paper` and
+`terracotta` are inserted after `lilac`, preserving the design doc's
+relative order for the other 6.) Once all 8 are in use, cycle back to the
+start.
 
 **Per-row secondary button — inline rename**, replacing the old
 quick-add-card affordance entirely (that action no longer exists on mobile
@@ -85,7 +91,8 @@ spec owns the card-face half — they must use the same id format.
       cancels with no deck created; a failed create keeps the typed text
       and stays in edit state; confirming navigates directly into that
       deck's new-card editor
-- [ ] New decks rotate through the 6 design-doc palettes based on what the
+- [ ] New decks rotate through all 8 palettes in `lib/palette.ts` (same
+      set desktop's `NewDeckModal`/`EditDeckModal` offer) based on what the
       user's existing decks already use, not a hardcoded default
 - [ ] Per-row secondary button is inline rename (pencil icon, not `+`);
       the old quick-add-card-from-Library action no longer exists on
