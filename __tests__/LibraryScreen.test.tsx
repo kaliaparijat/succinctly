@@ -75,6 +75,22 @@ describe('LibraryScreen — mobile (useIsMobile true)', () => {
       'forward'
     )
   })
+
+  it('renders a bottom tab bar with Library and a working Settings link', () => {
+    render(
+      <LibraryScreen decks={mockDecks} cardCounts={mockCardCounts} userName="Ada" greeting="Good evening." />
+    )
+    expect(screen.getByRole('link', { name: /library/i })).toHaveAttribute('href', '/library')
+    const settingsLink = screen.getByRole('link', { name: /settings/i })
+    expect(settingsLink).toHaveAttribute('href', '/settings')
+  })
+
+  it('renders the tab bar even when the library is empty', () => {
+    render(
+      <LibraryScreen decks={[]} cardCounts={[]} userName="Ada" greeting="Good evening." />
+    )
+    expect(screen.getByRole('link', { name: /settings/i })).toBeInTheDocument()
+  })
 })
 
 describe('LibraryScreen — desktop (useIsMobile false)', () => {
@@ -95,5 +111,12 @@ describe('LibraryScreen — desktop (useIsMobile false)', () => {
     const link = screen.getByText('Algorithms').closest('a')
     expect(link).toHaveAttribute('href', '/decks/deck-1')
     expect(mockNavigateWithTransition).not.toHaveBeenCalled()
+  })
+
+  it('does not render the mobile tab bar', () => {
+    render(
+      <LibraryScreen decks={mockDecks} cardCounts={mockCardCounts} userName="Ada" greeting="Good evening." />
+    )
+    expect(screen.queryByRole('link', { name: /settings/i })).toBeNull()
   })
 })
