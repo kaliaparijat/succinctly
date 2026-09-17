@@ -91,6 +91,28 @@ describe('LibraryScreen — mobile (useIsMobile true)', () => {
     )
     expect(screen.getByRole('link', { name: /settings/i })).toBeInTheDocument()
   })
+
+  it('renders a stacked mobile header with the eyebrow deck count and greeting', () => {
+    render(
+      <LibraryScreen decks={mockDecks} cardCounts={mockCardCounts} userName="Ada" greeting="Good evening." />
+    )
+    expect(screen.getByText(/your library/i)).toHaveTextContent('Your library · 2 decks')
+    expect(screen.getByText('Good evening.')).toBeInTheDocument()
+  })
+
+  it('uses the singular "deck" copy for exactly one deck', () => {
+    render(
+      <LibraryScreen decks={[mockDecks[0]]} cardCounts={[3]} userName="Ada" greeting="Good evening." />
+    )
+    expect(screen.getByText(/your library/i)).toHaveTextContent('Your library · 1 deck')
+  })
+
+  it('has no avatar or account-menu entry point on mobile', () => {
+    render(
+      <LibraryScreen decks={mockDecks} cardCounts={mockCardCounts} userName="Ada" greeting="Good evening." />
+    )
+    expect(screen.queryByRole('button', { name: /account menu/i })).toBeNull()
+  })
 })
 
 describe('LibraryScreen — desktop (useIsMobile false)', () => {
@@ -118,5 +140,12 @@ describe('LibraryScreen — desktop (useIsMobile false)', () => {
       <LibraryScreen decks={mockDecks} cardCounts={mockCardCounts} userName="Ada" greeting="Good evening." />
     )
     expect(screen.queryByRole('link', { name: /settings/i })).toBeNull()
+  })
+
+  it('still renders the desktop avatar/account-menu trigger', () => {
+    render(
+      <LibraryScreen decks={mockDecks} cardCounts={mockCardCounts} userName="Ada" greeting="Good evening." />
+    )
+    expect(screen.getByRole('button', { name: /account menu/i })).toBeInTheDocument()
   })
 })

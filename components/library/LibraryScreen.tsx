@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { LibraryBar } from '@/components/layout/TopBar'
 import DeckThumb from '@/components/decks/DeckThumb'
 import MobileDeckRow from '@/components/library/MobileDeckRow'
+import MobileLibraryHeader from '@/components/library/MobileLibraryHeader'
 import MobileNewDeckRow from '@/components/library/MobileNewDeckRow'
 import MobileTabBar from '@/components/library/MobileTabBar'
 import NewDeckModal from '@/components/decks/NewDeckModal'
@@ -37,38 +38,44 @@ export default function LibraryScreen({ decks, cardCounts, userName, greeting }:
 
   return (
     <div className="min-h-screen bg-surface flex flex-col">
-      <LibraryBar
-        userName={userName}
-        onAvatarClick={() => setDropdownOpen(o => !o)}
-        onHelpClick={() => setHelpOpen(true)}
-      />
+      {!isMobile && (
+        <LibraryBar
+          userName={userName}
+          onAvatarClick={() => setDropdownOpen(o => !o)}
+          onHelpClick={() => setHelpOpen(true)}
+        />
+      )}
 
       <main className={`flex-1 px-9 md:px-[72px] py-10 md:py-14 ${isMobile ? 'pb-20' : ''}`}>
+        {isMobile && <MobileLibraryHeader deckCount={decks.length} greeting={greeting} />}
+
         {isEmpty && !isMobile ? (
           <EmptyLibrary onNew={() => setModalOpen(true)} />
         ) : (
           <>
-            {/* Header row */}
-            <div className="flex items-start justify-between mb-10">
-              <div>
-                <p className="font-mono text-[11px] uppercase tracking-[0.8px] text-tertiary mb-2">
-                  Your library · {decks.length} {decks.length === 1 ? 'deck' : 'decks'}
-                </p>
-                <h1 className="font-display text-[40px] md:text-[56px] leading-tight text-primary" style={{ letterSpacing: '-0.5px' }}>
-                  {greeting}{' '}
-                  <em className="text-secondary not-italic" style={{ fontStyle: 'italic' }}>
-                    What are we studying?
-                  </em>
-                </h1>
+            {!isMobile && (
+              /* Header row */
+              <div className="flex items-start justify-between mb-10">
+                <div>
+                  <p className="font-mono text-[11px] uppercase tracking-[0.8px] text-tertiary mb-2">
+                    Your library · {decks.length} {decks.length === 1 ? 'deck' : 'decks'}
+                  </p>
+                  <h1 className="font-display text-[40px] md:text-[56px] leading-tight text-primary" style={{ letterSpacing: '-0.5px' }}>
+                    {greeting}{' '}
+                    <em className="text-secondary not-italic" style={{ fontStyle: 'italic' }}>
+                      What are we studying?
+                    </em>
+                  </h1>
+                </div>
+                <button
+                  onClick={() => setModalOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-pill bg-primary text-surface font-sans font-500 text-sm shrink-0 mt-2 hover:opacity-90 transition-opacity"
+                >
+                  <span className="text-lg leading-none">+</span>
+                  New deck
+                </button>
               </div>
-              <button
-                onClick={() => setModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-pill bg-primary text-surface font-sans font-500 text-sm shrink-0 mt-2 hover:opacity-90 transition-opacity"
-              >
-                <span className="text-lg leading-none">+</span>
-                New deck
-              </button>
-            </div>
+            )}
 
             {isMobile ? (
               /* Mobile deck row list */
