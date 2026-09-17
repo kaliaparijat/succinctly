@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { LibraryBar } from '@/components/layout/TopBar'
 import DeckThumb from '@/components/decks/DeckThumb'
 import MobileDeckRow from '@/components/library/MobileDeckRow'
+import MobileNewDeckRow from '@/components/library/MobileNewDeckRow'
 import NewDeckModal from '@/components/decks/NewDeckModal'
 import EditDeckModal from '@/components/decks/EditDeckModal'
 import AccountDropdown from '@/components/layout/AccountDropdown'
@@ -42,7 +43,7 @@ export default function LibraryScreen({ decks, cardCounts, userName, greeting }:
       />
 
       <main className="flex-1 px-9 md:px-[72px] py-10 md:py-14">
-        {isEmpty ? (
+        {isEmpty && !isMobile ? (
           <EmptyLibrary onNew={() => setModalOpen(true)} />
         ) : (
           <>
@@ -71,6 +72,7 @@ export default function LibraryScreen({ decks, cardCounts, userName, greeting }:
             {isMobile ? (
               /* Mobile deck row list */
               <div>
+                <MobileNewDeckRow existingPalettes={decks.map(deck => deck.palette)} />
                 {decks.map((deck, i) => (
                   <MobileDeckRow
                     key={deck.id}

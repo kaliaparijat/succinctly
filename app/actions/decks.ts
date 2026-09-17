@@ -22,15 +22,17 @@ export async function createDeck(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthenticated')
 
-  const { error } = await supabase.from('decks').insert({
+  const { data, error } = await supabase.from('decks').insert({
     user_id: user.id,
     title: formData.get('title') as string,
     palette: (formData.get('palette') as Palette) ?? 'butter',
-  })
+  }).select().single()
 
   if (error) throw new Error(error.message)
 
   revalidatePath('/library')
+
+  return data
 }
 
 export async function updateDeck(_prevState: unknown, formData: FormData) {
