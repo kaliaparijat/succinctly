@@ -25,24 +25,16 @@ beforeEach(() => {
 })
 
 describe('MobileDeckRow — rename', () => {
-  it('renders a pencil rename button, not a quick-add-card button', () => {
+  it('renders a pencil rename button (not quick-add-card), and tapping it swaps the title into a focused pre-filled input without navigating', () => {
     render(<MobileDeckRow id="deck-1" title="Algorithms" palette="butter" cardCount={3} />)
     expect(screen.getByRole('button', { name: /rename deck/i })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /add card/i })).toBeNull()
-  })
 
-  it('tapping the pencil swaps the title into a focused, pre-filled input', () => {
-    render(<MobileDeckRow id="deck-1" title="Algorithms" palette="butter" cardCount={3} />)
     fireEvent.click(screen.getByRole('button', { name: /rename deck/i }))
 
     const input = screen.getByRole('textbox')
     expect(input).toHaveValue('Algorithms')
     expect(input).toHaveFocus()
-  })
-
-  it('tapping the pencil does not navigate the row', () => {
-    render(<MobileDeckRow id="deck-1" title="Algorithms" palette="butter" cardCount={3} />)
-    fireEvent.click(screen.getByRole('button', { name: /rename deck/i }))
     expect(mockNavigateWithTransition).not.toHaveBeenCalled()
   })
 
