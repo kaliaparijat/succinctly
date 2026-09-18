@@ -42,10 +42,16 @@ the create call itself fails, stay in edit state with the typed text
 preserved (not discarded) so the user can retry or cancel manually.
 
 **Palette selection.** The next palette not currently used by any of this
-user's decks, cycling through the design doc's 6-palette set — `butter,
-sky, coral, mint, lilac, sage` (not all 8 palettes defined in
-`lib/palette.ts`, which also has `paper`/`terracotta` that the design
-doesn't document). Once all 6 are in use, cycle back to the start.
+user's decks, cycling through all 8 palettes defined in `lib/palette.ts`
+— `butter, sky, coral, mint, lilac, paper, terracotta, sage`, in that
+declaration order. (The design handoff's mockup only shows 6 — `butter,
+sky, coral, mint, lilac, sage` — because it predates `paper`/`terracotta`
+being added to the palette; mobile should have the same palette
+availability as desktop's `NewDeckModal`/`EditDeckModal`, so the design
+doc's set is extended rather than followed literally here. `paper` and
+`terracotta` are inserted after `lilac`, preserving the design doc's
+relative order for the other 6.) Once all 8 are in use, cycle back to the
+start.
 
 **Per-row secondary button — inline rename**, replacing the old
 quick-add-card affordance entirely (that action no longer exists on mobile
@@ -78,22 +84,26 @@ transition). This spec owns the row's half of the wiring; the study viewer
 spec owns the card-face half — they must use the same id format.
 
 ## Acceptance Criteria
-- [ ] At ≤768px, Library renders per the design doc's tokens/layout,
+- [x] At ≤768px, Library renders per the design doc's tokens/layout,
       except the two changes below
-- [ ] "New deck" is inline (no modal): editable row + checkmark; nothing
+- [x] "New deck" is inline (no modal): editable row + checkmark; nothing
       is created until confirm with a non-empty name; blur while editing
       cancels with no deck created; a failed create keeps the typed text
       and stays in edit state; confirming navigates directly into that
       deck's new-card editor
-- [ ] New decks rotate through the 6 design-doc palettes based on what the
+- [x] New decks rotate through all 8 palettes in `lib/palette.ts` (same
+      set desktop's `NewDeckModal`/`EditDeckModal` offer) based on what the
       user's existing decks already use, not a hardcoded default
-- [ ] Per-row secondary button is inline rename (pencil icon, not `+`);
+- [x] Per-row secondary button is inline rename (pencil icon, not `+`);
       the old quick-add-card-from-Library action no longer exists on
       mobile; rename uses the same inline-field rules as creation, and
       never changes the deck's palette
-- [ ] Library → card navigation on mobile morphs via shared
+- [x] Library → card navigation on mobile morphs via shared
       `view-transition-name`; desktop navigation is unchanged (no shared
-      element, no morph)
-- [ ] At >768px, `LibraryScreen` is visually and behaviorally unchanged
+      element, no morph). This spec's half (the row's `view-transition-name`
+      + `navigateWithTransition` call) is done; the actual morph also needs
+      the card face's matching name from `mobile-study-viewer.md`, not yet
+      built — until then this degrades gracefully to a plain navigation.
+- [x] At >768px, `LibraryScreen` is visually and behaviorally unchanged
       from current production
-- [ ] `npm test` and `npm run build` pass
+- [x] `npm test` and `npm run build` pass

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { stableTilt } from '@/lib/palette'
+import { stableTilt, nextPalette } from '@/lib/palette'
 
 describe('stableTilt', () => {
   it('returns the same value for the same input', () => {
@@ -21,5 +21,28 @@ describe('stableTilt', () => {
 
   it('returns -0.6 for an empty string (hash is 0, maps to minimum)', () => {
     expect(stableTilt('')).toBe(-0.6)
+  })
+})
+
+describe('nextPalette', () => {
+  it('returns the first palette when no decks exist', () => {
+    expect(nextPalette([])).toBe('butter')
+  })
+
+  it('returns the first unused palette in list order, not input order', () => {
+    expect(nextPalette(['sage', 'butter'])).toBe('sky')
+  })
+
+  it('skips over palettes already in use', () => {
+    expect(nextPalette(['butter', 'sky', 'coral'])).toBe('mint')
+  })
+
+  it('wraps back to the first palette once all 8 are in use', () => {
+    const allEight = ['butter', 'sky', 'coral', 'mint', 'lilac', 'paper', 'terracotta', 'sage']
+    expect(nextPalette(allEight)).toBe('butter')
+  })
+
+  it('ignores duplicate/unknown entries in usedPalettes', () => {
+    expect(nextPalette(['butter', 'butter'])).toBe('sky')
   })
 })

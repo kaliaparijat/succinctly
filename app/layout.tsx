@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Instrument_Serif, Inter_Tight, JetBrains_Mono } from "next/font/google";
+import PathnameTracker from "@/components/PathnameTracker";
 import "./globals.css";
 
 const instrumentSerif = Instrument_Serif({
@@ -36,7 +37,10 @@ export default function RootLayout({
       lang="en"
       className={`${instrumentSerif.variable} ${interTight.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full">{children}</body>
+      <body className="min-h-full">
+        <PathnameTracker />
+        {children}
+      </body>
     </html>
   );
 }

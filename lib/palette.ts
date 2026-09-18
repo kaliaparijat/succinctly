@@ -13,6 +13,14 @@ export const PALETTES: Record<Palette, { bg: string; ink: string; label: string 
   sage:       { bg: '#C5D4B0', ink: '#1F2B10', label: 'Sage' },
 }
 
+const PALETTE_ORDER = Object.keys(PALETTES) as Palette[]
+
+/** First palette in declaration order not present in usedPalettes; wraps once all are used. */
+export function nextPalette(usedPalettes: string[]): Palette {
+  const used = new Set(usedPalettes)
+  return PALETTE_ORDER.find(p => !used.has(p)) ?? PALETTE_ORDER[0]
+}
+
 export const PAPER_NOISE = `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='4'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")`
 
 /** Stable tilt in degrees, hashed from a string. Range: -0.6 to +0.6 */

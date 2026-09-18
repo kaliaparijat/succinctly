@@ -7,7 +7,7 @@ each can be reviewed independently rather than as one large document:
    `useSwipeGesture` extension, and the two shared desktop-behavior
    changes (flip duration, Chrome flicker fix). Everything else depends on
    this landing first.
-2. [`mobile-library.md`](mobile-library.md) — deck list, inline create,
+2. [`mobile-library.md`](mobile-library/mobile-library.md) — deck list, inline create,
    inline rename, tab bar.
 3. [`mobile-study-viewer.md`](mobile-study-viewer.md) — full-bleed card,
    swipe, flip, and how mobile reaches editing (no new route — retargets
