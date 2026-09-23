@@ -232,7 +232,7 @@ function CardFace({
             className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-pill border font-mono text-[10px] uppercase tracking-[0.8px]"
             style={{ color: ink, opacity: 0.4, borderColor: `${ink}30` }}
           >
-            Space to flip
+            Tap to flip
           </div>
         )}
 

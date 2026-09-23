@@ -154,6 +154,12 @@ describe('StudyViewer — mobile top bar', () => {
     // (the component reads/writes innerText, which works correctly in real browsers)
     expect(editable?.innerText).toBe('Q1')
   })
+
+  it('flip-hint pill reads "Tap to flip", not "Space to flip"', () => {
+    render(<StudyViewer deck={deck} cards={twoCards} />)
+    expect(screen.getAllByText('Tap to flip').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Space to flip')).toBeNull()
+  })
 })
 
 describe('StudyViewer — mobile swipe', () => {
@@ -224,6 +230,12 @@ describe('StudyViewer — desktop top bar unaffected by the mobile fork', () => 
     expect(screen.getByRole('link', { name: /library/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /keyboard shortcuts/i })).toBeInTheDocument()
     expect(mockNavigateWithTransition).not.toHaveBeenCalled()
+  })
+
+  it('flip-hint pill still reads "Space to flip"', () => {
+    render(<StudyViewer deck={deck} cards={twoCards} />)
+    expect(screen.getAllByText('Space to flip').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Tap to flip')).toBeNull()
   })
 
   it('double-click still enters editingFace state (enterEdit refactor is behaviorally identical)', () => {
