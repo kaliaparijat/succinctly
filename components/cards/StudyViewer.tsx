@@ -38,7 +38,7 @@ export default function StudyViewer({
   cards,
   initialCardId,
   tiltEnabled = true,
-  flipDuration = 320,
+  flipDuration = 380,
   hintsEnabled = true,
 }: Props) {
   const [idx, setIdx] = useState(() => {
