@@ -132,6 +132,7 @@ export default function MobileStudyViewer({
               editRef={editRef}
               onEditKeyDown={onEditKeyDown}
               onToggleFace={onToggleFace}
+              viewTransitionName={`card-${deck.id}`}
             />
             <CardFace
               label="Answer"
@@ -172,7 +173,7 @@ export default function MobileStudyViewer({
 
 function CardFace({
   label, text, deckName, bg, ink, tilt, showHint, back,
-  isEditing, editRef, onEditKeyDown, onToggleFace,
+  isEditing, editRef, onEditKeyDown, onToggleFace, viewTransitionName,
 }: {
   label: string; text: string; deckName: string; bg: string; ink: string
   tilt: number; showHint: boolean; back: boolean
@@ -180,6 +181,7 @@ function CardFace({
   editRef: RefObject<HTMLDivElement | null>
   onEditKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void
   onToggleFace: (face: 'question' | 'answer') => void
+  viewTransitionName?: string
 }) {
   return (
     <div
@@ -192,6 +194,7 @@ function CardFace({
         boxShadow: '0 1px 2px rgba(0,0,0,0.3), 0 24px 60px rgba(0,0,0,0.4)',
         willChange: 'transform',
         ...(isEditing ? { outline: `2px solid ${ink}25`, outlineOffset: '-2px' } : {}),
+        ...(viewTransitionName ? { viewTransitionName } : {}),
       }}
     >
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: PAPER_NOISE, mixBlendMode: 'multiply', opacity: 0.5 }} />

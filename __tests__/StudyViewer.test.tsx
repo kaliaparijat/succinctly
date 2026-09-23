@@ -160,6 +160,15 @@ describe('StudyViewer — mobile top bar', () => {
     expect(screen.getAllByText('Tap to flip').length).toBeGreaterThan(0)
     expect(screen.queryByText('Space to flip')).toBeNull()
   })
+
+  it('front face carries view-transition-name: card-{deckId}, matching MobileDeckRow\'s format; back face never carries it', () => {
+    render(<StudyViewer deck={deck} cards={twoCards} initialCardId="c1" />)
+    const front = screen.getByText('Question').closest('.rounded-card') as HTMLElement
+    const back = screen.getByText('Answer').closest('.rounded-card') as HTMLElement
+
+    expect(front.style.getPropertyValue('view-transition-name')).toBe('card-deck-1')
+    expect(back.style.getPropertyValue('view-transition-name')).toBe('')
+  })
 })
 
 describe('StudyViewer — mobile swipe', () => {
@@ -236,6 +245,15 @@ describe('StudyViewer — desktop top bar unaffected by the mobile fork', () => 
     render(<StudyViewer deck={deck} cards={twoCards} />)
     expect(screen.getAllByText('Space to flip').length).toBeGreaterThan(0)
     expect(screen.queryByText('Tap to flip')).toBeNull()
+  })
+
+  it('neither card face carries view-transition-name on desktop', () => {
+    render(<StudyViewer deck={deck} cards={twoCards} initialCardId="c1" />)
+    const front = screen.getByText('Question').closest('.rounded-card') as HTMLElement
+    const back = screen.getByText('Answer').closest('.rounded-card') as HTMLElement
+
+    expect(front.style.getPropertyValue('view-transition-name')).toBe('')
+    expect(back.style.getPropertyValue('view-transition-name')).toBe('')
   })
 
   it('double-click still enters editingFace state (enterEdit refactor is behaviorally identical)', () => {
