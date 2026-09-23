@@ -85,7 +85,7 @@ interface MobileViewerBarProps {
 
 export function MobileViewerBar({ deckName, current, total, onBackClick, onEditClick }: MobileViewerBarProps) {
   return (
-    <header className="flex items-center justify-between" style={{ padding: '2px 16px 10px' }}>
+    <header className="flex items-center justify-between p-[2px_16px_10px] landscape:p-[0px_16px_6px]">
       <button
         type="button"
         aria-label="Back to Library"

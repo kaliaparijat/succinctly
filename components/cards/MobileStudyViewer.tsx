@@ -95,8 +95,8 @@ export default function MobileStudyViewer({
       <div
         ref={swipeRef}
         data-testid="mobile-card-stage"
-        className="flex-1 flex items-center justify-center overflow-hidden"
-        style={{ perspective: '1200px', padding: '0 12px 8px' }}
+        className="flex-1 flex items-center justify-center overflow-hidden p-[0_12px_8px] landscape:p-[0_20px_4px]"
+        style={{ perspective: '1200px' }}
       >
         <div
           data-testid="mobile-card"
@@ -153,7 +153,7 @@ export default function MobileStudyViewer({
       </div>
 
       {/* Bottom control row */}
-      <div className="flex items-center justify-between" style={{ padding: '6px 20px 14px' }}>
+      <div className="flex items-center justify-between p-[6px_20px_14px] landscape:p-[2px_20px_8px]">
         <NavArrow direction="left" onClick={onPrev} disabled={idx === 0} />
         {idx === totalCards - 1 ? (
           <Link
@@ -204,16 +204,15 @@ function CardFace({
         <span className="font-sans text-[11px]" style={{ color: ink, opacity: 0.4 }}>{deckName}</span>
       </div>
 
-      <div className="flex-1 flex items-center justify-center relative" style={{ padding: '18px 26px' }}>
+      <div className="flex-1 flex items-center justify-center relative p-[18px_26px] landscape:p-[6px_40px]">
         <div
           ref={isEditing ? editRef : null}
           contentEditable={isEditing ? 'plaintext-only' : 'false'}
           suppressContentEditableWarning
           onKeyDown={isEditing ? onEditKeyDown : undefined}
-          className="font-display text-center outline-none w-full"
+          className="font-display text-center outline-none w-full text-[27px] landscape:text-[24px]"
           style={{
             color: ink,
-            fontSize: '27px',
             lineHeight: 1.28,
             letterSpacing: '-0.3px',
             textWrap: 'pretty',
