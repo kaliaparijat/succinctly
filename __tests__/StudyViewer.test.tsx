@@ -1,10 +1,12 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent, act } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, fireEvent, act, within } from '@testing-library/react'
 import StudyViewer from '@/components/cards/StudyViewer'
 
 const mockReplace = vi.fn()
 const mockPush = vi.fn()
 const mockRefresh = vi.fn()
+const mockUseIsMobile = vi.fn()
+const mockNavigateWithTransition = vi.fn()
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush, replace: mockReplace, refresh: mockRefresh }),
@@ -18,6 +20,19 @@ vi.mock('next/link', () => ({
 vi.mock('@/app/actions/cards', () => ({
   updateCardInline: vi.fn().mockResolvedValue(undefined),
 }))
+
+vi.mock('@/hooks/useIsMobile', () => ({
+  useIsMobile: () => mockUseIsMobile(),
+}))
+
+vi.mock('@/lib/viewTransition', () => ({
+  navigateWithTransition: (...args: unknown[]) => mockNavigateWithTransition(...args),
+}))
+
+beforeEach(() => {
+  mockUseIsMobile.mockReturnValue(false)
+  mockNavigateWithTransition.mockClear()
+})
 
 const deck = { id: 'deck-1', title: 'Test Deck', palette: 'butter' }
 
@@ -105,5 +120,38 @@ describe('StudyViewer — URL updates on navigation', () => {
     mockReplace.mockClear()
     render(<StudyViewer deck={deck} cards={twoCards} initialCardId="c1" />)
     expect(mockReplace).not.toHaveBeenCalled()
+  })
+})
+
+describe('StudyViewer — mobile top bar', () => {
+  beforeEach(() => mockUseIsMobile.mockReturnValue(true))
+
+  it('renders the deck name and index/total label', () => {
+    render(<StudyViewer deck={deck} cards={twoCards} initialCardId="c1" />)
+    const header = screen.getByRole('banner')
+    expect(within(header).getByText('Test Deck')).toBeInTheDocument()
+    expect(within(header).getByText('1 / 2')).toBeInTheDocument()
+  })
+
+  it('back button navigates to /library via navigateWithTransition', () => {
+    render(<StudyViewer deck={deck} cards={twoCards} />)
+    fireEvent.click(screen.getByRole('button', { name: /back to library/i }))
+    expect(mockNavigateWithTransition).toHaveBeenCalledWith(expect.anything(), '/library', 'back')
+  })
+
+  it('renders no help/keyboard-shortcuts button', () => {
+    render(<StudyViewer deck={deck} cards={twoCards} />)
+    expect(screen.queryByRole('button', { name: /keyboard shortcuts/i })).toBeNull()
+  })
+})
+
+describe('StudyViewer — desktop top bar unaffected by the mobile fork', () => {
+  beforeEach(() => mockUseIsMobile.mockReturnValue(false))
+
+  it('still renders the existing "← Library" link and "?" button', () => {
+    render(<StudyViewer deck={deck} cards={twoCards} />)
+    expect(screen.getByRole('link', { name: /library/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /keyboard shortcuts/i })).toBeInTheDocument()
+    expect(mockNavigateWithTransition).not.toHaveBeenCalled()
   })
 })

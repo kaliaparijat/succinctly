@@ -5,8 +5,11 @@ import { useRouter } from 'next/navigation'
 import { PALETTES, stableTilt, type Palette } from '@/lib/palette'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useSwipeGesture } from '@/hooks/useSwipeGesture'
+import { useIsMobile } from '@/hooks/useIsMobile'
+import { navigateWithTransition } from '@/lib/viewTransition'
 import { updateCardInline } from '@/app/actions/cards'
 import DesktopStudyViewer from '@/components/cards/DesktopStudyViewer'
+import MobileStudyViewer from '@/components/cards/MobileStudyViewer'
 
 interface Card {
   id: string
@@ -50,6 +53,7 @@ export default function StudyViewer({
   const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const router = useRouter()
+  const isMobile = useIsMobile()
   const hasMounted = useRef(false)
 
   useEffect(() => {
@@ -156,6 +160,33 @@ export default function StudyViewer({
   })
 
   const { ref: swipeRef } = useSwipeGesture({ onSwipeLeft: goNext, onSwipeRight: goPrev })
+
+  if (isMobile) {
+    return (
+      <MobileStudyViewer
+        deck={deck}
+        card={card}
+        idx={idx}
+        totalCards={cards.length}
+        bg={bg}
+        ink={ink}
+        tilt={tilt}
+        flipped={flipped}
+        flipDuration={flipDuration}
+        hintsEnabled={hintsEnabled}
+        editingFace={editingFace}
+        editRef={editRef}
+        dir={dir}
+        onBackClick={() => navigateWithTransition(router, '/library', 'back')}
+        onEditClick={() => {}}
+        onFlip={flip}
+        onEditKeyDown={handleEditKeyDown}
+        onToggleFace={handleToggleFace}
+        onPrev={goPrev}
+        onNext={goNext}
+      />
+    )
+  }
 
   return (
     <DesktopStudyViewer
