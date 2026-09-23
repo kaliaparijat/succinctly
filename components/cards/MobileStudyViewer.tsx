@@ -91,11 +91,11 @@ export default function MobileStudyViewer({
         onEditClick={onEditClick}
       />
 
-      {/* Card stage */}
+      {/* Card area */}
       <div
         ref={swipeRef}
         data-testid="mobile-card-stage"
-        className="flex-1 flex flex-col items-center justify-center"
+        className="flex-1 flex items-center justify-center overflow-hidden"
         style={{ perspective: '1200px', padding: '0 12px 8px' }}
       >
         <div
@@ -149,22 +149,22 @@ export default function MobileStudyViewer({
             />
           </div>
         </div>
+      </div>
 
-        {/* Nav row */}
-        <div className="flex items-center justify-between w-full max-w-[700px] mt-6">
-          <NavArrow direction="left" onClick={onPrev} disabled={idx === 0} />
-          {idx === totalCards - 1 ? (
-            <Link
-              href={`/decks/${deck.id}/cards/new`}
-              className="w-10 h-10 rounded-full bg-surface-card flex items-center justify-center text-xl text-secondary hover:text-primary hover:bg-surface-hover transition-colors"
-              aria-label="Add card"
-            >
-              +
-            </Link>
-          ) : (
-            <NavArrow direction="right" onClick={onNext} disabled={false} />
-          )}
-        </div>
+      {/* Bottom control row */}
+      <div className="flex items-center justify-between" style={{ padding: '6px 20px 14px' }}>
+        <NavArrow direction="left" onClick={onPrev} disabled={idx === 0} />
+        {idx === totalCards - 1 ? (
+          <Link
+            href={`/decks/${deck.id}/cards/new`}
+            className="w-10 h-10 rounded-full bg-surface-card flex items-center justify-center text-xl text-secondary hover:text-primary hover:bg-surface-hover transition-colors"
+            aria-label="Add card"
+          >
+            +
+          </Link>
+        ) : (
+          <NavArrow direction="right" onClick={onNext} disabled={false} />
+        )}
       </div>
     </div>
   )
@@ -196,22 +196,24 @@ function CardFace({
     >
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: PAPER_NOISE, mixBlendMode: 'multiply', opacity: 0.5 }} />
 
-      <div className="relative flex items-center justify-between px-5 py-3 shrink-0" style={{ borderBottom: `1px solid ${ink}20` }}>
+      <div className="relative flex items-center justify-between shrink-0" style={{ padding: '18px 22px 14px', borderBottom: `1px solid ${ink}1c` }}>
         <span className="font-mono text-[10px] uppercase tracking-[0.8px]" style={{ color: ink, opacity: 0.5 }}>{label}</span>
         <span className="font-sans text-[11px]" style={{ color: ink, opacity: 0.4 }}>{deckName}</span>
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-10 py-6 relative">
+      <div className="flex-1 flex items-center justify-center relative" style={{ padding: '18px 26px' }}>
         <div
           ref={isEditing ? editRef : null}
           contentEditable={isEditing ? 'plaintext-only' : 'false'}
           suppressContentEditableWarning
           onKeyDown={isEditing ? onEditKeyDown : undefined}
-          className="font-display text-center leading-snug outline-none w-full"
+          className="font-display text-center outline-none w-full"
           style={{
             color: ink,
-            fontSize: 'clamp(20px, 3vw, 40px)',
-            letterSpacing: '-0.5px',
+            fontSize: '27px',
+            lineHeight: 1.28,
+            letterSpacing: '-0.3px',
+            textWrap: 'pretty',
             cursor: isEditing ? 'text' : 'inherit',
             minHeight: '1em',
           }}
