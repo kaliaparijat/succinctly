@@ -142,14 +142,18 @@ export default function StudyViewer({
     }, 220)
   }, [editingFace, flip])
 
-  const handleDoubleClick = useCallback(() => {
+  const enterEdit = useCallback(() => {
     if (editingFace) return
+    setEditingFace(flipped ? 'answer' : 'question')
+  }, [editingFace, flipped])
+
+  const handleDoubleClick = useCallback(() => {
     if (clickTimer.current) {
       clearTimeout(clickTimer.current)
       clickTimer.current = null
     }
-    setEditingFace(flipped ? 'answer' : 'question')
-  }, [editingFace, flipped])
+    enterEdit()
+  }, [enterEdit])
 
   useKeyboardShortcuts({
     onFlip: flip,
@@ -178,7 +182,7 @@ export default function StudyViewer({
         editRef={editRef}
         dir={dir}
         onBackClick={() => navigateWithTransition(router, '/library', 'back')}
-        onEditClick={() => {}}
+        onEditClick={enterEdit}
         onFlip={flip}
         onEditKeyDown={handleEditKeyDown}
         onToggleFace={handleToggleFace}

@@ -143,6 +143,17 @@ describe('StudyViewer — mobile top bar', () => {
     render(<StudyViewer deck={deck} cards={twoCards} />)
     expect(screen.queryByRole('button', { name: /keyboard shortcuts/i })).toBeNull()
   })
+
+  it('tapping the edit-pencil button enters the same editingFace state double-click enters on desktop', () => {
+    const { container } = render(<StudyViewer deck={deck} cards={twoCards} initialCardId="c1" />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+
+    const editable = container.querySelector('[contenteditable="plaintext-only"]') as HTMLElement | null
+    expect(editable).not.toBeNull()
+    // jsdom doesn't sync innerText with textContent, so check innerText directly
+    // (the component reads/writes innerText, which works correctly in real browsers)
+    expect(editable?.innerText).toBe('Q1')
+  })
 })
 
 describe('StudyViewer — desktop top bar unaffected by the mobile fork', () => {
@@ -153,5 +164,14 @@ describe('StudyViewer — desktop top bar unaffected by the mobile fork', () => 
     expect(screen.getByRole('link', { name: /library/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /keyboard shortcuts/i })).toBeInTheDocument()
     expect(mockNavigateWithTransition).not.toHaveBeenCalled()
+  })
+
+  it('double-click still enters editingFace state (enterEdit refactor is behaviorally identical)', () => {
+    const { container } = render(<StudyViewer deck={deck} cards={twoCards} initialCardId="c1" />)
+    fireEvent.doubleClick(screen.getByText('Q1'))
+
+    const editable = container.querySelector('[contenteditable="plaintext-only"]') as HTMLElement | null
+    expect(editable).not.toBeNull()
+    expect(editable?.innerText).toBe('Q1')
   })
 })
