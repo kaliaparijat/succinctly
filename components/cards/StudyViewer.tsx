@@ -70,6 +70,11 @@ export default function StudyViewer({
 
   const flip = useCallback(() => setFlipped(f => !f), [])
 
+  // Mobile's slide-commit animation runs at 220ms (vs desktop's existing 280ms) — this
+  // delay bumps idx at the animation's midpoint, matching the halving relationship
+  // MobileStudyViewer's own COMMIT_DELAY_MS/COMMIT_DURATION_MS constants also use.
+  const commitDelayMs = isMobile ? 110 : 140
+
   const goNext = useCallback(() => {
     if (idx >= cards.length - 1) {
       router.push(`/decks/${deck.id}/cards/new`)
@@ -77,15 +82,15 @@ export default function StudyViewer({
     }
     setDir('next')
     setFlipped(false)
-    setTimeout(() => { setIdx(i => i + 1); setDir(null) }, 140)
-  }, [idx, cards.length, deck.id, router])
+    setTimeout(() => { setIdx(i => i + 1); setDir(null) }, commitDelayMs)
+  }, [idx, cards.length, deck.id, router, commitDelayMs])
 
   const goPrev = useCallback(() => {
     if (idx <= 0) return
     setDir('prev')
     setFlipped(false)
-    setTimeout(() => { setIdx(i => i - 1); setDir(null) }, 140)
-  }, [idx])
+    setTimeout(() => { setIdx(i => i - 1); setDir(null) }, commitDelayMs)
+  }, [idx, commitDelayMs])
 
   // Focus the contenteditable and place cursor at end when entering edit mode
   useEffect(() => {
@@ -163,7 +168,7 @@ export default function StudyViewer({
     disabled: editingFace !== null,
   })
 
-  const { ref: swipeRef } = useSwipeGesture({ onSwipeLeft: goNext, onSwipeRight: goPrev })
+  const { ref: swipeRef, dragX, isDragging } = useSwipeGesture({ onSwipeLeft: goNext, onSwipeRight: goPrev })
 
   if (isMobile) {
     return (
@@ -181,6 +186,9 @@ export default function StudyViewer({
         editingFace={editingFace}
         editRef={editRef}
         dir={dir}
+        swipeRef={swipeRef}
+        dragX={dragX}
+        isDragging={isDragging}
         onBackClick={() => navigateWithTransition(router, '/library', 'back')}
         onEditClick={enterEdit}
         onFlip={flip}

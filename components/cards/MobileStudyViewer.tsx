@@ -18,6 +18,14 @@ interface Deck {
   palette: string
 }
 
+// Mobile's own slide-commit timing — independent of DesktopStudyViewer's 110%/280ms/140ms,
+// which stays untouched in its own file. COMMIT_DELAY_MS is half of COMMIT_DURATION_MS,
+// matching the halving relationship the parent's commitDelayMs also uses to bump idx at
+// the animation's midpoint — keep the two in sync if either changes.
+const COMMIT_OFFSET_PCT = 100
+const COMMIT_DURATION_MS = 220
+const SPRING_BACK_DURATION_MS = 200
+
 interface Props {
   deck: Deck
   card: Card
@@ -32,6 +40,9 @@ interface Props {
   editingFace: 'question' | 'answer' | null
   editRef: RefObject<HTMLDivElement | null>
   dir: 'next' | 'prev' | null
+  swipeRef: (el: HTMLElement | null) => void
+  dragX: number
+  isDragging: boolean
   onBackClick: () => void
   onEditClick: () => void
   onFlip: () => void
@@ -43,14 +54,32 @@ interface Props {
 
 export default function MobileStudyViewer({
   deck, card, idx, totalCards, bg, ink, tilt, flipped, flipDuration,
-  hintsEnabled, editingFace, editRef, dir, onBackClick, onEditClick, onFlip,
-  onEditKeyDown, onToggleFace, onPrev, onNext,
+  hintsEnabled, editingFace, editRef, dir, swipeRef, dragX, isDragging,
+  onBackClick, onEditClick, onFlip, onEditKeyDown, onToggleFace, onPrev, onNext,
 }: Props) {
-  const slideStyle = dir === 'next'
-    ? { transform: 'translateX(-110%)', opacity: 0 }
-    : dir === 'prev'
-    ? { transform: 'translateX(110%)', opacity: 0 }
-    : { transform: 'translateX(0)', opacity: 1 }
+  let transform: string
+  let transition: string | undefined
+  let opacity = 1
+
+  if (dir === 'next') {
+    transform = `translateX(-${COMMIT_OFFSET_PCT}%)`
+    transition = `transform ${COMMIT_DURATION_MS}ms cubic-bezier(0.4,0,0.2,1), opacity ${COMMIT_DURATION_MS}ms cubic-bezier(0.4,0,0.2,1)`
+    opacity = 0
+  } else if (dir === 'prev') {
+    transform = `translateX(${COMMIT_OFFSET_PCT}%)`
+    transition = `transform ${COMMIT_DURATION_MS}ms cubic-bezier(0.4,0,0.2,1), opacity ${COMMIT_DURATION_MS}ms cubic-bezier(0.4,0,0.2,1)`
+    opacity = 0
+  } else if (isDragging) {
+    // Live 1:1 follow — no transition, so the card tracks the finger with zero lag.
+    transform = `translateX(${dragX}px)`
+    transition = 'none'
+  } else {
+    // At rest, or just released under the commit threshold: spring back to center.
+    transform = 'translateX(0)'
+    transition = `transform ${SPRING_BACK_DURATION_MS}ms cubic-bezier(0.4,0,0.2,1)`
+  }
+
+  const slideStyle = { transform, opacity, transition }
 
   return (
     <div className="min-h-screen bg-surface flex flex-col">
@@ -64,16 +93,20 @@ export default function MobileStudyViewer({
 
       {/* Card stage */}
       <div
+        ref={swipeRef}
+        data-testid="mobile-card-stage"
         className="flex-1 flex flex-col items-center justify-center"
         style={{ perspective: '1200px', padding: '0 12px 8px' }}
       >
         <div
+          data-testid="mobile-card"
           className="relative w-full max-w-[700px]"
           style={{
             height: 'clamp(300px, 40vw, 460px)',
-            ...slideStyle,
+            transform: slideStyle.transform,
+            opacity: slideStyle.opacity,
+            transition: slideStyle.transition,
             cursor: editingFace ? 'default' : 'pointer',
-            transition: dir ? 'transform 280ms cubic-bezier(0.4,0,0.2,1), opacity 280ms cubic-bezier(0.4,0,0.2,1)' : undefined,
           }}
           onClick={editingFace ? undefined : onFlip}
         >

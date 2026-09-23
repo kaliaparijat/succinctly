@@ -156,6 +156,66 @@ describe('StudyViewer — mobile top bar', () => {
   })
 })
 
+describe('StudyViewer — mobile swipe', () => {
+  beforeEach(() => mockUseIsMobile.mockReturnValue(true))
+
+  function touchStart(el: Element, clientX: number) {
+    const e = new Event('touchstart') as unknown as TouchEvent
+    Object.assign(e, { touches: [{ clientX }] })
+    fireEvent(el, e as unknown as Event)
+  }
+  function touchMove(el: Element, clientX: number) {
+    const e = new Event('touchmove') as unknown as TouchEvent
+    Object.assign(e, { touches: [{ clientX }] })
+    fireEvent(el, e as unknown as Event)
+  }
+  function touchEnd(el: Element, clientX: number) {
+    const e = new Event('touchend') as unknown as TouchEvent
+    Object.assign(e, { changedTouches: [{ clientX }] })
+    fireEvent(el, e as unknown as Event)
+  }
+
+  it('live-follows the finger during a drag under the commit threshold', () => {
+    const { getByTestId } = render(<StudyViewer deck={deck} cards={twoCards} />)
+    const stage = getByTestId('mobile-card-stage')
+    const card = getByTestId('mobile-card')
+
+    touchStart(stage, 200)
+    touchMove(stage, 230)
+
+    expect(card.style.transform).toBe('translateX(30px)')
+  })
+
+  it('springs back to center without navigating on release under the threshold', () => {
+    mockReplace.mockClear()
+    const { getByTestId } = render(<StudyViewer deck={deck} cards={twoCards} />)
+    const stage = getByTestId('mobile-card-stage')
+    const card = getByTestId('mobile-card')
+
+    touchStart(stage, 200)
+    touchMove(stage, 230)
+    touchEnd(stage, 230)
+
+    expect(card.style.transform).toBe('translateX(0)')
+    expect(mockPush).not.toHaveBeenCalled()
+  })
+
+  it('commits and navigates after releasing past the threshold, using the mobile 110ms delay', async () => {
+    mockReplace.mockClear()
+    const { getByTestId } = render(<StudyViewer deck={deck} cards={twoCards} initialCardId="c1" />)
+    const stage = getByTestId('mobile-card-stage')
+
+    await act(async () => {
+      touchStart(stage, 200)
+      touchMove(stage, 100)
+      touchEnd(stage, 100)
+      await new Promise(r => setTimeout(r, 130))
+    })
+
+    expect(mockReplace).toHaveBeenCalledWith('/decks/deck-1/cards/c2')
+  })
+})
+
 describe('StudyViewer — desktop top bar unaffected by the mobile fork', () => {
   beforeEach(() => mockUseIsMobile.mockReturnValue(false))
 
