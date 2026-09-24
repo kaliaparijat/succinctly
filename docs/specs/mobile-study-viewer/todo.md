@@ -26,7 +26,7 @@ Spec: `docs/specs/mobile-study-viewer/mobile-study-viewer.md`.
 **Checkpoint B** — all AC bullets implemented
 
 ## Phase 5 — Regression + verification
-- [ ] 5.1 Desktop-unchanged regression review (`DesktopStudyViewer` behaviorally equivalent, `ViewerBar` untouched)
-- [ ] 5.2 `npm test`, `npm run build`, live mobile-viewport check vs. `02-viewer-question.png`/`03-viewer-answer.png`, landscape token check, bonus Chrome flicker re-check
+- [x] 5.1 Desktop-unchanged regression review (`DesktopStudyViewer` behaviorally equivalent, `ViewerBar` untouched)
+- [x] 5.2 `npm test`, `npm run build`, live mobile-viewport check vs. `02-viewer-question.png`/`03-viewer-answer.png`, landscape token check, bonus Chrome flicker re-check
 
 **Checkpoint C** — every AC in `docs/specs/mobile-study-viewer/mobile-study-viewer.md` checked off, ready for PR

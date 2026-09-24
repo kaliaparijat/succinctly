@@ -60,25 +60,27 @@ Not meaningfully testable via component tests (no real CSS layout in
 jsdom); verify via a manual/devtools viewport-orientation check.
 
 ## Acceptance Criteria
-- [ ] At ≤768px, the viewer renders per the design doc's tokens/layout
-- [ ] Tapping the edit-pencil button enters the same `editingFace` state
+- [x] At ≤768px, the viewer renders per the design doc's tokens/layout
+- [x] Tapping the edit-pencil button enters the same `editingFace` state
       double-click enters on desktop — same save behavior
       (`updateCardInline`), no new route, no new component
-- [ ] Mobile has no double-tap-to-edit trigger; desktop's double-click
+- [x] Mobile has no double-tap-to-edit trigger; desktop's double-click
       trigger is unchanged
-- [ ] Swipe drags the card 1:1 with the finger; releases under 60px spring
+- [x] Swipe drags the card 1:1 with the finger; releases under 60px spring
       back to center; releases over 60px commit and slide out at ∓100%
       over 220ms
-- [ ] Flip-hint pill reads "Tap to flip" on mobile, "Space to flip" on
+- [x] Flip-hint pill reads "Tap to flip" on mobile, "Space to flip" on
       desktop
-- [ ] Library → card navigation morphs via `view-transition-name:
+- [x] Library → card navigation morphs via `view-transition-name:
       card-{deckId}` shared with the corresponding Library row; the back
       face never carries this name
-- [ ] Landscape orientation is supported with tighter chrome per design
-      tokens (manual/devtools-verified, not unit-tested)
-- [ ] At >768px, `StudyViewer` is visually and behaviorally unchanged from
+- [x] Landscape orientation is supported with tighter chrome per design
+      tokens (manual/devtools-verified, not unit-tested) — also required
+      fixing `useIsMobile` to catch landscape phones at all; see
+      `docs/specs/mobile-foundation.md`
+- [x] At >768px, `StudyViewer` is visually and behaviorally unchanged from
       current production, including the double-click-to-edit trigger
-- [ ] `npm test` and `npm run build` pass
+- [x] `npm test` and `npm run build` pass
 
 ## Not Doing
 - A dedicated edit-card route or screen for mobile (explicitly rejected —
