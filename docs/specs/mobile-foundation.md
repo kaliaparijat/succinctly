@@ -53,6 +53,20 @@ zoom/font-size, the JS fork and a co-located `md:` class could disagree by
 a few pixels. Internal authenticated app, not a public site — documented,
 not fixed.
 
+**Fixed during `mobile-study-viewer` implementation (2026-09-23):** the
+original query was width-only (`max-width: 767px`), which never caught a
+phone rotated to landscape — landscape width equals portrait height,
+which exceeds 767px on nearly every modern phone, so `StudyViewer`'s
+landscape branch was unreachable on real devices despite being built and
+unit-verified. Query is now a single compound media query (comma = OR):
+`(max-width: 767px), (max-height: 767px) and (orientation: landscape) and
+(pointer: coarse)`. The `pointer: coarse` guard on the new branch
+specifically excludes an ordinary short desktop browser window (also
+wide-and-short, but mouse-driven) from being misclassified as mobile —
+verified live in Chrome: a 1280×700 non-touch viewport still resolves to
+desktop, and the design doc's own 844×390 landscape reference now
+correctly resolves to mobile. See `docs/specs/mobile-study-viewer/`.
+
 ## Shared Changes (apply to both breakpoints)
 The only two approved changes to existing desktop behavior — independent
 of the breakpoint hook above, safe to ship first.
