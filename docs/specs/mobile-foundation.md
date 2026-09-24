@@ -103,10 +103,10 @@ the one current call site, not a breaking change to it.
       nothing consumes it yet outside of tests until the screen specs land
 - [ ] `useSwipeGesture`'s existing caller (`StudyViewer`) compiles and
       behaves identically without reading the new live-position value
-- [ ] Flip duration is 380/570/190 (normal/slow/fast) on both
+- [x] Flip duration is 380/570/190 (normal/slow/fast) on both
       `StudyViewer` and `CardEditor`, both respecting the `flipSpeed`
       preference (currently only `StudyViewer` does)
-- [ ] No visible flash/flicker of the wrong face during a flip in Chrome —
+- [x] No visible flash/flicker of the wrong face during a flip in Chrome —
       verified live, not just via code review
 - [ ] `npm test` and `npm run build` pass
 
