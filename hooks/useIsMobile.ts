@@ -1,6 +1,12 @@
 import { useSyncExternalStore } from 'react'
 
-const QUERY = '(max-width: 767px)'
+// Width-based check for portrait phones/narrow windows, OR'd with a
+// short-and-landscape-and-touch check for phones rotated to landscape
+// (landscape width = portrait height, which exceeds 767px on nearly every
+// modern phone, so the width clause alone never catches them). pointer:
+// coarse excludes an ordinary short desktop browser window, which is
+// wide-short too but mouse-driven, not touch-driven.
+const QUERY = '(max-width: 767px), (max-height: 767px) and (orientation: landscape) and (pointer: coarse)'
 
 function subscribe(callback: () => void) {
   const mql = window.matchMedia(QUERY)

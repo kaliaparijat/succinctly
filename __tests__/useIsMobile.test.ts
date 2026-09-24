@@ -31,6 +31,17 @@ afterEach(() => {
 })
 
 describe('useIsMobile', () => {
+  it('queries width OR (short + landscape + coarse-pointer), so landscape phones are caught even though landscape width exceeds 767px', () => {
+    mockMatchMedia(false)
+    renderHook(() => useIsMobile())
+
+    const query = (window.matchMedia as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0] as string
+    expect(query).toContain('max-width: 767px')
+    expect(query).toContain('max-height: 767px')
+    expect(query).toContain('orientation: landscape')
+    expect(query).toContain('pointer: coarse')
+  })
+
   it('returns false when the media query does not match', () => {
     mockMatchMedia(false)
     const { result } = renderHook(() => useIsMobile())
