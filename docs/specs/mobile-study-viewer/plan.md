@@ -351,6 +351,26 @@ mobile viewport (e.g. 844×390), navigate to a card, visually confirm tighter pa
 text against the written tokens. No landscape screenshot exists for the viewer (only the editor has
 04/05) — token-only verification.
 
+### Task 4.2 (unplanned) — Fix `useIsMobile` to catch landscape phones
+**Found during Task 4.1's own devtools verification**: testing at the design doc's stated 844×390
+landscape reference showed `useIsMobile()` returning `false` there — the hook's query was pure
+`(max-width: 767px)`, and landscape width equals portrait height, which exceeds 767px on nearly
+every modern phone. The landscape CSS built in 4.1 was correct but effectively unreachable on real
+devices. User confirmed fixing it now rather than deferring.
+**Do:** Single compound media query (comma = OR in CSS, no hook structure change):
+`(max-width: 767px), (max-height: 767px) and (orientation: landscape) and (pointer: coarse)`. The
+`pointer: coarse` guard excludes an ordinary short *desktop* browser window (also wide-and-short,
+but mouse-driven) from being misclassified as mobile.
+**Depends on:** nothing (independent fix to a `mobile-foundation.md`-owned shared hook).
+**Verify:** New unit test asserting the query string contains all four clauses (jsdom's matchMedia
+mock can't simulate real CSS matching, so this only guards against an accidental revert — the real
+verification is live). Full suite green (confirms no `LibraryScreen`/`MobileDeckRow` regression,
+since they also consume this hook). Live in Chrome: 844×390 landscape now resolves `matches: true`
+and the mobile viewer renders correctly with the 4.1 landscape tokens confirmed via computed
+styles; a 1280×700 non-touch desktop viewport (the specific false-positive risk) still resolves
+`matches: false` and renders the desktop viewer unchanged. Documented in
+`docs/specs/mobile-foundation.md`.
+
 **Checkpoint B:** all AC bullets implemented.
 
 ## Phase 5 — Regression + final verification
