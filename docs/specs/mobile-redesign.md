@@ -9,7 +9,7 @@ each can be reviewed independently rather than as one large document:
    this landing first.
 2. [`mobile-library.md`](mobile-library/mobile-library.md) — deck list, inline create,
    inline rename, tab bar.
-3. [`mobile-study-viewer.md`](mobile-study-viewer.md) — full-bleed card,
+3. [`mobile-study-viewer.md`](mobile-study-viewer/mobile-study-viewer.md) — full-bleed card,
    swipe, flip, and how mobile reaches editing (no new route — retargets
    the existing inline-edit mechanism).
 4. [`mobile-card-editor.md`](mobile-card-editor.md) — create-card screen

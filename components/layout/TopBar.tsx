@@ -74,6 +74,58 @@ export function ViewerBar({ deckName, current, total, onHelpClick }: ViewerBarPr
   )
 }
 
+// ── Variant: Viewer (mobile) ───────────────────────────────────────────────────
+interface MobileViewerBarProps {
+  deckName: string
+  current: number
+  total: number
+  onBackClick: () => void
+  onEditClick: () => void
+}
+
+export function MobileViewerBar({ deckName, current, total, onBackClick, onEditClick }: MobileViewerBarProps) {
+  return (
+    <header className="flex items-center justify-between p-[2px_16px_10px] landscape:p-[0px_16px_6px]">
+      <button
+        type="button"
+        aria-label="Back to Library"
+        onClick={onBackClick}
+        className="flex items-center justify-center rounded-full bg-surface-card border border-divider text-secondary shrink-0"
+        style={{ width: '34px', height: '34px' }}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      <div className="flex flex-col items-center min-w-0">
+        <span className="font-sans text-[12px] text-secondary truncate max-w-[180px]">{deckName}</span>
+        <span className="font-mono text-[10px] text-tertiary uppercase tracking-[0.8px]" style={{ marginTop: '1px' }}>
+          {current} / {total}
+        </span>
+      </div>
+
+      <button
+        type="button"
+        aria-label="Edit card"
+        onClick={onEditClick}
+        className="flex items-center justify-center rounded-full bg-surface-card border border-divider text-secondary shrink-0"
+        style={{ width: '34px', height: '34px' }}
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5Z"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+    </header>
+  )
+}
+
 // ── Variant: Create card ──────────────────────────────────────────────────────
 interface CreateBarProps {
   deckId: string

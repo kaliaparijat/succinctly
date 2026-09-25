@@ -76,6 +76,31 @@ describe('useSwipeGesture', () => {
     expect(onSwipeRight).not.toHaveBeenCalled()
   })
 
+  it('isDragging is true from touchstart through touchend', () => {
+    const onSwipeLeft = vi.fn()
+    const onSwipeRight = vi.fn()
+    const { result } = renderHook(() => useSwipeGesture({ onSwipeLeft, onSwipeRight, threshold: 60 }))
+
+    const el = document.createElement('div')
+    act(() => { result.current.ref(el) })
+    expect(result.current.isDragging).toBe(false)
+
+    const start = new Event('touchstart') as unknown as TouchEvent
+    Object.assign(start, { touches: [{ clientX: 100 }] })
+    act(() => { el.dispatchEvent(start as unknown as Event) })
+    expect(result.current.isDragging).toBe(true)
+
+    const move = new Event('touchmove') as unknown as TouchEvent
+    Object.assign(move, { touches: [{ clientX: 120 }] })
+    act(() => { el.dispatchEvent(move as unknown as Event) })
+    expect(result.current.isDragging).toBe(true)
+
+    const end = new Event('touchend') as unknown as TouchEvent
+    Object.assign(end, { changedTouches: [{ clientX: 120 }] })
+    act(() => { el.dispatchEvent(end as unknown as Event) })
+    expect(result.current.isDragging).toBe(false)
+  })
+
   it('fires onSwipeRight when released past the threshold moving right', () => {
     const onSwipeLeft = vi.fn()
     const onSwipeRight = vi.fn()

@@ -8,6 +8,7 @@ interface Options {
 
 export function useSwipeGesture({ onSwipeLeft, onSwipeRight, threshold = 60 }: Options) {
   const [dragX, setDragX] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
   const startX = useRef<number | null>(null)
 
   const ref = useCallback((el: HTMLElement | null) => {
@@ -15,6 +16,7 @@ export function useSwipeGesture({ onSwipeLeft, onSwipeRight, threshold = 60 }: O
 
     function onTouchStart(e: TouchEvent) {
       startX.current = e.touches[0].clientX
+      setIsDragging(true)
     }
 
     function onTouchMove(e: TouchEvent) {
@@ -27,6 +29,7 @@ export function useSwipeGesture({ onSwipeLeft, onSwipeRight, threshold = 60 }: O
       const dx = e.changedTouches[0].clientX - startX.current
       // Reset before the commit callback fires, so it doesn't fight the slide-out animation
       setDragX(0)
+      setIsDragging(false)
       if (Math.abs(dx) >= threshold) {
         dx < 0 ? onSwipeLeft() : onSwipeRight()
       }
@@ -44,5 +47,5 @@ export function useSwipeGesture({ onSwipeLeft, onSwipeRight, threshold = 60 }: O
     }
   }, [onSwipeLeft, onSwipeRight, threshold])
 
-  return { ref, dragX }
+  return { ref, dragX, isDragging }
 }
