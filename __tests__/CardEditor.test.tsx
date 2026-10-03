@@ -4,6 +4,7 @@ import CardEditor from '@/components/cards/CardEditor'
 
 const mockPush = vi.fn()
 const mockNavigateWithTransition = vi.fn()
+const mockUseIsMobile = vi.fn()
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush }),
@@ -22,11 +23,16 @@ vi.mock('@/lib/viewTransition', () => ({
   navigateWithTransition: (...args: unknown[]) => mockNavigateWithTransition(...args),
 }))
 
+vi.mock('@/hooks/useIsMobile', () => ({
+  useIsMobile: () => mockUseIsMobile(),
+}))
+
 const mockDeck = { id: 'deck-1', title: 'Test Deck', palette: 'butter' }
 
 beforeEach(() => {
   mockPush.mockClear()
   mockNavigateWithTransition.mockClear()
+  mockUseIsMobile.mockReturnValue(false)
 })
 
 describe('CardEditor — create mode', () => {
@@ -97,6 +103,54 @@ describe('CardEditor — Save navigation (create mode)', () => {
       '/decks/deck-1/cards/new-card-id',
       'forward'
     )
+  })
+})
+
+describe('CardEditor — mobile skeleton', () => {
+  beforeEach(() => mockUseIsMobile.mockReturnValue(true))
+
+  it('renders a Save pill in the mobile top bar that submits the form', async () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^save$/i }))
+    })
+
+    expect(mockNavigateWithTransition).toHaveBeenCalledWith(
+      expect.anything(),
+      '/decks/deck-1/cards/new-card-id',
+      'forward'
+    )
+  })
+
+  it('does not render the desktop footer Save/Cancel buttons', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    expect(screen.queryByRole('button', { name: /save card/i })).toBeNull()
+  })
+
+  it('back-chevron navigates to the previous card when previousCardId is provided', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={2} previousCardId="card-0" />)
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(mockPush).toHaveBeenCalledWith('/decks/deck-1/cards/card-0')
+  })
+
+  it('back-chevron navigates to /library when previousCardId is omitted', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(mockPush).toHaveBeenCalledWith('/library')
+  })
+
+  it('retains Tab-to-flip on the mobile textareas', () => {
+    vi.useFakeTimers()
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    const [questionTextarea] = screen.getAllByRole('textbox')
+
+    fireEvent.keyDown(questionTextarea, { key: 'Tab' })
+    vi.advanceTimersByTime(350)
+
+    const [, answerTextarea] = screen.getAllByRole('textbox')
+    expect(answerTextarea).toHaveFocus()
+    vi.useRealTimers()
   })
 })
 

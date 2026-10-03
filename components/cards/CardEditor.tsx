@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation'
 import { createCard } from '@/app/actions/cards'
 import { navigateWithTransition } from '@/lib/viewTransition'
 import { PALETTES, type Palette } from '@/lib/palette'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import DesktopCardEditor from '@/components/cards/DesktopCardEditor'
+import MobileCardEditor from '@/components/cards/MobileCardEditor'
 
 interface Deck {
   id: string
@@ -29,6 +31,7 @@ export default function CardEditor({ deck, cardNumber, previousCardId, flipDurat
   const answerRef = useRef<HTMLTextAreaElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
   const router = useRouter()
+  const isMobile = useIsMobile()
 
   const { bg, ink } = PALETTES[deck.palette as Palette] ?? PALETTES.butter
   const flipped = face === 'answer'
@@ -75,6 +78,28 @@ export default function CardEditor({ deck, cardNumber, previousCardId, flipDurat
     } else {
       router.push('/library')
     }
+  }
+
+  if (isMobile) {
+    return (
+      <MobileCardEditor
+        deck={deck}
+        flipDuration={flipDuration}
+        bg={bg}
+        ink={ink}
+        face={face}
+        flipped={flipped}
+        setFace={setFace}
+        questionRef={questionRef}
+        answerRef={answerRef}
+        formRef={formRef}
+        formAction={formAction}
+        pending={pending}
+        state={state}
+        onKeyDown={handleKeyDown}
+        onBack={handleCancel}
+      />
+    )
   }
 
   return (
