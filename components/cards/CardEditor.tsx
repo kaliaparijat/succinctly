@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useActionState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createCard, updateCard } from '@/app/actions/cards'
+import { createCard } from '@/app/actions/cards'
 import { CreateBar } from '@/components/layout/TopBar'
 import { PALETTES, PAPER_NOISE, type Palette } from '@/lib/palette'
 import QAToggle from '@/components/ui/QAToggle'
@@ -14,25 +14,17 @@ interface Deck {
   palette: string
 }
 
-interface CardData {
-  id: string
-  question: string
-  reference_answer: string
-}
-
 type Face = 'question' | 'answer'
 type State = { error?: string } | null
 
 interface Props {
   deck: Deck
-  card?: CardData
   cardNumber?: number
   previousCardId?: string | null
   flipDuration?: number
 }
 
-export default function CardEditor({ deck, card, cardNumber, previousCardId, flipDuration = 380 }: Props) {
-  const isEdit = !!card
+export default function CardEditor({ deck, cardNumber, previousCardId, flipDuration = 380 }: Props) {
   const [face, setFace] = useState<Face>('question')
   const questionRef = useRef<HTMLTextAreaElement>(null)
   const answerRef = useRef<HTMLTextAreaElement>(null)
@@ -45,13 +37,8 @@ export default function CardEditor({ deck, card, cardNumber, previousCardId, fli
   const [state, formAction, pending] = useActionState<State, FormData>(
     async (prev, formData) => {
       try {
-        if (isEdit) {
-          await updateCard(formData)
-          router.push(`/decks/${deck.id}`)
-        } else {
-          const newCard = await createCard(formData)
-          router.push(`/decks/${deck.id}/cards/${newCard.id}`)
-        }
+        const newCard = await createCard(formData)
+        router.push(`/decks/${deck.id}/cards/${newCard.id}`)
         return null
       } catch (e) {
         return { error: (e as Error).message }
@@ -88,14 +75,12 @@ export default function CardEditor({ deck, card, cardNumber, previousCardId, fli
       <CreateBar
         deckId={deck.id}
         deckName={deck.title}
-        label={isEdit ? 'Edit card' : 'New card'}
       />
 
       {/* Card stage */}
       <div className="flex-1 flex items-center justify-center p-6 [perspective:1200px]">
         <form ref={formRef} action={formAction} className="w-full max-w-full flex flex-col items-center gap-6">
           <input type="hidden" name="deck_id" value={deck.id} />
-          {isEdit && <input type="hidden" name="id" value={card.id} />}
 
           {/* The flipping card — palette CSS vars scoped here */}
           <div
@@ -121,7 +106,6 @@ export default function CardEditor({ deck, card, cardNumber, previousCardId, fli
                 <textarea
                   ref={questionRef}
                   name="question"
-                  defaultValue={card?.question}
                   placeholder="What's the question?"
                   onKeyDown={handleKeyDown}
                   className="absolute inset-0 w-full h-full bg-transparent resize-none outline-none px-10 pt-4 pb-14 font-display leading-snug text-[clamp(20px,3vw,38px)] tracking-[-0.5px] text-[var(--card-ink)] placeholder:opacity-30 placeholder:text-center"
@@ -143,7 +127,6 @@ export default function CardEditor({ deck, card, cardNumber, previousCardId, fli
                 <textarea
                   ref={answerRef}
                   name="reference_answer"
-                  defaultValue={card?.reference_answer}
                   placeholder="Write the answer…"
                   onKeyDown={handleKeyDown}
                   className="absolute inset-0 w-full h-full bg-transparent resize-none outline-none px-10 pt-4 pb-14 font-display leading-snug text-[clamp(20px,3vw,38px)] tracking-[-0.5px] text-[var(--card-ink)] placeholder:opacity-30 placeholder:text-center"
@@ -158,7 +141,7 @@ export default function CardEditor({ deck, card, cardNumber, previousCardId, fli
           {/* Footer */}
           <div className="flex items-center justify-between w-full max-w-[700px]">
             <span className="hidden md:inline font-mono text-[11px] uppercase tracking-[0.8px] text-tertiary">
-              {isEdit ? 'Editing' : `Card #${cardNumber}`} · {deck.title}
+              Card #{cardNumber} · {deck.title}
             </span>
             <span className="md:hidden" />
             <div className="flex items-center gap-3">
@@ -178,7 +161,7 @@ export default function CardEditor({ deck, card, cardNumber, previousCardId, fli
                 disabled={pending}
                 className="flex items-center gap-2 px-4 py-2 rounded-btn text-sm font-sans font-500 bg-primary text-surface hover:opacity-90 transition-opacity disabled:opacity-50"
               >
-                {isEdit ? 'Save changes' : 'Save card'}
+                Save card
                 <kbd className="hidden md:inline font-mono text-[10px] px-1 py-0.5 rounded border border-divider-strong bg-surface-card text-tertiary">⌘↵</kbd>
               </button>
             </div>

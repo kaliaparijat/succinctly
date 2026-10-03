@@ -15,11 +15,9 @@ vi.mock('next/link', () => ({
 
 vi.mock('@/app/actions/cards', () => ({
   createCard: vi.fn().mockResolvedValue({ id: 'new-card-id', deck_id: 'deck-1' }),
-  updateCard: vi.fn().mockResolvedValue(undefined),
 }))
 
 const mockDeck = { id: 'deck-1', title: 'Test Deck', palette: 'butter' }
-const mockCard = { id: 'card-1', question: 'What is React?', reference_answer: 'A UI library' }
 
 beforeEach(() => mockPush.mockClear())
 
@@ -39,26 +37,6 @@ describe('CardEditor — create mode', () => {
     const [question, answer] = screen.getAllByRole('textbox')
     expect(question).toHaveValue('')
     expect(answer).toHaveValue('')
-  })
-})
-
-describe('CardEditor — edit mode', () => {
-  it('shows "Save changes" on the submit button', () => {
-    render(<CardEditor deck={mockDeck} card={mockCard} />)
-    expect(screen.getByRole('button', { name: /save changes/i })).toBeInTheDocument()
-  })
-
-  it('renders a hidden id field with the card id', () => {
-    const { container } = render(<CardEditor deck={mockDeck} card={mockCard} />)
-    const idInput = container.querySelector('input[name="id"]') as HTMLInputElement
-    expect(idInput).not.toBeNull()
-    expect(idInput.value).toBe(mockCard.id)
-  })
-
-  it('pre-populates textareas with the card content', () => {
-    render(<CardEditor deck={mockDeck} card={mockCard} />)
-    expect(screen.getByDisplayValue(mockCard.question)).toBeInTheDocument()
-    expect(screen.getByDisplayValue(mockCard.reference_answer)).toBeInTheDocument()
   })
 })
 
