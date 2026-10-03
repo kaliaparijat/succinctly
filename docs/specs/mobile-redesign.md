@@ -12,7 +12,7 @@ each can be reviewed independently rather than as one large document:
 3. [`mobile-study-viewer.md`](mobile-study-viewer/mobile-study-viewer.md) — full-bleed card,
    swipe, flip, and how mobile reaches editing (no new route — retargets
    the existing inline-edit mechanism).
-4. [`mobile-card-editor.md`](mobile-card-editor.md) — create-card screen
+4. [`mobile-card-editor.md`](mobile-card-editor/mobile-card-editor.md) — create-card screen
    only; editing lives in the study viewer spec instead.
 
 Decision history / discovery notes from the original interview process:
