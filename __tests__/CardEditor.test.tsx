@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import CardEditor from '@/components/cards/CardEditor'
+import { createCard } from '@/app/actions/cards'
 
 const mockPush = vi.fn()
 const mockNavigateWithTransition = vi.fn()
@@ -151,6 +152,38 @@ describe('CardEditor — mobile skeleton', () => {
     const [, answerTextarea] = screen.getAllByRole('textbox')
     expect(answerTextarea).toHaveFocus()
     vi.useRealTimers()
+  })
+})
+
+describe('CardEditor — mobile card body (Screen 3 tokens)', () => {
+  beforeEach(() => mockUseIsMobile.mockReturnValue(true))
+
+  it('shows "Draft" instead of the deck title on both faces', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    // Both card faces read "Draft" — the deck title still appears once, in the top bar label.
+    expect(screen.getAllByText('Draft')).toHaveLength(2)
+    expect(screen.getAllByText(mockDeck.title)).toHaveLength(1)
+  })
+
+  it('renders no error text by default', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    expect(screen.queryByText(/boom/i)).toBeNull()
+  })
+
+  it('shows the error message centered below the card when save fails', async () => {
+    vi.mocked(createCard).mockRejectedValueOnce(new Error('Boom'))
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^save$/i }))
+    })
+
+    expect(screen.getByText('Boom')).toBeInTheDocument()
+  })
+
+  it('never renders an "Auto-saved" indicator', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    expect(screen.queryByText(/auto-saved/i)).toBeNull()
   })
 })
 

@@ -66,14 +66,14 @@ export default function MobileCardEditor({
                 className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-50"
                 style={{ backgroundImage: PAPER_NOISE }}
               />
-              <CardHeader label="Question" deckName={deck.title} />
+              <CardHeader label="Question" />
               <div className="flex-1 relative">
                 <textarea
                   ref={questionRef}
                   name="question"
                   placeholder="What's the question?"
                   onKeyDown={onKeyDown}
-                  className="absolute inset-0 w-full h-full bg-transparent resize-none outline-none px-10 pt-4 pb-14 font-display leading-snug text-[clamp(20px,3vw,38px)] tracking-[-0.5px] text-[var(--card-ink)] placeholder:opacity-30 placeholder:text-center"
+                  className="absolute inset-0 w-full h-full bg-transparent resize-none outline-none px-[26px] py-[10px] font-display text-center leading-[1.3] text-[26px] tracking-[-0.3px] text-[var(--card-ink)] placeholder:opacity-30"
                 />
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
                   <QAToggle face={face} onChange={setFace} />
@@ -87,14 +87,14 @@ export default function MobileCardEditor({
                 className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-50"
                 style={{ backgroundImage: PAPER_NOISE }}
               />
-              <CardHeader label="Answer" deckName={deck.title} />
+              <CardHeader label="Answer" />
               <div className="flex-1 relative">
                 <textarea
                   ref={answerRef}
                   name="reference_answer"
                   placeholder="Write the answer…"
                   onKeyDown={onKeyDown}
-                  className="absolute inset-0 w-full h-full bg-transparent resize-none outline-none px-10 pt-4 pb-14 font-display leading-snug text-[clamp(20px,3vw,38px)] tracking-[-0.5px] text-[var(--card-ink)] placeholder:opacity-30 placeholder:text-center"
+                  className="absolute inset-0 w-full h-full bg-transparent resize-none outline-none px-[26px] py-[10px] font-display text-center leading-[1.3] text-[26px] tracking-[-0.3px] text-[var(--card-ink)] placeholder:opacity-30"
                 />
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
                   <QAToggle face={face} onChange={setFace} />
@@ -112,11 +112,11 @@ export default function MobileCardEditor({
   )
 }
 
-function CardHeader({ label, deckName }: { label: string; deckName: string }) {
+function CardHeader({ label }: { label: string }) {
   return (
     <div className="flex items-center justify-between px-5 py-3 shrink-0 border-b border-[color:var(--card-ink-subtle)]">
       <span className="font-mono text-[10px] uppercase tracking-[0.8px] text-[var(--card-ink)] opacity-50">{label}</span>
-      <span className="font-sans text-[11px] text-[var(--card-ink)] opacity-40">{deckName}</span>
+      <span className="font-sans text-[11px] text-[var(--card-ink)] opacity-40">Draft</span>
     </div>
   )
 }
