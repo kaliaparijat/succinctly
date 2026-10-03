@@ -55,13 +55,13 @@ mobile and desktop.
 manual/devtools-verified rather than unit-tested.
 
 ## Acceptance Criteria
-- [ ] At ≤768px, the create-card screen renders per the design doc's
+- [x] At ≤768px, the create-card screen renders per the design doc's
       tokens/layout, with the Save pill in the top bar
-- [ ] Save/cancel behavior (including newly-created-card navigation) is
+- [x] Save/cancel behavior (including newly-created-card navigation) is
       identical on both breakpoints — same server action, same navigation
       call, only different JSX and button placement
-- [ ] Landscape orientation supported per design tokens (manual/devtools-
+- [x] Landscape orientation supported per design tokens (manual/devtools-
       verified)
-- [ ] At >768px, `CardEditor` is visually and behaviorally unchanged from
+- [x] At >768px, `CardEditor` is visually and behaviorally unchanged from
       current production
-- [ ] `npm test` and `npm run build` pass
+- [x] `npm test` and `npm run build` pass
