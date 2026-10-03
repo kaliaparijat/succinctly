@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useActionState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createCard } from '@/app/actions/cards'
+import { navigateWithTransition } from '@/lib/viewTransition'
 import { CreateBar } from '@/components/layout/TopBar'
 import { PALETTES, PAPER_NOISE, type Palette } from '@/lib/palette'
 import QAToggle from '@/components/ui/QAToggle'
@@ -38,7 +39,7 @@ export default function CardEditor({ deck, cardNumber, previousCardId, flipDurat
     async (prev, formData) => {
       try {
         const newCard = await createCard(formData)
-        router.push(`/decks/${deck.id}/cards/${newCard.id}`)
+        navigateWithTransition(router, `/decks/${deck.id}/cards/${newCard.id}`, 'forward')
         return null
       } catch (e) {
         return { error: (e as Error).message }

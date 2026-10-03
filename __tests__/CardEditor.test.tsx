@@ -3,6 +3,7 @@ import { render, screen, fireEvent, act } from '@testing-library/react'
 import CardEditor from '@/components/cards/CardEditor'
 
 const mockPush = vi.fn()
+const mockNavigateWithTransition = vi.fn()
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush }),
@@ -17,9 +18,16 @@ vi.mock('@/app/actions/cards', () => ({
   createCard: vi.fn().mockResolvedValue({ id: 'new-card-id', deck_id: 'deck-1' }),
 }))
 
+vi.mock('@/lib/viewTransition', () => ({
+  navigateWithTransition: (...args: unknown[]) => mockNavigateWithTransition(...args),
+}))
+
 const mockDeck = { id: 'deck-1', title: 'Test Deck', palette: 'butter' }
 
-beforeEach(() => mockPush.mockClear())
+beforeEach(() => {
+  mockPush.mockClear()
+  mockNavigateWithTransition.mockClear()
+})
 
 describe('CardEditor — create mode', () => {
   it('shows "Save card" on the submit button', () => {
@@ -77,14 +85,18 @@ describe('CardEditor — Cancel navigation', () => {
 })
 
 describe('CardEditor — Save navigation (create mode)', () => {
-  it('navigates to the new card URL after successful save', async () => {
+  it('navigates to the new card URL via navigateWithTransition, forward', async () => {
     render(<CardEditor deck={mockDeck} cardNumber={1} />)
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /save card/i }))
     })
 
-    expect(mockPush).toHaveBeenCalledWith('/decks/deck-1/cards/new-card-id')
+    expect(mockNavigateWithTransition).toHaveBeenCalledWith(
+      expect.anything(),
+      '/decks/deck-1/cards/new-card-id',
+      'forward'
+    )
   })
 })
 
