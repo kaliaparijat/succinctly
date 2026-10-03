@@ -73,7 +73,7 @@ export default function MobileCardEditor({
                   name="question"
                   placeholder="What's the question?"
                   onKeyDown={onKeyDown}
-                  className="absolute inset-0 w-full h-full bg-transparent resize-none outline-none px-[26px] py-[10px] font-display text-center leading-[1.3] text-[26px] tracking-[-0.3px] text-[var(--card-ink)] placeholder:opacity-30"
+                  className="absolute inset-0 w-full h-full bg-transparent resize-none outline-none px-[26px] py-[10px] landscape:px-10 landscape:py-1 font-display text-center leading-[1.3] text-[26px] landscape:text-[22px] tracking-[-0.3px] text-[var(--card-ink)] placeholder:opacity-30"
                 />
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
                   <QAToggle face={face} onChange={setFace} />
@@ -94,7 +94,7 @@ export default function MobileCardEditor({
                   name="reference_answer"
                   placeholder="Write the answer…"
                   onKeyDown={onKeyDown}
-                  className="absolute inset-0 w-full h-full bg-transparent resize-none outline-none px-[26px] py-[10px] font-display text-center leading-[1.3] text-[26px] tracking-[-0.3px] text-[var(--card-ink)] placeholder:opacity-30"
+                  className="absolute inset-0 w-full h-full bg-transparent resize-none outline-none px-[26px] py-[10px] landscape:px-10 landscape:py-1 font-display text-center leading-[1.3] text-[26px] landscape:text-[22px] tracking-[-0.3px] text-[var(--card-ink)] placeholder:opacity-30"
                 />
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
                   <QAToggle face={face} onChange={setFace} />
