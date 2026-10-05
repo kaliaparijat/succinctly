@@ -41,25 +41,6 @@ export async function createCard(formData: FormData) {
   return data
 }
 
-export async function updateCard(formData: FormData) {
-  const supabase = await createClient()
-
-  const id = formData.get('id') as string
-  const deckId = formData.get('deck_id') as string
-
-  const { error } = await supabase
-    .from('cards')
-    .update({
-      question: formData.get('question') as string,
-      reference_answer: formData.get('reference_answer') as string,
-    })
-    .eq('id', id)
-
-  if (error) throw new Error(error.message)
-
-  revalidatePath(`/decks/${deckId}`)
-}
-
 export async function updateCardInline(
   id: string,
   deckId: string,

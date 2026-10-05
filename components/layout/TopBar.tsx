@@ -126,6 +126,49 @@ export function MobileViewerBar({ deckName, current, total, onBackClick, onEditC
   )
 }
 
+// ── Variant: Create card (mobile) ───────────────────────────────────────────────
+interface MobileCreateBarProps {
+  deckName: string
+  label: string
+  onBack: () => void
+  onSave: () => void
+  saving: boolean
+}
+
+export function MobileCreateBar({ deckName, label, onBack, onSave, saving }: MobileCreateBarProps) {
+  return (
+    <header className="flex items-center justify-between p-[2px_16px_10px] landscape:p-[0px_16px_6px]">
+      <button
+        type="button"
+        aria-label="Cancel"
+        onClick={onBack}
+        className="flex items-center justify-center rounded-full bg-surface-card border border-divider text-secondary shrink-0"
+        style={{ width: '34px', height: '34px' }}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      <span className="font-sans text-[12px] text-secondary truncate max-w-[200px]">
+        {deckName}
+        <span className="text-tertiary"> · {label}</span>
+      </span>
+
+      <button
+        type="button"
+        aria-label="Save"
+        onClick={onSave}
+        disabled={saving}
+        className="rounded-pill bg-primary text-surface font-sans font-500 text-[12px] disabled:opacity-50"
+        style={{ padding: '7px 14px' }}
+      >
+        Save
+      </button>
+    </header>
+  )
+}
+
 // ── Variant: Create card ──────────────────────────────────────────────────────
 interface CreateBarProps {
   deckId: string

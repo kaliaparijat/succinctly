@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import CardEditor from '@/components/cards/CardEditor'
+import { createCard } from '@/app/actions/cards'
 
 const mockPush = vi.fn()
+const mockNavigateWithTransition = vi.fn()
+const mockUseIsMobile = vi.fn()
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush }),
@@ -15,13 +18,23 @@ vi.mock('next/link', () => ({
 
 vi.mock('@/app/actions/cards', () => ({
   createCard: vi.fn().mockResolvedValue({ id: 'new-card-id', deck_id: 'deck-1' }),
-  updateCard: vi.fn().mockResolvedValue(undefined),
+}))
+
+vi.mock('@/lib/viewTransition', () => ({
+  navigateWithTransition: (...args: unknown[]) => mockNavigateWithTransition(...args),
+}))
+
+vi.mock('@/hooks/useIsMobile', () => ({
+  useIsMobile: () => mockUseIsMobile(),
 }))
 
 const mockDeck = { id: 'deck-1', title: 'Test Deck', palette: 'butter' }
-const mockCard = { id: 'card-1', question: 'What is React?', reference_answer: 'A UI library' }
 
-beforeEach(() => mockPush.mockClear())
+beforeEach(() => {
+  mockPush.mockClear()
+  mockNavigateWithTransition.mockClear()
+  mockUseIsMobile.mockReturnValue(false)
+})
 
 describe('CardEditor — create mode', () => {
   it('shows "Save card" on the submit button', () => {
@@ -39,26 +52,6 @@ describe('CardEditor — create mode', () => {
     const [question, answer] = screen.getAllByRole('textbox')
     expect(question).toHaveValue('')
     expect(answer).toHaveValue('')
-  })
-})
-
-describe('CardEditor — edit mode', () => {
-  it('shows "Save changes" on the submit button', () => {
-    render(<CardEditor deck={mockDeck} card={mockCard} />)
-    expect(screen.getByRole('button', { name: /save changes/i })).toBeInTheDocument()
-  })
-
-  it('renders a hidden id field with the card id', () => {
-    const { container } = render(<CardEditor deck={mockDeck} card={mockCard} />)
-    const idInput = container.querySelector('input[name="id"]') as HTMLInputElement
-    expect(idInput).not.toBeNull()
-    expect(idInput.value).toBe(mockCard.id)
-  })
-
-  it('pre-populates textareas with the card content', () => {
-    render(<CardEditor deck={mockDeck} card={mockCard} />)
-    expect(screen.getByDisplayValue(mockCard.question)).toBeInTheDocument()
-    expect(screen.getByDisplayValue(mockCard.reference_answer)).toBeInTheDocument()
   })
 })
 
@@ -99,14 +92,98 @@ describe('CardEditor — Cancel navigation', () => {
 })
 
 describe('CardEditor — Save navigation (create mode)', () => {
-  it('navigates to the new card URL after successful save', async () => {
+  it('navigates to the new card URL via navigateWithTransition, forward', async () => {
     render(<CardEditor deck={mockDeck} cardNumber={1} />)
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /save card/i }))
     })
 
-    expect(mockPush).toHaveBeenCalledWith('/decks/deck-1/cards/new-card-id')
+    expect(mockNavigateWithTransition).toHaveBeenCalledWith(
+      expect.anything(),
+      '/decks/deck-1/cards/new-card-id',
+      'forward'
+    )
+  })
+})
+
+describe('CardEditor — mobile skeleton', () => {
+  beforeEach(() => mockUseIsMobile.mockReturnValue(true))
+
+  it('renders a Save pill in the mobile top bar that submits the form', async () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^save$/i }))
+    })
+
+    expect(mockNavigateWithTransition).toHaveBeenCalledWith(
+      expect.anything(),
+      '/decks/deck-1/cards/new-card-id',
+      'forward'
+    )
+  })
+
+  it('does not render the desktop footer Save/Cancel buttons', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    expect(screen.queryByRole('button', { name: /save card/i })).toBeNull()
+  })
+
+  it('back-chevron navigates to the previous card when previousCardId is provided', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={2} previousCardId="card-0" />)
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(mockPush).toHaveBeenCalledWith('/decks/deck-1/cards/card-0')
+  })
+
+  it('back-chevron navigates to /library when previousCardId is omitted', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
+    expect(mockPush).toHaveBeenCalledWith('/library')
+  })
+
+  it('retains Tab-to-flip on the mobile textareas', () => {
+    vi.useFakeTimers()
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    const [questionTextarea] = screen.getAllByRole('textbox')
+
+    fireEvent.keyDown(questionTextarea, { key: 'Tab' })
+    vi.advanceTimersByTime(350)
+
+    const [, answerTextarea] = screen.getAllByRole('textbox')
+    expect(answerTextarea).toHaveFocus()
+    vi.useRealTimers()
+  })
+})
+
+describe('CardEditor — mobile card body (Screen 3 tokens)', () => {
+  beforeEach(() => mockUseIsMobile.mockReturnValue(true))
+
+  it('shows "Draft" instead of the deck title on both faces', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    // Both card faces read "Draft" — the deck title still appears once, in the top bar label.
+    expect(screen.getAllByText('Draft')).toHaveLength(2)
+    expect(screen.getAllByText(mockDeck.title)).toHaveLength(1)
+  })
+
+  it('renders no error text by default', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    expect(screen.queryByText(/boom/i)).toBeNull()
+  })
+
+  it('shows the error message centered below the card when save fails', async () => {
+    vi.mocked(createCard).mockRejectedValueOnce(new Error('Boom'))
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^save$/i }))
+    })
+
+    expect(screen.getByText('Boom')).toBeInTheDocument()
+  })
+
+  it('never renders an "Auto-saved" indicator', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    expect(screen.queryByText(/auto-saved/i)).toBeNull()
   })
 })
 
