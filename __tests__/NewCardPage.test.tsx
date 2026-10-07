@@ -83,7 +83,15 @@ describe('NewCardPage', () => {
     mockListCards.mockResolvedValue([{ id: 'card-1' }, { id: 'card-2' }])
     const result = await NewCardPage({ params, searchParams: Promise.resolve({ after: 'card-1' }) })
     render(result)
-    expect(screen.getByTestId('card-editor')).toHaveTextContent('3:card-1')
+    expect(screen.getByTestId('card-editor')).toHaveTextContent('2:card-1')
+  })
+
+  it('derives cardNumber from the anchor position for a mid-deck insert, not the deck length', async () => {
+    mockGetDeck.mockResolvedValue(deck)
+    mockListCards.mockResolvedValue([{ id: 'card-1' }, { id: 'card-2' }, { id: 'card-3' }])
+    const result = await NewCardPage({ params, searchParams: Promise.resolve({ after: 'card-2' }) })
+    render(result)
+    expect(screen.getByTestId('card-editor')).toHaveTextContent('3:card-2')
   })
 
   it('defaults flipDuration to 380ms when no preference is set', async () => {

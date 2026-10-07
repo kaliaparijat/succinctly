@@ -25,12 +25,17 @@ export default async function NewCardPage({ params, searchParams }: Props) {
 
   const cards = await listCards(id)
   const prefs = (profile?.preferences ?? {}) as Preferences
+  const afterCardId = resolveAfterCardId(after, cards)
+  // Card number reflects where the new card actually lands: right after its anchor,
+  // not always the end of the deck. Falls back to append-at-end if the anchor isn't found.
+  const anchorIndex = afterCardId ? cards.findIndex((c) => c.id === afterCardId) : -1
+  const cardNumber = anchorIndex >= 0 ? anchorIndex + 2 : cards.length + 1
 
   return (
     <CardEditor
       deck={deck}
-      cardNumber={cards.length + 1}
-      previousCardId={resolveAfterCardId(after, cards)}
+      cardNumber={cardNumber}
+      previousCardId={afterCardId}
       flipDuration={resolveFlipDuration(prefs.flipSpeed)}
     />
   )
