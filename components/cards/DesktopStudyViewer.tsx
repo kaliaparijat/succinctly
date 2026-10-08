@@ -133,19 +133,18 @@ export default function DesktopStudyViewer({
         </div>
 
         {/* Nav arrows */}
-        <div className="flex items-center justify-between w-full max-w-[700px] mt-6">
+        <div className="grid grid-cols-3 items-center w-full max-w-[700px] mt-6">
           <NavArrow direction="left" onClick={onPrev} disabled={idx === 0} />
-          {idx === totalCards - 1 ? (
-            <Link
-              href={`/decks/${deck.id}/cards/new`}
-              className="w-11 h-11 rounded-full bg-surface-card flex items-center justify-center text-xl text-secondary hover:text-primary hover:bg-surface-hover transition-colors"
-              aria-label="Add card"
-            >
-              +
-            </Link>
-          ) : (
-            <NavArrow direction="right" onClick={onNext} disabled={false} />
-          )}
+          <Link
+            href={`/decks/${deck.id}/cards/new?after=${card.id}`}
+            className="justify-self-center w-11 h-11 rounded-full bg-surface-card flex items-center justify-center text-xl text-secondary hover:text-primary hover:bg-surface-hover transition-colors"
+            aria-label="Insert card"
+          >
+            +
+          </Link>
+          <div className="justify-self-end">
+            <NavArrow direction="right" onClick={onNext} disabled={idx === totalCards - 1} />
+          </div>
         </div>
       </div>
 

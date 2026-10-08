@@ -54,18 +54,18 @@ beforeEach(() => {
 describe('NewCardPage', () => {
   it('redirects to /signin when unauthenticated', async () => {
     mockGetUser.mockResolvedValue(null)
-    await expect(NewCardPage({ params })).rejects.toThrow('REDIRECT:/signin')
+    await expect(NewCardPage({ params, searchParams: Promise.resolve({}) })).rejects.toThrow('REDIRECT:/signin')
   })
 
   it('redirects to /library when the deck is not found', async () => {
     mockGetDeck.mockResolvedValue(null)
-    await expect(NewCardPage({ params })).rejects.toThrow('REDIRECT:/library')
+    await expect(NewCardPage({ params, searchParams: Promise.resolve({}) })).rejects.toThrow('REDIRECT:/library')
   })
 
   it('passes previousCardId=null and cardNumber=1 for an empty deck', async () => {
     mockGetDeck.mockResolvedValue(deck)
     mockListCards.mockResolvedValue([])
-    const result = await NewCardPage({ params })
+    const result = await NewCardPage({ params, searchParams: Promise.resolve({}) })
     render(result)
     expect(screen.getByTestId('card-editor')).toHaveTextContent('1:null')
   })
@@ -73,7 +73,23 @@ describe('NewCardPage', () => {
   it('passes the last card id as previousCardId and the next card number', async () => {
     mockGetDeck.mockResolvedValue(deck)
     mockListCards.mockResolvedValue([{ id: 'card-1' }, { id: 'card-2' }])
-    const result = await NewCardPage({ params })
+    const result = await NewCardPage({ params, searchParams: Promise.resolve({}) })
+    render(result)
+    expect(screen.getByTestId('card-editor')).toHaveTextContent('3:card-2')
+  })
+
+  it('uses the after search param as previousCardId when given', async () => {
+    mockGetDeck.mockResolvedValue(deck)
+    mockListCards.mockResolvedValue([{ id: 'card-1' }, { id: 'card-2' }])
+    const result = await NewCardPage({ params, searchParams: Promise.resolve({ after: 'card-1' }) })
+    render(result)
+    expect(screen.getByTestId('card-editor')).toHaveTextContent('2:card-1')
+  })
+
+  it('derives cardNumber from the anchor position for a mid-deck insert, not the deck length', async () => {
+    mockGetDeck.mockResolvedValue(deck)
+    mockListCards.mockResolvedValue([{ id: 'card-1' }, { id: 'card-2' }, { id: 'card-3' }])
+    const result = await NewCardPage({ params, searchParams: Promise.resolve({ after: 'card-2' }) })
     render(result)
     expect(screen.getByTestId('card-editor')).toHaveTextContent('3:card-2')
   })
@@ -81,7 +97,7 @@ describe('NewCardPage', () => {
   it('defaults flipDuration to 380ms when no preference is set', async () => {
     mockGetDeck.mockResolvedValue(deck)
     mockListCards.mockResolvedValue([])
-    const result = await NewCardPage({ params })
+    const result = await NewCardPage({ params, searchParams: Promise.resolve({}) })
     render(result)
     expect(screen.getByTestId('card-editor')).toHaveTextContent('1:null:380')
   })
@@ -90,7 +106,7 @@ describe('NewCardPage', () => {
     mockGetDeck.mockResolvedValue(deck)
     mockListCards.mockResolvedValue([])
     mockGetProfile.mockResolvedValue({ preferences: { flipSpeed: 'fast' } })
-    const result = await NewCardPage({ params })
+    const result = await NewCardPage({ params, searchParams: Promise.resolve({}) })
     render(result)
     expect(screen.getByTestId('card-editor')).toHaveTextContent('1:null:190')
   })

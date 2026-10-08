@@ -59,16 +59,16 @@ describe('StudyViewer — keyboard boundaries', () => {
     expect(nextBtn).not.toBeDisabled()
   })
 
-  it('replaces the right arrow with a + link at the last card', () => {
+  it('disables the right arrow at the last card and keeps the insert link', () => {
     render(<StudyViewer deck={deck} cards={oneCard} />)
-    expect(screen.getByRole('link', { name: /add card/i })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /next card/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Insert card' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /next card/i })).toBeDisabled()
   })
 
-  it('shows the right arrow button when not at the last card', () => {
+  it('enables the right arrow when not at the last card, alongside the insert link', () => {
     render(<StudyViewer deck={deck} cards={twoCards} />)
-    expect(screen.getByRole('button', { name: /next card/i })).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: /add card/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /next card/i })).toBeEnabled()
+    expect(screen.getByRole('link', { name: 'Insert card' })).toBeInTheDocument()
   })
 })
 
@@ -80,9 +80,10 @@ describe('StudyViewer — initialCardId', () => {
 
   it('starts at the matching card when initialCardId is provided', () => {
     render(<StudyViewer deck={deck} cards={threeCards} initialCardId="c3" />)
-    // At the last card: prev enabled, + link shown instead of next button
+    // At the last card: prev enabled, next disabled, insert link still shown
     expect(screen.getByRole('button', { name: /previous card/i })).not.toBeDisabled()
-    expect(screen.getByRole('link', { name: /add card/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /next card/i })).toBeDisabled()
+    expect(screen.getByRole('link', { name: 'Insert card' })).toBeInTheDocument()
   })
 
   it('falls back to card 0 when initialCardId does not match', () => {
@@ -263,5 +264,44 @@ describe('StudyViewer — desktop top bar unaffected by the mobile fork', () => 
     const editable = container.querySelector('[contenteditable="plaintext-only"]') as HTMLElement | null
     expect(editable).not.toBeNull()
     expect(editable?.innerText).toBe('Q1')
+  })
+})
+
+describe.each([
+  ['desktop', false],
+  ['mobile', true],
+])('StudyViewer — insert-after control (%s)', (_label, isMobile) => {
+  beforeEach(() => mockUseIsMobile.mockReturnValue(isMobile))
+
+  it('shows an insert link pointing at the current card on a middle card', () => {
+    render(<StudyViewer deck={deck} cards={threeCards} initialCardId="c2" />)
+
+    const insert = screen.getByRole('link', { name: 'Insert card' })
+    expect(insert).toHaveAttribute('href', '/decks/deck-1/cards/new?after=c2')
+  })
+
+  it('shows the same insert link on the last card, pointing at that card', () => {
+    render(<StudyViewer deck={deck} cards={threeCards} initialCardId="c3" />)
+
+    const insert = screen.getByRole('link', { name: 'Insert card' })
+    expect(insert).toHaveAttribute('href', '/decks/deck-1/cards/new?after=c3')
+  })
+
+  it('keeps the next arrow enabled on a middle card', () => {
+    render(<StudyViewer deck={deck} cards={threeCards} initialCardId="c2" />)
+
+    expect(screen.getByRole('button', { name: 'Next card' })).toBeEnabled()
+  })
+
+  it('disables the next arrow on the last card instead of replacing it', () => {
+    render(<StudyViewer deck={deck} cards={threeCards} initialCardId="c3" />)
+
+    expect(screen.getByRole('button', { name: 'Next card' })).toBeDisabled()
+  })
+
+  it('keeps the previous arrow disabled on the first card', () => {
+    render(<StudyViewer deck={deck} cards={threeCards} initialCardId="c1" />)
+
+    expect(screen.getByRole('button', { name: 'Previous card' })).toBeDisabled()
   })
 })

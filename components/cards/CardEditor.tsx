@@ -98,6 +98,7 @@ export default function CardEditor({ deck, cardNumber, previousCardId, flipDurat
         state={state}
         onKeyDown={handleKeyDown}
         onBack={handleCancel}
+        previousCardId={previousCardId}
       />
     )
   }
@@ -120,6 +121,7 @@ export default function CardEditor({ deck, cardNumber, previousCardId, flipDurat
       state={state}
       onKeyDown={handleKeyDown}
       onCancel={handleCancel}
+      previousCardId={previousCardId}
     />
   )
 }
