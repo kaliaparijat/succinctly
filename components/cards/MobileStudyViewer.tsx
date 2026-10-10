@@ -82,7 +82,7 @@ export default function MobileStudyViewer({
   const slideStyle = { transform, opacity, transition }
 
   return (
-    <div className="min-h-screen bg-surface flex flex-col">
+    <div className="h-dvh bg-surface flex flex-col">
       <MobileViewerBar
         deckName={deck.title}
         current={idx + 1}
@@ -102,7 +102,7 @@ export default function MobileStudyViewer({
           data-testid="mobile-card"
           className="relative w-full max-w-[700px]"
           style={{
-            height: 'clamp(300px, 40vw, 460px)',
+            height: '100%',
             transform: slideStyle.transform,
             opacity: slideStyle.opacity,
             transition: slideStyle.transition,

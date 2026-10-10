@@ -232,6 +232,22 @@ describe('StudyViewer — mobile swipe', () => {
   })
 })
 
+describe('StudyViewer — mobile card fills available height', () => {
+  beforeEach(() => mockUseIsMobile.mockReturnValue(true))
+
+  it('does not cap the card to a fixed/viewport-width-relative height — it fills its flex-1 stage', () => {
+    const { getByTestId } = render(<StudyViewer deck={deck} cards={oneCard} />)
+    const card = getByTestId('mobile-card')
+    expect(card.style.height).toBe('100%')
+  })
+
+  it('roots the page in a definite height (h-dvh), not min-h-screen — required for the card\'s 100% height to resolve at all (jsdom can\'t verify the actual layout resolution; see browser-qa for that)', () => {
+    const { container } = render(<StudyViewer deck={deck} cards={oneCard} />)
+    expect(container.firstChild).toHaveClass('h-dvh')
+    expect(container.firstChild).not.toHaveClass('min-h-screen')
+  })
+})
+
 describe('StudyViewer — desktop top bar unaffected by the mobile fork', () => {
   beforeEach(() => mockUseIsMobile.mockReturnValue(false))
 
