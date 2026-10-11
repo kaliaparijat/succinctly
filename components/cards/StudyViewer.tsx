@@ -128,6 +128,19 @@ export default function StudyViewer({
     setFlipped(newFace === 'answer')
   }, [editingFace, handleEditSave])
 
+  // Blurring the contentEditable (tap/click elsewhere, swipe, nav away) must save —
+  // otherwise the edit is silently discarded (#15). Exception: blurring TO the Q/A
+  // toggle is the existing "save and switch which face you're editing" flow
+  // (handleToggleFace), which passes the new face as nextFace — if we also saved
+  // here with nextFace=null, we'd force editingFace closed before the toggle's own
+  // handler runs, breaking "switch face while staying in edit mode." Skip in that
+  // one case and let the toggle's click handler do the save+transition itself.
+  const handleEditBlur = useCallback((e: React.FocusEvent<HTMLDivElement>) => {
+    const next = e.relatedTarget
+    if (next instanceof HTMLElement && next.closest('[data-qa-toggle]')) return
+    handleEditSave(null)
+  }, [handleEditSave])
+
   const handleEditKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Escape') {
       e.preventDefault()
@@ -193,6 +206,7 @@ export default function StudyViewer({
         onEditClick={enterEdit}
         onFlip={flip}
         onEditKeyDown={handleEditKeyDown}
+        onEditBlur={handleEditBlur}
         onToggleFace={handleToggleFace}
         onPrev={goPrev}
         onNext={goNext}
@@ -222,6 +236,7 @@ export default function StudyViewer({
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
       onEditKeyDown={handleEditKeyDown}
+      onEditBlur={handleEditBlur}
       onToggleFace={handleToggleFace}
       onPrev={goPrev}
       onNext={goNext}

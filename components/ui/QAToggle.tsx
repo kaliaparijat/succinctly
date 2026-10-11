@@ -7,7 +7,7 @@ interface Props {
 
 export default function QAToggle({ face, onChange }: Props) {
   return (
-    <div className="flex items-center gap-1 px-1 py-1 rounded-pill bg-surface-card">
+    <div data-qa-toggle className="flex items-center gap-1 px-1 py-1 rounded-pill bg-surface-card">
       {(['question', 'answer'] as Face[]).map(f => (
         <button
           key={f}

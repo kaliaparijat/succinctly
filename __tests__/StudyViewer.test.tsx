@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, act, within } from '@testing-library/react'
+import { render, screen, fireEvent, act, within, waitFor } from '@testing-library/react'
 import StudyViewer from '@/components/cards/StudyViewer'
+import { updateCardInline } from '@/app/actions/cards'
 
 const mockReplace = vi.fn()
 const mockPush = vi.fn()
@@ -32,6 +33,7 @@ vi.mock('@/lib/viewTransition', () => ({
 beforeEach(() => {
   mockUseIsMobile.mockReturnValue(false)
   mockNavigateWithTransition.mockClear()
+  vi.mocked(updateCardInline).mockClear()
 })
 
 const deck = { id: 'deck-1', title: 'Test Deck', palette: 'butter' }
@@ -245,6 +247,56 @@ describe('StudyViewer — mobile card fills available height', () => {
     const { container } = render(<StudyViewer deck={deck} cards={oneCard} />)
     expect(container.firstChild).toHaveClass('h-dvh')
     expect(container.firstChild).not.toHaveClass('min-h-screen')
+  })
+})
+
+describe('StudyViewer — blur saves the inline edit (#15)', () => {
+  beforeEach(() => mockUseIsMobile.mockReturnValue(true))
+
+  it('blurring away from the card (not to the Q/A toggle) saves the edited text', async () => {
+    const { container } = render(<StudyViewer deck={deck} cards={oneCard} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+
+    const editable = container.querySelector('[contenteditable="plaintext-only"]') as HTMLElement
+    editable.innerText = 'Updated question'
+    fireEvent.blur(editable, { relatedTarget: null })
+
+    await waitFor(() =>
+      expect(updateCardInline).toHaveBeenCalledWith('c1', 'deck-1', 'Updated question', 'A1')
+    )
+  })
+
+  it('blurring to the Q/A toggle does not short-circuit the toggle\'s own save-and-switch-face behavior', async () => {
+    const { container } = render(<StudyViewer deck={deck} cards={oneCard} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+
+    const editable = container.querySelector('[contenteditable="plaintext-only"]') as HTMLElement
+    editable.innerText = 'Updated question'
+    const toggleToAnswer = screen.getByRole('button', { name: 'A' })
+
+    // Real browsers fire blur before the click handler when focus moves to another
+    // element — replicate that ordering explicitly, same as a real toggle tap would.
+    fireEvent.blur(editable, { relatedTarget: toggleToAnswer })
+    fireEvent.click(toggleToAnswer)
+
+    await waitFor(() =>
+      expect(updateCardInline).toHaveBeenCalledWith('c1', 'deck-1', 'Updated question', 'A1')
+    )
+    // Still editing — now the answer face, not exited. A naive "always save+exit on
+    // blur" would have closed editingFace before the toggle's handler ran.
+    expect(container.querySelector('[contenteditable="plaintext-only"]')).not.toBeNull()
+  })
+
+  it('Escape-to-cancel followed by blur does not trigger a save', () => {
+    const { container } = render(<StudyViewer deck={deck} cards={oneCard} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+
+    const editable = container.querySelector('[contenteditable="plaintext-only"]') as HTMLElement
+    editable.innerText = 'Should not save'
+    fireEvent.keyDown(editable, { key: 'Escape' })
+    fireEvent.blur(editable, { relatedTarget: null })
+
+    expect(updateCardInline).not.toHaveBeenCalled()
   })
 })
 
