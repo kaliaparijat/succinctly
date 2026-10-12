@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, act, within, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import StudyViewer from '@/components/cards/StudyViewer'
 import { updateCardInline } from '@/app/actions/cards'
 
@@ -238,6 +239,10 @@ describe('StudyViewer — mobile card fills available height', () => {
   beforeEach(() => mockUseIsMobile.mockReturnValue(true))
 
   it('does not cap the card to a fixed/viewport-width-relative height — it fills its flex-1 stage', () => {
+    // This only confirms the style *declares* height:100% (a regression guard against
+    // reintroducing the clamp) — jsdom does no real layout, so it can't confirm 100%
+    // actually resolves against the viewport. That requires a definite-height ancestor
+    // (see the h-dvh test below) and real browser layout (verified via browser-qa).
     const { getByTestId } = render(<StudyViewer deck={deck} cards={oneCard} />)
     const card = getByTestId('mobile-card')
     expect(card.style.height).toBe('100%')
@@ -254,12 +259,16 @@ describe('StudyViewer — blur saves the inline edit (#15)', () => {
   beforeEach(() => mockUseIsMobile.mockReturnValue(true))
 
   it('blurring away from the card (not to the Q/A toggle) saves the edited text', async () => {
-    const { container } = render(<StudyViewer deck={deck} cards={oneCard} />)
+    const user = userEvent.setup()
+    render(<StudyViewer deck={deck} cards={oneCard} />)
     fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
 
-    const editable = container.querySelector('[contenteditable="plaintext-only"]') as HTMLElement
+    const editable = screen.getByRole('textbox', { name: 'Question' })
     editable.innerText = 'Updated question'
-    fireEvent.blur(editable, { relatedTarget: null })
+    // userEvent.click replicates real browser focus handling: it fires blur on the
+    // previously-focused element (with the correct relatedTarget) before the click
+    // lands on the target — no manual event construction needed.
+    await user.click(within(screen.getByRole('banner')).getByText('Test Deck'))
 
     await waitFor(() =>
       expect(updateCardInline).toHaveBeenCalledWith('c1', 'deck-1', 'Updated question', 'A1')
@@ -267,31 +276,29 @@ describe('StudyViewer — blur saves the inline edit (#15)', () => {
   })
 
   it('blurring to the Q/A toggle does not short-circuit the toggle\'s own save-and-switch-face behavior', async () => {
-    const { container } = render(<StudyViewer deck={deck} cards={oneCard} />)
+    const user = userEvent.setup()
+    render(<StudyViewer deck={deck} cards={oneCard} />)
     fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
 
-    const editable = container.querySelector('[contenteditable="plaintext-only"]') as HTMLElement
+    const editable = screen.getByRole('textbox', { name: 'Question' })
     editable.innerText = 'Updated question'
     const toggleToAnswer = screen.getByRole('button', { name: 'A' })
 
-    // Real browsers fire blur before the click handler when focus moves to another
-    // element — replicate that ordering explicitly, same as a real toggle tap would.
-    fireEvent.blur(editable, { relatedTarget: toggleToAnswer })
-    fireEvent.click(toggleToAnswer)
+    await user.click(toggleToAnswer)
 
     await waitFor(() =>
       expect(updateCardInline).toHaveBeenCalledWith('c1', 'deck-1', 'Updated question', 'A1')
     )
     // Still editing — now the answer face, not exited. A naive "always save+exit on
     // blur" would have closed editingFace before the toggle's handler ran.
-    expect(container.querySelector('[contenteditable="plaintext-only"]')).not.toBeNull()
+    expect(screen.getByRole('textbox', { name: 'Answer' })).toBeInTheDocument()
   })
 
   it('Escape-to-cancel followed by blur does not trigger a save', () => {
-    const { container } = render(<StudyViewer deck={deck} cards={oneCard} />)
+    render(<StudyViewer deck={deck} cards={oneCard} />)
     fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
 
-    const editable = container.querySelector('[contenteditable="plaintext-only"]') as HTMLElement
+    const editable = screen.getByRole('textbox', { name: 'Question' })
     editable.innerText = 'Should not save'
     fireEvent.keyDown(editable, { key: 'Escape' })
     fireEvent.blur(editable, { relatedTarget: null })

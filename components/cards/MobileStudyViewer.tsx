@@ -212,6 +212,8 @@ function CardFace({
           ref={isEditing ? editRef : null}
           contentEditable={isEditing ? 'plaintext-only' : 'false'}
           suppressContentEditableWarning
+          role={isEditing ? 'textbox' : undefined}
+          aria-label={isEditing ? label : undefined}
           onKeyDown={isEditing ? onEditKeyDown : undefined}
           onBlur={isEditing ? onEditBlur : undefined}
           className="font-display text-center outline-none w-full text-[27px] landscape:text-[24px]"
