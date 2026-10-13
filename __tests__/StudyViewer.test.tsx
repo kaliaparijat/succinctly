@@ -294,6 +294,29 @@ describe('StudyViewer — blur saves the inline edit (#15)', () => {
     expect(screen.getByRole('textbox', { name: 'Answer' })).toBeInTheDocument()
   })
 
+  it('QAToggle prevents its default click-focus (#15 WebKit fix) — mousedown stays prevented regardless of what the click eventually re-focuses', () => {
+    // The real bug (confirmed via browser-qa against real WebKit, not reproducible
+    // in jsdom): WebKit doesn't focus <button> on click by default the way Chromium/
+    // Firefox do, so handleEditBlur's relatedTarget-based "was this the toggle"
+    // check silently fails there, and blur falls through to a full save+exit instead
+    // of the toggle's own save+switch-face. The fix is QAToggle calling
+    // preventDefault in onMouseDown so the click never triggers a focus-shift (and
+    // therefore never triggers blur) in the first place — regardless of where the
+    // toggle's own onClick logic subsequently moves focus to (the new face, via
+    // StudyViewer's own re-focus effect). jsdom can't reproduce WebKit's divergent
+    // default behavior to prove the bug or the fix end-to-end; this only confirms
+    // the mechanism — that the mousedown is actually prevented — is in place. Real
+    // verification is via browser-qa against real WebKit.
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+
+    const toggleToAnswer = screen.getByRole('button', { name: 'A' })
+    const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+    fireEvent(toggleToAnswer, event)
+
+    expect(event.defaultPrevented).toBe(true)
+  })
+
   it('Escape-to-cancel followed by blur does not trigger a save', () => {
     render(<StudyViewer deck={deck} cards={oneCard} />)
     fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
