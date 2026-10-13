@@ -185,6 +185,19 @@ describe('CardEditor — mobile card body (Screen 3 tokens)', () => {
     render(<CardEditor deck={mockDeck} cardNumber={1} />)
     expect(screen.queryByText(/auto-saved/i)).toBeNull()
   })
+
+  it('mobile card fills its stage height instead of a fixed/viewport-width-relative cap', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    const card = screen.getByTestId('mobile-card')
+    expect(card).toHaveClass('flex-1')
+    expect(card.className).not.toMatch(/clamp/)
+  })
+
+  it('roots the page in a definite height (h-dvh), not min-h-screen — required for the flex-1 card to resolve at all (jsdom can\'t verify the actual layout resolution; see browser-qa for that)', () => {
+    const { container } = render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    expect(container.firstChild).toHaveClass('h-dvh')
+    expect(container.firstChild).not.toHaveClass('min-h-screen')
+  })
 })
 
 describe('CardEditor — flip duration', () => {

@@ -35,7 +35,7 @@ export default function MobileCardEditor({
   questionRef, answerRef, formRef, formAction, pending, state, onKeyDown, onBack,
 }: Props) {
   return (
-    <div className="min-h-screen bg-surface flex flex-col">
+    <div className="h-dvh bg-surface flex flex-col">
       <MobileCreateBar
         deckName={deck.title}
         label="New card"
@@ -46,13 +46,14 @@ export default function MobileCardEditor({
 
       {/* Card stage */}
       <div className="flex-1 flex items-center justify-center p-6 [perspective:1200px]">
-        <form ref={formRef} action={formAction} className="w-full max-w-full flex flex-col items-center gap-6">
+        <form ref={formRef} action={formAction} className="w-full h-full max-w-full flex flex-col items-center gap-6">
           <input type="hidden" name="deck_id" value={deck.id} />
           <input type="hidden" name="after_card_id" value={previousCardId ?? ''} />
 
           {/* The flipping card — palette CSS vars scoped here */}
           <div
-            className="relative w-full max-w-[700px] h-[clamp(300px,40vw,460px)] [transform-style:preserve-3d] transition-transform ease-in-out"
+            data-testid="mobile-card"
+            className="relative w-full max-w-[700px] flex-1 [transform-style:preserve-3d] transition-transform ease-in-out"
             style={{
               '--card-bg': bg,
               '--card-ink': ink,

@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, act, within } from '@testing-library/react'
+import { render, screen, fireEvent, act, within, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import StudyViewer from '@/components/cards/StudyViewer'
+import { updateCardInline } from '@/app/actions/cards'
 
 const mockReplace = vi.fn()
 const mockPush = vi.fn()
@@ -32,6 +34,7 @@ vi.mock('@/lib/viewTransition', () => ({
 beforeEach(() => {
   mockUseIsMobile.mockReturnValue(false)
   mockNavigateWithTransition.mockClear()
+  vi.mocked(updateCardInline).mockClear()
 })
 
 const deck = { id: 'deck-1', title: 'Test Deck', palette: 'butter' }
@@ -229,6 +232,101 @@ describe('StudyViewer — mobile swipe', () => {
     })
 
     expect(mockReplace).toHaveBeenCalledWith('/decks/deck-1/cards/c2')
+  })
+})
+
+describe('StudyViewer — mobile card fills available height', () => {
+  beforeEach(() => mockUseIsMobile.mockReturnValue(true))
+
+  it('does not cap the card to a fixed/viewport-width-relative height — it fills its flex-1 stage', () => {
+    // This only confirms the style *declares* height:100% (a regression guard against
+    // reintroducing the clamp) — jsdom does no real layout, so it can't confirm 100%
+    // actually resolves against the viewport. That requires a definite-height ancestor
+    // (see the h-dvh test below) and real browser layout (verified via browser-qa).
+    const { getByTestId } = render(<StudyViewer deck={deck} cards={oneCard} />)
+    const card = getByTestId('mobile-card')
+    expect(card.style.height).toBe('100%')
+  })
+
+  it('roots the page in a definite height (h-dvh), not min-h-screen — required for the card\'s 100% height to resolve at all (jsdom can\'t verify the actual layout resolution; see browser-qa for that)', () => {
+    const { container } = render(<StudyViewer deck={deck} cards={oneCard} />)
+    expect(container.firstChild).toHaveClass('h-dvh')
+    expect(container.firstChild).not.toHaveClass('min-h-screen')
+  })
+})
+
+describe('StudyViewer — blur saves the inline edit (#15)', () => {
+  beforeEach(() => mockUseIsMobile.mockReturnValue(true))
+
+  it('blurring away from the card (not to the Q/A toggle) saves the edited text', async () => {
+    const user = userEvent.setup()
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+
+    const editable = screen.getByRole('textbox', { name: 'Question' })
+    editable.innerText = 'Updated question'
+    // userEvent.click replicates real browser focus handling: it fires blur on the
+    // previously-focused element (with the correct relatedTarget) before the click
+    // lands on the target — no manual event construction needed.
+    await user.click(within(screen.getByRole('banner')).getByText('Test Deck'))
+
+    await waitFor(() =>
+      expect(updateCardInline).toHaveBeenCalledWith('c1', 'deck-1', 'Updated question', 'A1')
+    )
+  })
+
+  it('blurring to the Q/A toggle does not short-circuit the toggle\'s own save-and-switch-face behavior', async () => {
+    const user = userEvent.setup()
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+
+    const editable = screen.getByRole('textbox', { name: 'Question' })
+    editable.innerText = 'Updated question'
+    const toggleToAnswer = screen.getByRole('button', { name: 'A' })
+
+    await user.click(toggleToAnswer)
+
+    await waitFor(() =>
+      expect(updateCardInline).toHaveBeenCalledWith('c1', 'deck-1', 'Updated question', 'A1')
+    )
+    // Still editing — now the answer face, not exited. A naive "always save+exit on
+    // blur" would have closed editingFace before the toggle's handler ran.
+    expect(screen.getByRole('textbox', { name: 'Answer' })).toBeInTheDocument()
+  })
+
+  it('QAToggle prevents its default click-focus (#15 WebKit fix) — mousedown stays prevented regardless of what the click eventually re-focuses', () => {
+    // The real bug (confirmed via browser-qa against real WebKit, not reproducible
+    // in jsdom): WebKit doesn't focus <button> on click by default the way Chromium/
+    // Firefox do, so handleEditBlur's relatedTarget-based "was this the toggle"
+    // check silently fails there, and blur falls through to a full save+exit instead
+    // of the toggle's own save+switch-face. The fix is QAToggle calling
+    // preventDefault in onMouseDown so the click never triggers a focus-shift (and
+    // therefore never triggers blur) in the first place — regardless of where the
+    // toggle's own onClick logic subsequently moves focus to (the new face, via
+    // StudyViewer's own re-focus effect). jsdom can't reproduce WebKit's divergent
+    // default behavior to prove the bug or the fix end-to-end; this only confirms
+    // the mechanism — that the mousedown is actually prevented — is in place. Real
+    // verification is via browser-qa against real WebKit.
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+
+    const toggleToAnswer = screen.getByRole('button', { name: 'A' })
+    const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+    fireEvent(toggleToAnswer, event)
+
+    expect(event.defaultPrevented).toBe(true)
+  })
+
+  it('Escape-to-cancel followed by blur does not trigger a save', () => {
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+
+    const editable = screen.getByRole('textbox', { name: 'Question' })
+    editable.innerText = 'Should not save'
+    fireEvent.keyDown(editable, { key: 'Escape' })
+    fireEvent.blur(editable, { relatedTarget: null })
+
+    expect(updateCardInline).not.toHaveBeenCalled()
   })
 })
 

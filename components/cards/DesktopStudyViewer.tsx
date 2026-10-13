@@ -41,6 +41,7 @@ interface Props {
   onClick: () => void
   onDoubleClick: () => void
   onEditKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void
+  onEditBlur: (e: React.FocusEvent<HTMLDivElement>) => void
   onToggleFace: (face: 'question' | 'answer') => void
   onPrev: () => void
   onNext: () => void
@@ -49,7 +50,7 @@ interface Props {
 export default function DesktopStudyViewer({
   deck, card, idx, totalCards, bg, ink, tilt, progress, flipped, flipDuration,
   hintsEnabled, editingFace, editRef, dir, swipeRef, helpOpen, setHelpOpen,
-  onClick, onDoubleClick, onEditKeyDown, onToggleFace, onPrev, onNext,
+  onClick, onDoubleClick, onEditKeyDown, onEditBlur, onToggleFace, onPrev, onNext,
 }: Props) {
   const slideStyle = dir === 'next'
     ? { transform: 'translateX(-110%)', opacity: 0 }
@@ -113,6 +114,7 @@ export default function DesktopStudyViewer({
               isEditing={editingFace === 'question'}
               editRef={editRef}
               onEditKeyDown={onEditKeyDown}
+              onEditBlur={onEditBlur}
               onToggleFace={onToggleFace}
             />
             <CardFace
@@ -127,6 +129,7 @@ export default function DesktopStudyViewer({
               isEditing={editingFace === 'answer'}
               editRef={editRef}
               onEditKeyDown={onEditKeyDown}
+              onEditBlur={onEditBlur}
               onToggleFace={onToggleFace}
             />
           </div>
@@ -164,13 +167,14 @@ export default function DesktopStudyViewer({
 
 function CardFace({
   label, text, deckName, bg, ink, tilt, showHint, back,
-  isEditing, editRef, onEditKeyDown, onToggleFace,
+  isEditing, editRef, onEditKeyDown, onEditBlur, onToggleFace,
 }: {
   label: string; text: string; deckName: string; bg: string; ink: string
   tilt: number; showHint: boolean; back: boolean
   isEditing: boolean
   editRef: RefObject<HTMLDivElement | null>
   onEditKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void
+  onEditBlur: (e: React.FocusEvent<HTMLDivElement>) => void
   onToggleFace: (face: 'question' | 'answer') => void
 }) {
   return (
@@ -198,7 +202,10 @@ function CardFace({
           ref={isEditing ? editRef : null}
           contentEditable={isEditing ? 'plaintext-only' : 'false'}
           suppressContentEditableWarning
+          role={isEditing ? 'textbox' : undefined}
+          aria-label={isEditing ? label : undefined}
           onKeyDown={isEditing ? onEditKeyDown : undefined}
+          onBlur={isEditing ? onEditBlur : undefined}
           className="font-display text-center leading-snug outline-none w-full"
           style={{
             color: ink,

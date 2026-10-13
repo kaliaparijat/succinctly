@@ -35,6 +35,15 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# browser-qa evidence (screenshots/traces/videos from QA runs)
+.claude/qa-evidence/
+
+# subagent definitions stay local, not checked into the repo
+.claude/agents/
+
+# Playwright MCP's own auto-generated page/console snapshot logs
+.playwright-mcp/
+
 # vercel
 .vercel
 

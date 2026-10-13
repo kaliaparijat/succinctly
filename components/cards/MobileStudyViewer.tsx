@@ -47,6 +47,7 @@ interface Props {
   onEditClick: () => void
   onFlip: () => void
   onEditKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void
+  onEditBlur: (e: React.FocusEvent<HTMLDivElement>) => void
   onToggleFace: (face: 'question' | 'answer') => void
   onPrev: () => void
   onNext: () => void
@@ -55,7 +56,7 @@ interface Props {
 export default function MobileStudyViewer({
   deck, card, idx, totalCards, bg, ink, tilt, flipped, flipDuration,
   hintsEnabled, editingFace, editRef, dir, swipeRef, dragX, isDragging,
-  onBackClick, onEditClick, onFlip, onEditKeyDown, onToggleFace, onPrev, onNext,
+  onBackClick, onEditClick, onFlip, onEditKeyDown, onEditBlur, onToggleFace, onPrev, onNext,
 }: Props) {
   let transform: string
   let transition: string | undefined
@@ -82,7 +83,7 @@ export default function MobileStudyViewer({
   const slideStyle = { transform, opacity, transition }
 
   return (
-    <div className="min-h-screen bg-surface flex flex-col">
+    <div className="h-dvh bg-surface flex flex-col">
       <MobileViewerBar
         deckName={deck.title}
         current={idx + 1}
@@ -102,7 +103,7 @@ export default function MobileStudyViewer({
           data-testid="mobile-card"
           className="relative w-full max-w-[700px]"
           style={{
-            height: 'clamp(300px, 40vw, 460px)',
+            height: '100%',
             transform: slideStyle.transform,
             opacity: slideStyle.opacity,
             transition: slideStyle.transition,
@@ -131,6 +132,7 @@ export default function MobileStudyViewer({
               isEditing={editingFace === 'question'}
               editRef={editRef}
               onEditKeyDown={onEditKeyDown}
+              onEditBlur={onEditBlur}
               onToggleFace={onToggleFace}
               viewTransitionName={`card-${deck.id}`}
             />
@@ -146,6 +148,7 @@ export default function MobileStudyViewer({
               isEditing={editingFace === 'answer'}
               editRef={editRef}
               onEditKeyDown={onEditKeyDown}
+              onEditBlur={onEditBlur}
               onToggleFace={onToggleFace}
             />
           </div>
@@ -172,13 +175,14 @@ export default function MobileStudyViewer({
 
 function CardFace({
   label, text, deckName, bg, ink, tilt, showHint, back,
-  isEditing, editRef, onEditKeyDown, onToggleFace, viewTransitionName,
+  isEditing, editRef, onEditKeyDown, onEditBlur, onToggleFace, viewTransitionName,
 }: {
   label: string; text: string; deckName: string; bg: string; ink: string
   tilt: number; showHint: boolean; back: boolean
   isEditing: boolean
   editRef: RefObject<HTMLDivElement | null>
   onEditKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void
+  onEditBlur: (e: React.FocusEvent<HTMLDivElement>) => void
   onToggleFace: (face: 'question' | 'answer') => void
   viewTransitionName?: string
 }) {
@@ -208,7 +212,10 @@ function CardFace({
           ref={isEditing ? editRef : null}
           contentEditable={isEditing ? 'plaintext-only' : 'false'}
           suppressContentEditableWarning
+          role={isEditing ? 'textbox' : undefined}
+          aria-label={isEditing ? label : undefined}
           onKeyDown={isEditing ? onEditKeyDown : undefined}
+          onBlur={isEditing ? onEditBlur : undefined}
           className="font-display text-center outline-none w-full text-[27px] landscape:text-[24px]"
           style={{
             color: ink,
