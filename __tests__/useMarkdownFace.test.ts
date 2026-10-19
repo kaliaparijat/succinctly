@@ -87,3 +87,144 @@ describe('useMarkdownFace — fmt()', () => {
     expect(result.current.editing).toBe(true)
   })
 })
+
+describe('useMarkdownFace — onKeyDown', () => {
+  function makeEvent(ta: HTMLTextAreaElement, overrides: Partial<{ key: string; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }>) {
+    return {
+      key: overrides.key ?? '',
+      metaKey: overrides.metaKey ?? false,
+      ctrlKey: overrides.ctrlKey ?? false,
+      shiftKey: overrides.shiftKey ?? false,
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+      currentTarget: ta,
+    } as unknown as React.KeyboardEvent<HTMLTextAreaElement>
+  }
+
+  it('Escape blurs the textarea and closes editing', () => {
+    const { result } = renderHook(() => useMarkdownFace({ initialText: 'hi', initialEditing: true }))
+    const ta = document.createElement('textarea')
+    document.body.appendChild(ta)
+    ta.focus()
+    const blur = vi.spyOn(ta, 'blur')
+
+    const event = makeEvent(ta, { key: 'Escape' })
+    act(() => result.current.onKeyDown(event))
+
+    expect(event.preventDefault).toHaveBeenCalled()
+    expect(blur).toHaveBeenCalled()
+    expect(result.current.editing).toBe(false)
+    document.body.removeChild(ta)
+  })
+
+  it('⌘B applies bold formatting', () => {
+    const { result } = renderHook(() => useMarkdownFace({ initialText: 'Hello world', initialEditing: true }))
+    const ta = document.createElement('textarea')
+    document.body.appendChild(ta)
+    ta.value = 'Hello world'
+    ta.selectionStart = 6
+    ta.selectionEnd = 11
+    act(() => { result.current.textareaRef.current = ta })
+
+    const event = makeEvent(ta, { key: 'b', metaKey: true })
+    act(() => result.current.onKeyDown(event))
+
+    expect(event.preventDefault).toHaveBeenCalled()
+    expect(result.current.text).toBe('Hello **world**')
+    document.body.removeChild(ta)
+  })
+
+  it('⌘I applies italic formatting', () => {
+    const { result } = renderHook(() => useMarkdownFace({ initialText: 'Hello world', initialEditing: true }))
+    const ta = document.createElement('textarea')
+    document.body.appendChild(ta)
+    ta.value = 'Hello world'
+    ta.selectionStart = 6
+    ta.selectionEnd = 11
+    act(() => { result.current.textareaRef.current = ta })
+
+    const event = makeEvent(ta, { key: 'i', ctrlKey: true })
+    act(() => result.current.onKeyDown(event))
+
+    expect(result.current.text).toBe('Hello *world*')
+    document.body.removeChild(ta)
+  })
+
+  it('Tab inside an open fenced code block inserts 4 spaces and stops propagation', () => {
+    const { result } = renderHook(() => useMarkdownFace({ initialText: '```python\ndef f():\n', initialEditing: true }))
+    const ta = document.createElement('textarea')
+    document.body.appendChild(ta)
+    ta.value = '```python\ndef f():\n'
+    ta.selectionStart = ta.value.length
+    ta.selectionEnd = ta.value.length
+
+    const event = makeEvent(ta, { key: 'Tab' })
+    act(() => result.current.onKeyDown(event))
+
+    expect(event.preventDefault).toHaveBeenCalled()
+    expect(event.stopPropagation).toHaveBeenCalled()
+    expect(result.current.text).toBe('```python\ndef f():\n    ')
+    document.body.removeChild(ta)
+  })
+
+  it('Tab outside a fence does not stop propagation (lets the card flip)', () => {
+    const { result } = renderHook(() => useMarkdownFace({ initialText: 'plain text', initialEditing: true }))
+    const ta = document.createElement('textarea')
+    document.body.appendChild(ta)
+    ta.value = 'plain text'
+    ta.selectionStart = ta.value.length
+    ta.selectionEnd = ta.value.length
+
+    const event = makeEvent(ta, { key: 'Tab' })
+    act(() => result.current.onKeyDown(event))
+
+    expect(event.stopPropagation).not.toHaveBeenCalled()
+    expect(result.current.text).toBe('plain text')
+    document.body.removeChild(ta)
+  })
+
+  it('Enter continues a list item', () => {
+    const { result } = renderHook(() => useMarkdownFace({ initialText: '- first', initialEditing: true }))
+    const ta = document.createElement('textarea')
+    document.body.appendChild(ta)
+    ta.value = '- first'
+    ta.selectionStart = ta.value.length
+    ta.selectionEnd = ta.value.length
+
+    const event = makeEvent(ta, { key: 'Enter' })
+    act(() => result.current.onKeyDown(event))
+
+    expect(event.preventDefault).toHaveBeenCalled()
+    expect(result.current.text).toBe('- first\n- ')
+    document.body.removeChild(ta)
+  })
+
+  it('Enter on an empty list line ends the list without preventing default list-less Enter elsewhere', () => {
+    const { result } = renderHook(() => useMarkdownFace({ initialText: '- ', initialEditing: true }))
+    const ta = document.createElement('textarea')
+    document.body.appendChild(ta)
+    ta.value = '- '
+    ta.selectionStart = ta.value.length
+    ta.selectionEnd = ta.value.length
+
+    const event = makeEvent(ta, { key: 'Enter' })
+    act(() => result.current.onKeyDown(event))
+
+    expect(result.current.text).toBe('')
+  })
+
+  it('plain Enter on non-list text does nothing special', () => {
+    const { result } = renderHook(() => useMarkdownFace({ initialText: 'plain text', initialEditing: true }))
+    const ta = document.createElement('textarea')
+    document.body.appendChild(ta)
+    ta.value = 'plain text'
+    ta.selectionStart = ta.value.length
+    ta.selectionEnd = ta.value.length
+
+    const event = makeEvent(ta, { key: 'Enter' })
+    act(() => result.current.onKeyDown(event))
+
+    expect(event.preventDefault).not.toHaveBeenCalled()
+    expect(result.current.text).toBe('plain text')
+  })
+})
