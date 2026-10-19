@@ -1,3 +1,5 @@
+import katex from 'katex'
+
 export type MarkdownBlock =
   | { type: 'text'; text: string }
   | { type: 'code'; lang: string; body: string }
@@ -93,4 +95,33 @@ export function parseMarkdown(src: string): MarkdownBlock[] {
 
   flush()
   return blocks
+}
+
+export function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+function renderMath(tex: string, display: boolean): string {
+  try {
+    return katex.renderToString(tex, { throwOnError: false, displayMode: display })
+  } catch {
+    return escapeHtml(tex)
+  }
+}
+
+/** Renders one line of inline Markdown (bold/italic/inline code/inline math) to HTML. */
+export function renderInline(text: string): string {
+  const tokens: string[] = []
+  const hold = (html: string) => {
+    tokens.push(html)
+    return `\u0000${tokens.length - 1}\u0000`
+  }
+
+  let t = text.replace(/`([^`]+)`/g, (_m, code: string) => hold(`<code class="ic">${escapeHtml(code)}</code>`))
+  t = t.replace(/\$([^$]+)\$/g, (_m, tex: string) => hold(renderMath(tex, false)))
+  t = escapeHtml(t)
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+
+  return t.replace(/\u0000(\d+)\u0000/g, (_m, i: string) => tokens[Number(i)])
 }

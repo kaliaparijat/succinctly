@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { parseMarkdown } from '@/lib/markdown'
+import { describe, it, expect, vi, afterEach } from 'vitest'
+import { parseMarkdown, escapeHtml, renderInline } from '@/lib/markdown'
 
 describe('parseMarkdown — paragraphs', () => {
   it('parses a single paragraph', () => {
@@ -109,5 +109,54 @@ describe('parseMarkdown — mixed content', () => {
       { type: 'list', items: ['item one', 'item two'] },
       { type: 'math', tex: 'a = b' },
     ])
+  })
+})
+
+describe('escapeHtml', () => {
+  it('escapes &, <, and >', () => {
+    expect(escapeHtml('a < b & b > c')).toBe('a &lt; b &amp; b &gt; c')
+  })
+})
+
+describe('renderInline', () => {
+  it('renders **bold** as <strong>', () => {
+    expect(renderInline('**bold**')).toBe('<strong>bold</strong>')
+  })
+
+  it('renders *italic* as <em>', () => {
+    expect(renderInline('*italic*')).toBe('<em>italic</em>')
+  })
+
+  it('renders `code` as an escaped <code> span', () => {
+    expect(renderInline('`a < b`')).toBe('<code class="ic">a &lt; b</code>')
+  })
+
+  it('escapes plain text outside any token', () => {
+    expect(renderInline('5 < 10 & true')).toBe('5 &lt; 10 &amp; true')
+  })
+
+  it('renders inline $math$ via KaTeX', () => {
+    const html = renderInline('$x^2$')
+    expect(html).toContain('katex')
+    expect(html).not.toContain('$x^2$')
+  })
+
+  it('combines bold, code, and math in one line', () => {
+    const html = renderInline('**bold** `code` $x$')
+    expect(html).toContain('<strong>bold</strong>')
+    expect(html).toContain('<code class="ic">code</code>')
+    expect(html).toContain('katex')
+  })
+})
+
+describe('renderInline — KaTeX failure fallback', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  it('falls back to escaped raw source if katex throws', async () => {
+    const katex = await import('katex')
+    vi.spyOn(katex.default, 'renderToString').mockImplementation(() => {
+      throw new Error('boom')
+    })
+    expect(renderInline('$<broken>$')).toBe('&lt;broken&gt;')
   })
 })
