@@ -9,13 +9,24 @@ interface Props {
   codeSize?: number
   ink?: string
   className?: string
+  /**
+   * Called after the face's own onKeyDown (Escape/⌘B/⌘I/Tab-in-fence/list
+   * Enter), but only if that didn't call stopPropagation() — e.g. CardEditor's
+   * Tab-to-flip, which should still fire for a plain Tab outside a fence.
+   */
+  onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
 }
 
-export default function MarkdownFace({ name, face, placeholder, size = 24, codeSize = 13, ink, className }: Props) {
+export default function MarkdownFace({ name, face, placeholder, size = 24, codeSize = 13, ink, className, onKeyDown }: Props) {
   function handleBlur(e: React.FocusEvent<HTMLDivElement>) {
     const next = e.relatedTarget
     if (next && e.currentTarget.contains(next)) return
     face.close()
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    face.onKeyDown(e)
+    if (!e.isPropagationStopped()) onKeyDown?.(e)
   }
 
   return (
@@ -26,7 +37,7 @@ export default function MarkdownFace({ name, face, placeholder, size = 24, codeS
           ref={face.textareaRef}
           value={face.text}
           onChange={(e) => face.setText(e.target.value)}
-          onKeyDown={face.onKeyDown}
+          onKeyDown={handleKeyDown}
           placeholder={placeholder}
           autoFocus
           className="absolute inset-0 w-full h-full bg-transparent resize-none outline-none"

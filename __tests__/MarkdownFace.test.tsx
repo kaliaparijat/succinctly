@@ -1,11 +1,21 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, fireEvent, screen } from '@testing-library/react'
 import MarkdownFace from '@/components/cards/markdown/MarkdownFace'
 import { useMarkdownFace } from '@/components/cards/markdown/useMarkdownFace'
 
-function TestFace({ initialText = '', initialEditing = false, name = 'question' }: { initialText?: string; initialEditing?: boolean; name?: string }) {
+function TestFace({
+  initialText = '',
+  initialEditing = false,
+  name = 'question',
+  onKeyDown,
+}: {
+  initialText?: string
+  initialEditing?: boolean
+  name?: string
+  onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
+}) {
   const face = useMarkdownFace({ initialText, initialEditing })
-  return <MarkdownFace name={name} face={face} placeholder="What's the question?" />
+  return <MarkdownFace name={name} face={face} placeholder="What's the question?" onKeyDown={onKeyDown} />
 }
 
 describe('MarkdownFace — render/edit toggle', () => {
@@ -75,5 +85,25 @@ describe('MarkdownFace — blur closes editing', () => {
     fireEvent.blur(textarea, { relatedTarget: screen.getByText('outside') })
     expect(screen.queryByRole('textbox')).toBeNull()
     expect(screen.getByText('Hello')).toBeInTheDocument()
+  })
+})
+
+describe('MarkdownFace — composed onKeyDown', () => {
+  it('calls the outer onKeyDown after the face handles a key it does not consume', () => {
+    const outer = vi.fn()
+    render(<TestFace initialText="plain text" initialEditing onKeyDown={outer} />)
+    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement
+    textarea.selectionStart = textarea.selectionEnd = textarea.value.length
+    fireEvent.keyDown(textarea, { key: 'Tab' })
+    expect(outer).toHaveBeenCalled()
+  })
+
+  it('does not call the outer onKeyDown when the face stops propagation (Tab inside an open fence)', () => {
+    const outer = vi.fn()
+    render(<TestFace initialText={'```python\ncode'} initialEditing onKeyDown={outer} />)
+    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement
+    textarea.selectionStart = textarea.selectionEnd = textarea.value.length
+    fireEvent.keyDown(textarea, { key: 'Tab' })
+    expect(outer).not.toHaveBeenCalled()
   })
 })
