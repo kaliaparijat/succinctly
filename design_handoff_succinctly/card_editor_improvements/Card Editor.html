@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Succinctly — Card editor, Markdown live</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:"Inter Tight",system-ui,sans-serif;background:#26262A;color:#F5F5F7;min-height:100vh}
+a{color:#3A2E0A}a:hover{color:#0A0A0B}
+.frame{position:relative;overflow:hidden;flex-shrink:0}
+.desk{border-radius:12px;box-shadow:0 30px 70px rgba(0,0,0,0.25),0 0 0 1px rgba(0,0,0,0.2)}
+textarea::placeholder,input::placeholder{color:currentColor;opacity:.35}
+.rt strong{font-weight:400;background:linear-gradient(transparent 62%,rgba(58,46,10,0.16) 62%)}
+.rt em{font-style:italic}
+.ic{font-family:"JetBrains Mono",monospace;font-size:.62em;background:rgba(58,46,10,0.12);padding:2px 6px;border-radius:5px;vertical-align:.12em;letter-spacing:0}
+.katex{font-size:1.05em}.katex-display{margin:0}
+.fmtbtn:hover{background:rgba(127,127,127,0.18)!important}
+.seg:hover{background:rgba(58,46,10,0.06)}
+.inschip:hover{background:rgba(58,46,10,0.08)!important}
+.hljs-keyword,.hljs-built_in{color:#F5D96B}
+.hljs-string{color:#B8DFC4}
+.hljs-number,.hljs-literal{color:#F2A68F}
+.hljs-comment{color:rgba(237,230,214,0.45);font-style:italic}
+.hljs-title,.hljs-title.function_{color:#A8C8E8}
+.hljs-meta{color:#D4BFE8}
+.hljs-params{color:#EDE6D6}
+::-webkit-scrollbar{width:0;height:0}
+.stage{width:1794px;box-sizing:border-box;display:flex;flex-wrap:nowrap;align-items:flex-start;justify-content:center;gap:48px;padding:40px 32px;transform-origin:top left}.col{display:flex;flex-direction:column;gap:12px}.cap{font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.8px;text-transform:uppercase;color:rgba(245,245,247,0.55)}
+</style>
+</head>
+<body>
+<div id="wrap" style="overflow:hidden"><div class="stage" id="stage"><div class="col"><div class="cap">Desktop · 1280×800 · click the card to edit</div><div class="frame desk" id="l-desk" style="width:1280px;height:800px"></div></div><div class="col"><div class="cap">Mobile · 402×874 · tap the card to edit</div><div class="frame" id="l-mob" style="width:402px;height:874px;border-radius:48px"></div></div></div></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" data-presets="react">
+// @ds-adherence-ignore -- omelette starter scaffold (raw elements/hex/px by design)
+// Copied omelette starter. Re-running copy_starter_component with this kind overwrites this file with the latest version (page content is unaffected).
+
+/* BEGIN USAGE */
+// iOS.jsx — Simplified iOS 26 (Liquid Glass) device frame
+// Based on the iOS 26 UI Kit + Figma status bar spec. No assets, no deps.
+// Exports (to window): IOSDevice, IOSStatusBar, IOSNavBar, IOSGlassPill, IOSList, IOSListRow, IOSKeyboard
+//
+// Usage — wrap your screen content in <IOSDevice> to get the bezel, status bar
+// and home indicator (props: title, dark, keyboard):
+//
+//   <IOSDevice title="Settings">
+//     ...your screen content...
+//   </IOSDevice>
+//   <IOSDevice dark title="Search" keyboard>…</IOSDevice>
+/* END USAGE */
+
+// ─────────────────────────────────────────────────────────────
+// Status bar
+// ─────────────────────────────────────────────────────────────
+function IOSStatusBar({ dark = false, time = '9:41' }) {
+  const c = dark ? '#fff' : '#000';
+  return (
+    <div style={{
+      display: 'flex', gap: 154, alignItems: 'center', justifyContent: 'center',
+      padding: '21px 24px 19px', boxSizing: 'border-box',
+      position: 'relative', zIndex: 20, width: '100%',
+    }}>
+      <div style={{ flex: 1, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: 1.5 }}>
+        <span style={{
+          fontFamily: '-apple-system, "SF Pro", system-ui', fontWeight: 590,
+          fontSize: 17, lineHeight: '22px', color: c,
+        }}>{time}</span>
+      </div>
+      <div style={{ flex: 1, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, paddingTop: 1, paddingRight: 1 }}>
+        <svg width="19" height="12" viewBox="0 0 19 12">
+          <rect x="0" y="7.5" width="3.2" height="4.5" rx="0.7" fill={c}/>
+          <rect x="4.8" y="5" width="3.2" height="7" rx="0.7" fill={c}/>
+          <rect x="9.6" y="2.5" width="3.2" height="9.5" rx="0.7" fill={c}/>
+          <rect x="14.4" y="0" width="3.2" height="12" rx="0.7" fill={c}/>
+        </svg>
+        <svg width="17" height="12" viewBox="0 0 17 12">
+          <path d="M8.5 3.2C10.8 3.2 12.9 4.1 14.4 5.6L15.5 4.5C13.7 2.7 11.2 1.5 8.5 1.5C5.8 1.5 3.3 2.7 1.5 4.5L2.6 5.6C4.1 4.1 6.2 3.2 8.5 3.2Z" fill={c}/>
+          <path d="M8.5 6.8C9.9 6.8 11.1 7.3 12 8.2L13.1 7.1C11.8 5.9 10.2 5.1 8.5 5.1C6.8 5.1 5.2 5.9 3.9 7.1L5 8.2C5.9 7.3 7.1 6.8 8.5 6.8Z" fill={c}/>
+          <circle cx="8.5" cy="10.5" r="1.5" fill={c}/>
+        </svg>
+        <svg width="27" height="13" viewBox="0 0 27 13">
+          <rect x="0.5" y="0.5" width="23" height="12" rx="3.5" stroke={c} strokeOpacity="0.35" fill="none"/>
+          <rect x="2" y="2" width="20" height="9" rx="2" fill={c}/>
+          <path d="M25 4.5V8.5C25.8 8.2 26.5 7.2 26.5 6.5C26.5 5.8 25.8 4.8 25 4.5Z" fill={c} fillOpacity="0.4"/>
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Liquid glass pill — blur + tint + shine
+// ─────────────────────────────────────────────────────────────
+function IOSGlassPill({ children, dark = false, style = {} }) {
+  return (
+    <div style={{
+      height: 44, minWidth: 44, borderRadius: 9999,
+      position: 'relative', overflow: 'hidden',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      boxShadow: dark
+        ? '0 2px 6px rgba(0,0,0,0.35), 0 6px 16px rgba(0,0,0,0.2)'
+        : '0 1px 3px rgba(0,0,0,0.07), 0 3px 10px rgba(0,0,0,0.06)',
+      ...style,
+    }}>
+      {/* blur + tint */}
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 9999,
+        backdropFilter: 'blur(12px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+        background: dark ? 'rgba(120,120,128,0.28)' : 'rgba(255,255,255,0.5)',
+      }} />
+      {/* shine */}
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 9999,
+        boxShadow: dark
+          ? 'inset 1.5px 1.5px 1px rgba(255,255,255,0.15), inset -1px -1px 1px rgba(255,255,255,0.08)'
+          : 'inset 1.5px 1.5px 1px rgba(255,255,255,0.7), inset -1px -1px 1px rgba(255,255,255,0.4)',
+        border: dark ? '0.5px solid rgba(255,255,255,0.15)' : '0.5px solid rgba(0,0,0,0.06)',
+      }} />
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', padding: '0 4px' }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Navigation bar — glass pills + large title
+// ─────────────────────────────────────────────────────────────
+function IOSNavBar({ title = 'Title', dark = false, trailingIcon = true }) {
+  const muted = dark ? 'rgba(255,255,255,0.6)' : '#404040';
+  const text = dark ? '#fff' : '#000';
+  const pillIcon = (content) => (
+    <IOSGlassPill dark={dark}>
+      <div style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {content}
+      </div>
+    </IOSGlassPill>
+  );
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: 10,
+      paddingTop: 62, paddingBottom: 10, position: 'relative', zIndex: 5,
+    }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 16px',
+      }}>
+        {/* back chevron */}
+        {pillIcon(
+          <svg width="12" height="20" viewBox="0 0 12 20" fill="none" style={{ marginLeft: -1 }}>
+            <path d="M10 2L2 10l8 8" stroke={muted} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
+        {/* trailing ellipsis */}
+        {trailingIcon && pillIcon(
+          <svg width="22" height="6" viewBox="0 0 22 6">
+            <circle cx="3" cy="3" r="2.5" fill={muted}/>
+            <circle cx="11" cy="3" r="2.5" fill={muted}/>
+            <circle cx="19" cy="3" r="2.5" fill={muted}/>
+          </svg>
+        )}
+      </div>
+      {/* large title */}
+      <div style={{
+        padding: '0 16px',
+        fontFamily: '-apple-system, system-ui',
+        fontSize: 34, fontWeight: 700, lineHeight: '41px',
+        color: text, letterSpacing: 0.4,
+      }}>{title}</div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Grouped list (inset card, r:26) + row (52px)
+// ─────────────────────────────────────────────────────────────
+function IOSListRow({ title, detail, icon, chevron = true, isLast = false, dark = false }) {
+  const text = dark ? '#fff' : '#000';
+  const sec = dark ? 'rgba(235,235,245,0.6)' : 'rgba(60,60,67,0.6)';
+  const ter = dark ? 'rgba(235,235,245,0.3)' : 'rgba(60,60,67,0.3)';
+  const sep = dark ? 'rgba(84,84,88,0.65)' : 'rgba(60,60,67,0.12)';
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', minHeight: 52,
+      padding: '0 16px', position: 'relative',
+      fontFamily: '-apple-system, system-ui', fontSize: 17,
+      letterSpacing: -0.43,
+    }}>
+      {icon && (
+        <div style={{
+          width: 30, height: 30, borderRadius: 7, background: icon,
+          marginRight: 12, flexShrink: 0,
+        }} />
+      )}
+      <div style={{ flex: 1, color: text }}>{title}</div>
+      {detail && <span style={{ color: sec, marginRight: 6 }}>{detail}</span>}
+      {chevron && (
+        <svg width="8" height="14" viewBox="0 0 8 14" style={{ flexShrink: 0 }}>
+          <path d="M1 1l6 6-6 6" stroke={ter} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      )}
+      {!isLast && (
+        <div style={{
+          position: 'absolute', bottom: 0, right: 0,
+          left: icon ? 58 : 16, height: 0.5, background: sep,
+        }} />
+      )}
+    </div>
+  );
+}
+
+function IOSList({ header, children, dark = false }) {
+  const hc = dark ? 'rgba(235,235,245,0.6)' : 'rgba(60,60,67,0.6)';
+  const bg = dark ? '#1C1C1E' : '#fff';
+  return (
+    <div>
+      {header && (
+        <div style={{
+          fontFamily: '-apple-system, system-ui', fontSize: 13,
+          color: hc, textTransform: 'uppercase',
+          padding: '8px 36px 6px', letterSpacing: -0.08,
+        }}>{header}</div>
+      )}
+      <div style={{
+        background: bg, borderRadius: 26,
+        margin: '0 16px', overflow: 'hidden',
+      }}>{children}</div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Device frame
+// ─────────────────────────────────────────────────────────────
+function IOSDevice({
+  children, width = 402, height = 874, dark = false,
+  title, keyboard = false,
+}) {
+  return (
+    // data-om-starter: inert presence marker — Claude Design's starter-usage
+    // probe reads it; it renders nothing. Keep it on this root element.
+    <div data-om-starter="ios-frame" style={{
+      width, height, borderRadius: 48, overflow: 'hidden',
+      position: 'relative', background: dark ? '#000' : '#F2F2F7',
+      boxShadow: '0 40px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.12)',
+      fontFamily: '-apple-system, system-ui, sans-serif',
+      WebkitFontSmoothing: 'antialiased',
+    }}>
+      {/* dynamic island */}
+      <div style={{
+        position: 'absolute', top: 11, left: '50%', transform: 'translateX(-50%)',
+        width: 126, height: 37, borderRadius: 24, background: '#000', zIndex: 50,
+      }} />
+      {/* status bar (absolute) */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
+        <IOSStatusBar dark={dark} />
+      </div>
+      {/* nav + content */}
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        {title !== undefined && <IOSNavBar title={title} dark={dark} />}
+        <div style={{ flex: 1, overflow: 'auto' }}>{children}</div>
+        {keyboard && <IOSKeyboard dark={dark} />}
+      </div>
+      {/* home indicator — always on top */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 60,
+        height: 34, display: 'flex', justifyContent: 'center', alignItems: 'flex-end',
+        paddingBottom: 8, pointerEvents: 'none',
+      }}>
+        <div style={{
+          width: 139, height: 5, borderRadius: 100,
+          background: dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.25)',
+        }} />
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Keyboard — iOS 26 liquid glass
+// ─────────────────────────────────────────────────────────────
+function IOSKeyboard({ dark = false }) {
+  const glyph = dark ? 'rgba(255,255,255,0.7)' : '#595959';
+  const sugg = dark ? 'rgba(255,255,255,0.6)' : '#333';
+  const keyBg = dark ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.85)';
+
+  // special-key icons
+  const icons = {
+    shift: <svg width="19" height="17" viewBox="0 0 19 17"><path d="M9.5 1L1 9.5h4.5V16h8V9.5H18L9.5 1z" fill={glyph}/></svg>,
+    del: <svg width="23" height="17" viewBox="0 0 23 17"><path d="M7 1h13a2 2 0 012 2v11a2 2 0 01-2 2H7l-6-7.5L7 1z" fill="none" stroke={glyph} strokeWidth="1.6" strokeLinejoin="round"/><path d="M10 5l7 7M17 5l-7 7" stroke={glyph} strokeWidth="1.6" strokeLinecap="round"/></svg>,
+    ret: <svg width="20" height="14" viewBox="0 0 20 14"><path d="M18 1v6H4m0 0l4-4M4 7l4 4" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  };
+
+  const key = (content, { w, flex, ret, fs = 25, k } = {}) => (
+    <div key={k} style={{
+      height: 42, borderRadius: 8.5,
+      flex: flex ? 1 : undefined, width: w, minWidth: 0,
+      background: ret ? '#08f' : keyBg,
+      boxShadow: '0 1px 0 rgba(0,0,0,0.075)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontFamily: '-apple-system, "SF Compact", system-ui',
+      fontSize: fs, fontWeight: 458, color: ret ? '#fff' : glyph,
+    }}>{content}</div>
+  );
+
+  const row = (keys, pad = 0) => (
+    <div style={{ display: 'flex', gap: 6.5, justifyContent: 'center', padding: `0 ${pad}px` }}>
+      {keys.map(l => key(l, { flex: true, k: l }))}
+    </div>
+  );
+
+  return (
+    <div style={{
+      position: 'relative', zIndex: 15, borderRadius: 27, overflow: 'hidden',
+      padding: '11px 0 2px',
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      boxShadow: dark
+        ? '0 -2px 20px rgba(0,0,0,0.09)'
+        : '0 -1px 6px rgba(0,0,0,0.018), 0 -3px 20px rgba(0,0,0,0.012)',
+    }}>
+      {/* liquid glass bg — same recipe as nav pills */}
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 27,
+        backdropFilter: 'blur(12px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+        background: dark ? 'rgba(120,120,128,0.14)' : 'rgba(255,255,255,0.25)',
+      }} />
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 27,
+        boxShadow: dark
+          ? 'inset 1.5px 1.5px 1px rgba(255,255,255,0.15)'
+          : 'inset 1.5px 1.5px 1px rgba(255,255,255,0.7), inset -1px -1px 1px rgba(255,255,255,0.4)',
+        border: dark ? '0.5px solid rgba(255,255,255,0.15)' : '0.5px solid rgba(0,0,0,0.06)',
+        pointerEvents: 'none',
+      }} />
+
+      {/* autocorrect bar */}
+      <div style={{
+        display: 'flex', gap: 20, alignItems: 'center',
+        padding: '8px 22px 13px', width: '100%', boxSizing: 'border-box',
+        position: 'relative',
+      }}>
+        {['"The"', 'the', 'to'].map((w, i) => (
+          <React.Fragment key={i}>
+            {i > 0 && <div style={{ width: 1, height: 25, background: '#ccc', opacity: 0.3 }} />}
+            <div style={{
+              flex: 1, textAlign: 'center',
+              fontFamily: '-apple-system, system-ui', fontSize: 17,
+              color: sugg, letterSpacing: -0.43, lineHeight: '22px',
+            }}>{w}</div>
+          </React.Fragment>
+        ))}
+      </div>
+
+      {/* key layout */}
+      <div style={{
+        display: 'flex', flexDirection: 'column', gap: 13,
+        padding: '0 6.5px', width: '100%', boxSizing: 'border-box',
+        position: 'relative',
+      }}>
+        {row(['q','w','e','r','t','y','u','i','o','p'])}
+        {row(['a','s','d','f','g','h','j','k','l'], 20)}
+        <div style={{ display: 'flex', gap: 14.25, alignItems: 'center' }}>
+          {key(icons.shift, { w: 45, k: 'shift' })}
+          <div style={{ display: 'flex', gap: 6.5, flex: 1 }}>
+            {['z','x','c','v','b','n','m'].map(l => key(l, { flex: true, k: l }))}
+          </div>
+          {key(icons.del, { w: 45, k: 'del' })}
+        </div>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          {key('ABC', { w: 92.25, fs: 18, k: 'abc' })}
+          {key('', { flex: true, k: 'space' })}
+          {key(icons.ret, { w: 92.25, ret: true, k: 'ret' })}
+        </div>
+      </div>
+
+      {/* bottom spacer (emoji+mic area, icons omitted) */}
+      <div style={{ height: 56, width: '100%', position: 'relative' }} />
+    </div>
+  );
+}
+
+Object.assign(window, {
+  IOSDevice, IOSStatusBar, IOSNavBar, IOSGlassPill, IOSList, IOSListRow, IOSKeyboard,
+});
+
+</script>
+<script type="text/babel" data-presets="react">
+const { useState, useRef, useEffect, useLayoutEffect } = React;
+
+const ET = {
+  bg: '#0A0A0B', bgElev: '#111113', bgCard: '#17171A', bgHover: '#1D1D21',
+  border: 'rgba(255,255,255,0.08)', borderStrong: 'rgba(255,255,255,0.14)',
+  text: '#F5F5F7', muted: 'rgba(245,245,247,0.6)', faint: 'rgba(245,245,247,0.38)',
+  display: '"Instrument Serif", Georgia, serif', sans: '"Inter Tight", -apple-system, system-ui, sans-serif', mono: '"JetBrains Mono", ui-monospace, monospace',
+};
+const CARD = { bg: '#F5D96B', ink: '#3A2E0A' };
+const NOISE = `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='4'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")`;
+
+const SAMPLE_Q = "What does `fib(5)` return, and what is the time complexity?\n\n```python\ndef fib(n):\n    if n < 2:\n        return n\n    return fib(n - 1) + fib(n - 2)\n```";
+const SAMPLE_A = "Returns **5**. Each call branches twice, so the running time follows\n\n$$T(n) = T(n-1) + T(n-2) + O(1)$$\n\nwhich grows as $O(\\varphi^n) \\approx O(1.618^n)$. Caching makes it *linear*:\n\n```python {3|4-7}\nfrom functools import cache\n\n@cache\ndef fib(n):\n    if n < 2:\n        return n\n    return fib(n - 1) + fib(n - 2)\n```";
+
+function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function tex(c, display) { try { return katex.renderToString(c, { throwOnError: false, displayMode: display }); } catch (e) { return esc(c); } }
+function inlineHTML(t) {
+  const toks = [];
+  const hold = (h) => { toks.push(h); return `\u0000${toks.length - 1}\u0000`; };
+  t = t.replace(/`([^`]+)`/g, (m, c) => hold(`<code class="ic">${esc(c)}</code>`));
+  t = t.replace(/\$([^$]+)\$/g, (m, c) => hold(tex(c, false)));
+  t = esc(t).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  return t.replace(/\u0000(\d+)\u0000/g, (m, i) => toks[i]);
+}
+function parseMD(src) {
+  const lines = (src || '').split('\n'); const out = []; let i = 0; let para = [];
+  const flush = () => { if (para.length) { out.push({ type: 'text', text: para.join(' ') }); para = []; } };
+  while (i < lines.length) {
+    const l = lines[i];
+    const f = l.match(/^```(\w+)?\s*(?:\{([\d|,\-\s]*)\}|([\d|,\-]+))?\s*$/);
+    if (f) { flush(); const body = []; i++; while (i < lines.length && !/^```\s*$/.test(lines[i])) { body.push(lines[i]); i++; } i++; out.push({ type: 'code', lang: f[1] || 'plaintext', steps: (f[2] || f[3] || '').replace(/\s/g, ''), body: body.join('\n') }); continue; }
+    if (l.trim().startsWith('$$')) {
+      flush(); const s = l.trim().slice(2);
+      if (s.endsWith('$$')) { out.push({ type: 'math', tex: s.slice(0, -2) }); i++; continue; }
+      const body = [s]; i++;
+      while (i < lines.length && !lines[i].trim().endsWith('$$')) { body.push(lines[i]); i++; }
+      if (i < lines.length) { body.push(lines[i].trim().slice(0, -2)); i++; }
+      out.push({ type: 'math', tex: body.join('\n') }); continue;
+    }
+    const im = l.match(/^!\[([^\]]*)\]\(([^)]*)\)/);
+    if (im) { flush(); out.push({ type: 'image', alt: im[1], src: im[2] }); i++; continue; }
+    if (/^\s*[-*] /.test(l)) { flush(); const items = []; while (i < lines.length && /^\s*[-*] /.test(lines[i])) { items.push(lines[i].replace(/^\s*[-*] /, '')); i++; } out.push({ type: 'list', items }); continue; }
+    if (!l.trim()) { flush(); i++; continue; }
+    para.push(l.trim()); i++;
+  }
+  flush(); return out;
+}
+function parseSteps(s) {
+  if (!s) return [];
+  return s.split('|').map(p => { const set = new Set(); p.split(',').forEach(r => { const [a, b] = r.split('-').map(Number); if (!a) return; for (let k = a; k <= (b || a); k++) set.add(k); }); return set; }).filter(s => s.size);
+}
+
+function CodeBlock({ lang, body, steps, size = 13 }) {
+  const st = parseSteps(steps); const [k, setK] = useState(-1);
+  let html; try { html = hljs.getLanguage(lang) ? hljs.highlight(body, { language: lang }).value : esc(body); } catch (e) { html = esc(body); }
+  const active = k >= 0 ? st[k] : null;
+  return (
+    <div style={{ background: '#1E1B14', borderRadius: 10, padding: '9px 0 10px', fontFamily: ET.mono, fontSize: size, lineHeight: 1.6, color: '#EDE6D6', textAlign: 'left', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.25)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 12px 5px', fontSize: 9.5, letterSpacing: 0.8, textTransform: 'uppercase', color: 'rgba(237,230,214,0.45)' }}>
+        <span>{lang}</span>
+        {st.length > 0 && (
+          <button type="button" onClick={e => { e.stopPropagation(); setK(x => x + 1 >= st.length ? -1 : x + 1); }} style={{ background: k >= 0 ? 'rgba(245,217,107,0.18)' : 'rgba(237,230,214,0.08)', color: k >= 0 ? '#F5D96B' : 'rgba(237,230,214,0.6)', border: 'none', borderRadius: 999, padding: '2px 8px', fontFamily: ET.mono, fontSize: 9.5, letterSpacing: 0.6, textTransform: 'uppercase', cursor: 'pointer' }}>
+            {k < 0 ? `▸ ${st.length} steps` : `step ${k + 1} / ${st.length}`}
+          </button>
+        )}
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        {html.split('\n').map((ln, i) => {
+          const on = active && active.has(i + 1);
+          return (
+            <div key={i} style={{ display: 'flex', padding: '0 12px', opacity: active && !on ? 0.28 : 1, background: on ? 'rgba(245,217,107,0.09)' : 'transparent', transition: 'opacity 220ms, background 220ms' }}>
+              <span style={{ width: '2.4ch', flexShrink: 0, color: 'rgba(237,230,214,0.28)', userSelect: 'none' }}>{i + 1}</span>
+              <span style={{ whiteSpace: 'pre' }} dangerouslySetInnerHTML={{ __html: ln || ' ' }}></span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ImageSlot({ ink, h = 130, label = 'Drop or paste an image' }) {
+  return <div style={{ height: h, borderRadius: 10, border: `1.5px dashed ${ink}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: ink, opacity: 0.7, fontFamily: ET.mono, fontSize: 10, letterSpacing: 0.6, textTransform: 'uppercase' }}><Ic.image size={15} />{label}</div>;
+}
+
+function Block({ b, size, codeSize, ink }) {
+  if (b.type === 'text') return <div className="rt" style={{ fontFamily: ET.display, fontSize: size, lineHeight: 1.28, letterSpacing: -0.3, textWrap: 'pretty' }} dangerouslySetInnerHTML={{ __html: inlineHTML(b.text) }}></div>;
+  if (b.type === 'math') return <div style={{ fontSize: size * 0.8, overflowX: 'auto', overflowY: 'hidden' }} dangerouslySetInnerHTML={{ __html: tex(b.tex, true) }}></div>;
+  if (b.type === 'code') return <CodeBlock {...b} size={codeSize} />;
+  if (b.type === 'image') return b.src && b.src !== 'upload' ? <img src={b.src} alt={b.alt} style={{ display: 'block', maxWidth: '100%', maxHeight: size * 9, borderRadius: 10, objectFit: 'contain' }} /> : <ImageSlot ink={ink} h={size * 5} />;
+  if (b.type === 'list') return <ul style={{ fontFamily: ET.display, fontSize: size * 0.92, lineHeight: 1.3, margin: 0, paddingLeft: '1.1em' }}>{b.items.map((t, i) => <li key={i} dangerouslySetInnerHTML={{ __html: inlineHTML(t) }}></li>)}</ul>;
+  return null;
+}
+
+function Rich({ src, blocks, size = 24, codeSize = 13, ink = CARD.ink, empty }) {
+  const bs = blocks || parseMD(src);
+  if (!bs.length) return <div style={{ fontFamily: ET.display, fontSize: size, color: ink, opacity: 0.3, textAlign: 'center' }}>{empty}</div>;
+  const center = bs.length === 1 && bs[0].type === 'text';
+  return <div style={{ display: 'flex', flexDirection: 'column', gap: Math.round(size * 0.55), textAlign: center ? 'center' : 'left', color: ink }}>{bs.map((b, i) => <Block key={i} b={b} size={size} codeSize={codeSize} ink={ink} />)}</div>;
+}
+
+function FlipCard({ flipped, front, back, radius = 22, compact }) {
+  const face = (f, isBack) => (
+    <div style={{ position: 'absolute', inset: 0, borderRadius: radius, background: CARD.bg, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: isBack ? 'rotateY(180deg)' : 'none', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 1px 2px rgba(0,0,0,0.3), 0 24px 60px rgba(0,0,0,0.4)', color: CARD.ink }}>
+      <div style={{ position: 'absolute', inset: 0, backgroundImage: NOISE, mixBlendMode: 'multiply', opacity: 0.5, pointerEvents: 'none' }}></div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: compact ? '10px 16px' : '11px 20px', minHeight: 28, borderBottom: `1px solid ${CARD.ink}20`, position: 'relative', flexShrink: 0 }}>
+        <span style={{ fontFamily: ET.mono, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', opacity: 0.55 }}>{f.label}</span>
+        {f.mid}
+        <span style={{ display: 'flex', alignItems: 'center' }}>{f.right}</span>
+      </div>
+      <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>{f.body}</div>
+    </div>
+  );
+  return (
+    <div style={{ perspective: 1800, height: '100%', width: '100%' }}>
+      <div style={{ position: 'relative', height: '100%', transformStyle: 'preserve-3d', transition: 'transform 380ms cubic-bezier(0.4,0,0.2,1)', transform: flipped ? 'rotateY(180deg)' : 'none' }}>
+        {face(front, false)}{face(back, true)}
+      </div>
+    </div>
+  );
+}
+
+function QA({ face, setFace, style }) {
+  return (
+    <div style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 999, background: ET.bgCard, ...style }}>
+      {['question', 'answer'].map(f => (
+        <button key={f} type="button" onClick={e => { e.stopPropagation(); setFace(f); }} style={{ padding: '6px 16px', borderRadius: 999, border: 'none', cursor: 'pointer', fontFamily: ET.mono, fontSize: 12, letterSpacing: 0.8, textTransform: 'uppercase', background: face === f ? '#F5F5F7' : 'transparent', color: face === f ? '#0A0A0B' : 'rgba(245,245,247,0.4)' }}>{f === 'question' ? 'Q' : 'A'}</button>
+      ))}
+    </div>
+  );
+}
+
+const svg = (d, extra) => ({ size = 16, color = 'currentColor', stroke = 1.7 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round">{d.map((p, i) => <path key={i} d={p}></path>)}{extra}</svg>
+);
+const Ic = {
+  back: svg(['M15 6l-6 6 6 6']),
+  arrowR: svg(['M5 12h14', 'M13 6l6 6-6 6']),
+  plus: svg(['M12 5v14', 'M5 12h14']),
+  x: svg(['M6 6l12 12', 'M18 6L6 18']),
+  code: svg(['M8 8l-4 4 4 4', 'M16 8l4 4-4 4', 'M14 5l-4 14']),
+  sigma: svg(['M18 5H6l6 7-6 7h12']),
+  image: svg(['M4 5h16v14H4z', 'M4 16l5-5 4 4 2-2 5 5', 'M15.5 9.5h.01']),
+  list: svg(['M9 6h11', 'M9 12h11', 'M9 18h11', 'M4.5 6h.01', 'M4.5 12h.01', 'M4.5 18h.01']),
+  text: svg(['M5 6h14', 'M12 6v13', 'M9 19h6']),
+  check: svg(['M5 12.5l4.5 4.5L19 7']),
+};
+
+function useSession(start = 4) {
+  const [n, setN] = useState(start); const [anim, setAnim] = useState(null); const [toast, setToast] = useState(null); const [saved, setSaved] = useState(['Big-O of binary search?', 'Define a complete binary tree', 'Stable vs unstable sort']);
+  const saveNext = (q, reset) => {
+    setAnim('out');
+    setTimeout(() => { reset(); setSaved(s => [...s, (q || 'Untitled').split('\n')[0].replace(/[`*$#]/g, '').slice(0, 48)]); setToast(`Card ${n} saved`); setN(x => x + 1); setAnim('in'); requestAnimationFrame(() => requestAnimationFrame(() => setAnim(null))); setTimeout(() => setToast(null), 1800); }, 200);
+  };
+  const cardStyle = { height: '100%', transition: anim === 'in' ? 'none' : 'transform 200ms cubic-bezier(0.4,0,0.2,1), opacity 200ms', transform: anim === 'out' ? 'translateX(-48px)' : anim === 'in' ? 'translateX(48px)' : 'none', opacity: anim ? 0 : 1 };
+  return { n, toast, saved, saveNext, cardStyle };
+}
+
+function Toast({ text }) {
+  return <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: ET.mono, fontSize: 10, letterSpacing: 0.6, textTransform: 'uppercase', color: ET.muted, opacity: text ? 1 : 0, transition: 'opacity 240ms' }}><Ic.check size={13} color="#B8DFC4" stroke={2.2} />{text || ' '}</span>;
+}
+
+function Btn({ primary, children, onClick, kbd, small }) {
+  return (
+    <button type="button" onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: small ? '7px 14px' : '9px 16px', borderRadius: 10, cursor: 'pointer', fontFamily: ET.sans, fontSize: small ? 12 : 13.5, fontWeight: 500, background: primary ? ET.text : 'transparent', color: primary ? ET.bg : ET.muted, border: primary ? 'none' : `1px solid ${ET.border}` }}>
+      {children}
+      {kbd && <kbd style={{ fontFamily: ET.mono, fontSize: 10, padding: '1px 5px', borderRadius: 4, border: `1px solid ${primary ? 'rgba(0,0,0,0.18)' : ET.borderStrong}`, color: primary ? 'rgba(10,10,11,0.55)' : ET.faint }}>{kbd}</kbd>}
+    </button>
+  );
+}
+
+function KeyHint({ k, label }) {
+  return <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ fontFamily: ET.mono, fontSize: 10, padding: '4px 10px', borderRadius: 999, border: `1px solid ${ET.borderStrong}`, color: ET.text }}>{k}</span><span style={{ fontFamily: ET.mono, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', color: ET.faint }}>{label}</span></span>;
+}
+
+function DesktopShell({ children, hints, onKeyDown }) {
+  return (
+    <div tabIndex={-1} onKeyDown={onKeyDown} style={{ width: '100%', height: '100%', background: ET.bg, color: ET.text, fontFamily: ET.sans, display: 'flex', flexDirection: 'column', outline: 'none' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '0 28px', height: 56, borderBottom: `1px solid ${ET.border}`, flexShrink: 0 }}>
+        <Ic.back size={16} color={ET.muted} />
+        <span style={{ fontSize: 14 }}>Algorithms<span style={{ color: ET.faint }}> · New card</span></span>
+      </div>
+      <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>{children}</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 22, padding: '12px 28px', borderTop: `1px solid ${ET.border}`, flexShrink: 0 }}>{hints}</div>
+    </div>
+  );
+}
+
+function DesktopFooter({ ses, onSave, onSaveNext }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+      <span style={{ fontFamily: ET.mono, fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase', color: ET.faint }}>Card #{ses.n} · Algorithms</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <Toast text={ses.toast} />
+        <Btn>Cancel</Btn>
+        <Btn onClick={onSave}>Save</Btn>
+        <Btn primary kbd="⌘↵" onClick={onSaveNext}>Save &amp; next</Btn>
+      </div>
+    </div>
+  );
+}
+
+function MobileShell({ children, onSave, n }) {
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: ET.bg, color: ET.text, fontFamily: ET.sans, paddingTop: 54 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 16px 10px', flexShrink: 0 }}>
+        <div style={{ width: 34, height: 34, borderRadius: 999, background: ET.bgCard, border: `1px solid ${ET.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Ic.back size={16} /></div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 12, color: ET.muted }}>Algorithms · New card</div>
+          <div style={{ fontFamily: ET.mono, fontSize: 10, color: ET.faint, marginTop: 1 }}>card {n}</div>
+        </div>
+        <button type="button" onClick={onSave} style={{ padding: '7px 14px', borderRadius: 999, background: ET.text, color: ET.bg, border: 'none', fontFamily: ET.sans, fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>Save</button>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function fmt(ta, val, set, kind) {
+  const s = ta ? ta.selectionStart : val.length, e = ta ? ta.selectionEnd : val.length; const sel = val.slice(s, e);
+  const W = { bold: ['**', '**'], italic: ['*', '*'], code: (sel.includes('\n') || !sel) ? ['\n```python\n', '\n```\n'] : ['`', '`'], math: ['$', '$'], list: ['\n- ', ''], image: ['\n![image](upload)\n', ''] }[kind];
+  set(val.slice(0, s) + W[0] + sel + W[1] + val.slice(e));
+  requestAnimationFrame(() => { if (ta) { ta.focus(); ta.selectionStart = s + W[0].length; ta.selectionEnd = s + W[0].length + sel.length; } });
+}
+
+Object.assign(window, { ET, CARD, NOISE, SAMPLE_Q, SAMPLE_A, parseMD, inlineHTML, tex, CodeBlock, ImageSlot, Block, Rich, FlipCard, QA, Ic, useSession, Toast, Btn, KeyHint, DesktopShell, DesktopFooter, MobileShell, fmt });
+
+</script>
+<script type="text/babel" data-presets="react">
+// Direction A v2 — GitHub-comment simplicity: one Markdown textarea per face; rendered whenever you're not editing.
+function useSimpleFace(init) {
+  const [text, setText] = useState(init); const [editing, setEditing] = useState(false);
+  const ta = useRef(null), fileIn = useRef(null), pend = useRef(null);
+  const focusAt = (a, b = a) => { pend.current = [a, b]; };
+  const fit = (tries = 0) => { const el = ta.current; if (!el) return; el.style.height = 'auto'; const h = el.scrollHeight; if (h) el.style.height = h + 'px'; else if (tries < 60) requestAnimationFrame(() => fit(tries + 1)); };
+  useEffect(() => { if (!editing) return; const el = ta.current; if (!el) return; const ro = new ResizeObserver(() => fit()); ro.observe(el.parentElement); fit(); const t = setTimeout(() => fit(), 400); document.fonts && document.fonts.ready.then(() => fit()); return () => { ro.disconnect(); clearTimeout(t); }; }, [editing]);
+  useLayoutEffect(() => {
+    const el = ta.current; if (!el) return;
+    fit();
+    if (pend.current) { const [a, b] = pend.current; pend.current = null; el.focus({ preventScroll: true }); el.setSelectionRange(a, b); }
+  });
+  const open = (at) => { setEditing(true); focusAt(at == null ? text.length : at); };
+  const close = () => setEditing(false);
+  const replace = (a, b, ins, selA, selB) => { const v = text.slice(0, a) + ins + text.slice(b); setText(v); setEditing(true); focusAt(a + selA, a + (selB == null ? selA : selB)); };
+  const sel = () => { const el = ta.current; return editing && el ? [el.selectionStart, el.selectionEnd] : [text.length, text.length]; };
+  const lineStart = (a) => text.lastIndexOf('\n', a - 1) + 1;
+  const fmt = (k) => {
+    if (k === 'image') return fileIn.current && fileIn.current.click();
+    const [a, b] = sel(); const s = text.slice(a, b);
+    const nl = a > 0 && text[a - 1] !== '\n' ? '\n\n' : (a > 0 && text[a - 2] !== '\n' ? '\n' : '');
+    if (k === 'bold') return replace(a, b, `**${s}**`, 2, 2 + s.length);
+    if (k === 'italic') return replace(a, b, `*${s}*`, 1, 1 + s.length);
+    if (k === 'code') { if (s && !s.includes('\n')) return replace(a, b, '`' + s + '`', 1, 1 + s.length); const ins = `${nl}\`\`\`python\n${s}\n\`\`\``; return replace(a, b, ins, nl.length + 10 + s.length); }
+    if (k === 'math') { if (s || (a > 0 && text[a - 1] !== '\n')) return replace(a, b, `$${s}$`, 1, 1 + s.length); const ins = `${nl}$$\n${s}\n$$`; return replace(a, b, ins, nl.length + 3 + s.length); }
+    if (k === 'list') { const ls = lineStart(a); return replace(ls, ls, '- ', 2 + (a - ls)); }
+  };
+  const insertImage = (file) => { if (!file || !file.type.startsWith('image/')) return; const [a, b] = sel(); const nl = a > 0 && text[a - 1] !== '\n' ? '\n\n' : ''; const ins = `${nl}![${file.name.replace(/\.\w+$/, '')}](${URL.createObjectURL(file)})\n`; replace(a, b, ins, ins.length); };
+  const onKeyDown = (e) => {
+    const el = e.currentTarget, mod = e.metaKey || e.ctrlKey, a = el.selectionStart;
+    if (e.key === 'Escape') { e.preventDefault(); el.blur(); close(); return; }
+    if (mod && (e.key === 'b' || e.key === 'i')) { e.preventDefault(); fmt(e.key === 'b' ? 'bold' : 'italic'); return; }
+    const before = text.slice(0, a); const inCode = ((before.match(/^```/gm) || []).length % 2) === 1;
+    if (e.key === 'Tab' && inCode) { e.preventDefault(); e.stopPropagation(); replace(a, el.selectionEnd, '    ', 4); return; }
+    if (e.key === 'Enter' && !mod && !e.shiftKey && a === el.selectionEnd) {
+      const ls = lineStart(a); const line = text.slice(ls, a); const m = line.match(/^(\s*)([-*]) (.*)$/);
+      if (m) { e.preventDefault(); if (!m[3]) replace(ls, a, '', 0); else replace(a, a, `\n${m[1]}${m[2]} `, m[1].length + 3); }
+    }
+  };
+  return { text, setText, editing, open, close, fmt, insertImage, onKeyDown, ta, fileIn, reset: (focus) => { setText(''); if (focus) { setEditing(true); focusAt(0); } else setEditing(false); } };
+}
+
+const simpleMono = { fontFamily: ET.mono, fontSize: 9.5, letterSpacing: 0.6, textTransform: 'uppercase' };
+
+function SimpleFace({ f, size, codeSize, mobile, bottomPad, placeholder }) {
+  const ink = CARD.ink;
+  const pad = mobile ? `18px 20px ${bottomPad}px` : `26px 44px ${bottomPad}px`;
+  const onDrop = e => { e.preventDefault(); f.insertImage(e.dataTransfer.files[0]); };
+  const onPaste = e => { const file = [...(e.clipboardData.files || [])].find(x => x.type.startsWith('image/')); if (file) { e.preventDefault(); f.insertImage(file); } };
+  return (
+    <div onDragOver={e => e.preventDefault()} onDrop={onDrop} style={{ position: 'absolute', inset: 0, overflowY: 'auto', padding: pad, display: 'flex', flexDirection: 'column' }}>
+      <input ref={f.fileIn} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { f.insertImage(e.target.files[0]); e.target.value = ''; }} />
+      {f.editing ? (
+        <>
+          <textarea ref={f.ta} rows={3} value={f.text} placeholder={placeholder + '   **bold**  `code`  $math$'} spellCheck={false} onChange={e => f.setText(e.target.value)} onKeyDown={f.onKeyDown} onPaste={onPaste} onBlur={e => { const r = e.relatedTarget; if (r && (r.tagName === 'TEXTAREA' || e.currentTarget.closest('[data-face]').contains(r))) return; f.close(); }} style={{ display: 'block', width: '100%', minHeight: '6em', fieldSizing: 'content', resize: 'none', overflow: 'hidden', outline: 'none', border: 'none', background: 'transparent', color: ink, caretColor: ink, fontFamily: ET.mono, fontSize: mobile ? 12.5 : 14, lineHeight: 1.65, padding: 0 }}></textarea>
+          <div style={{ marginTop: 14, paddingTop: 8, borderTop: `1px dashed ${ink}30`, ...simpleMono, color: `${ink}99`, display: 'flex', flexWrap: 'wrap', gap: '4px 12px' }}>
+            <span>Markdown supported</span><span>Paste, drop or click to add images</span>
+          </div>
+        </>
+      ) : (
+        <div className="seg" onMouseDown={e => { if (e.target.closest('button,a')) return; e.preventDefault(); f.open(); }} style={{ cursor: 'text', display: 'flex', flexDirection: 'column', gap: Math.round(size * 0.55), color: ink, margin: '-6px -10px', padding: '6px 10px', borderRadius: 8 }}>
+          {f.text.trim() ? parseMD(f.text).map((b, i) => <Block key={i} b={b} size={size} codeSize={codeSize} ink={ink} />) : <div style={{ fontFamily: ET.display, fontSize: size, opacity: 0.3 }}>{placeholder}</div>}
+        </div>
+      )}
+      <div onMouseDown={e => { e.preventDefault(); if (!f.editing) f.open(); else f.ta.current && f.ta.current.focus(); }} style={{ flex: 1, minHeight: 40, cursor: 'text' }}></div>
+    </div>
+  );
+}
+
+function SimpleFmtBar({ onFmt, color, gap = 2, size = 26 }) {
+  const items = [['bold', 'Bold ⌘B', <span style={{ fontFamily: ET.sans, fontWeight: 700, fontSize: 13 }}>B</span>], ['italic', 'Italic ⌘I', <span style={{ fontFamily: ET.display, fontStyle: 'italic', fontSize: 16 }}>I</span>], ['code', 'Code', <Ic.code size={15} />], ['math', 'Math', <Ic.sigma size={14} />], ['list', 'List', <Ic.list size={15} />], ['image', 'Image', <Ic.image size={15} />]];
+  return <div style={{ display: 'flex', alignItems: 'center', gap }}>{items.map(([k, t, g]) => <button key={k} type="button" title={t} onMouseDown={e => e.preventDefault()} onClick={() => onFmt(k)} className="fmtbtn" style={{ width: size, height: size, borderRadius: 7, border: 'none', background: 'transparent', color, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>{g}</button>)}</div>;
+}
+
+function useSimpleDraft(startFace, editStart) {
+  const q = useSimpleFace(SAMPLE_Q), a = useSimpleFace(SAMPLE_A.replace(/(```\w*)[ \t]*\{[^}]*\}/g, '$1'));
+  const [face, setFace] = useState(startFace);
+  useEffect(() => { if (editStart) (startFace === 'question' ? q : a).open(); }, []);
+  const cur = face === 'question' ? q : a;
+  const flip = () => { const to = face === 'question' ? 'answer' : 'question'; const from = cur, nxt = to === 'question' ? q : a; const wasEditing = from.editing; setFace(to); if (wasEditing) { nxt.open(); setTimeout(from.close, 420); } else nxt.close(); };
+  const reset = () => { a.reset(false); q.reset(true); setFace('question'); };
+  return { q, a, face, cur, flip, reset };
+}
+
+function EditorSimple_Desktop() {
+  const d = useSimpleDraft('answer', false); const ses = useSession();
+  const next = () => ses.saveNext(d.q.text, d.reset);
+  const onKey = e => {
+    const mod = e.metaKey || e.ctrlKey;
+    if (e.key === 'Tab') { e.preventDefault(); d.flip(); }
+    if (e.key === 'Enter' && mod) { e.preventDefault(); next(); }
+  };
+  const face = w => {
+    const f = w === 'question' ? d.q : d.a;
+    return {
+      label: w === 'question' ? 'Question' : 'Answer',
+      right: <SimpleFmtBar color={CARD.ink} onFmt={f.fmt} />,
+      body: <div data-face style={{ position: 'absolute', inset: 0 }}><SimpleFace f={f} size={25} codeSize={13} bottomPad={74} placeholder={w === 'question' ? "What's the question?" : 'Write the answer…'} /><div style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)' }}><QA face={d.face} setFace={x => x !== d.face && d.flip()} /></div></div>,
+    };
+  };
+  return (
+    <DesktopShell onKeyDown={onKey} hints={<><KeyHint k="Click" label="edit" /><KeyHint k="Esc" label="done" /><KeyHint k="Tab" label="flip" /><KeyHint k="⌘B ⌘I" label="format" /><KeyHint k="⌘↵" label="save & next" /></>}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 22, padding: 24 }}>
+        <div style={{ width: '100%', maxWidth: 760, height: 540 }}><div style={ses.cardStyle}><FlipCard flipped={d.face === 'answer'} front={face('question')} back={face('answer')} /></div></div>
+        <div style={{ width: '100%', maxWidth: 760 }}><DesktopFooter ses={ses} onSave={() => {}} onSaveNext={next} /></div>
+      </div>
+    </DesktopShell>
+  );
+}
+
+function EditorSimple_Mobile() {
+  const d = useSimpleDraft('answer', false); const ses = useSession();
+  const next = () => ses.saveNext(d.q.text, d.reset);
+  const face = w => {
+    const f = w === 'question' ? d.q : d.a;
+    return {
+      label: w === 'question' ? 'Question' : 'Answer',
+      right: f.editing ? <button type="button" onMouseDown={e => e.preventDefault()} onClick={f.close} style={{ ...simpleMono, letterSpacing: 0.7, border: 'none', borderRadius: 999, padding: '5px 10px', background: CARD.ink, color: CARD.bg, cursor: 'pointer' }}>Done</button> : null,
+      body: <div data-face style={{ position: 'absolute', inset: 0 }}><SimpleFace f={f} mobile size={19} codeSize={10.5} bottomPad={66} placeholder={w === 'question' ? "What's the question?" : 'Write the answer…'} /><div style={{ position: 'absolute', bottom: 14, left: '50%', transform: 'translateX(-50%)' }}><QA face={d.face} setFace={x => x !== d.face && d.flip()} /></div></div>,
+    };
+  };
+  return (
+    <MobileShell n={ses.n}>
+      <div style={{ flex: 1, minHeight: 0, padding: '0 12px 10px' }}><div style={ses.cardStyle}><FlipCard compact flipped={d.face === 'answer'} front={face('question')} back={face('answer')} /></div></div>
+      <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 10px 30px', borderTop: `1px solid ${ET.border}`, background: ET.bgElev }}>
+        <SimpleFmtBar color={ET.text} gap={0} size={38} onFmt={d.cur.fmt} />
+        <button type="button" onClick={next} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 14px', borderRadius: 999, background: CARD.bg, color: CARD.ink, border: 'none', fontFamily: ET.sans, fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>Next<Ic.arrowR size={14} stroke={2.2} /></button>
+      </div>
+    </MobileShell>
+  );
+}
+
+Object.assign(window, { EditorSimple_Desktop, EditorSimple_Mobile });
+
+</script>
+<script type="text/babel">
+const mount = (id, el) => ReactDOM.createRoot(document.getElementById(id)).render(el);
+mount('l-desk', <EditorSimple_Desktop />);
+mount('l-mob', <IOSDevice dark width={402} height={874}><EditorSimple_Mobile /></IOSDevice>);
+</script>
+<script>
+function fitStage(){const s=document.getElementById('stage'),w=document.getElementById('wrap');const z=Math.min(1,window.innerWidth/1794);s.style.transform='scale('+z+')';w.style.height=(s.offsetHeight*z)+'px';}
+addEventListener('resize',fitStage);fitStage();
+</script>
+</body>
+</html>
