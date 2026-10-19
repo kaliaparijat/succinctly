@@ -158,11 +158,20 @@ describe('CardEditor — mobile skeleton', () => {
 describe('CardEditor — mobile card body (Screen 3 tokens)', () => {
   beforeEach(() => mockUseIsMobile.mockReturnValue(true))
 
-  it('shows "Draft" instead of the deck title on both faces', () => {
+  it('shows a "Done" pill on both faces while both start editing', () => {
     render(<CardEditor deck={mockDeck} cardNumber={1} />)
-    // Both card faces read "Draft" — the deck title still appears once, in the top bar label.
-    expect(screen.getAllByText('Draft')).toHaveLength(2)
+    // Both faces start in editing mode (see useMarkdownFace calls in
+    // CardEditor), so both read "Done" rather than "Draft" at mount — the
+    // deck title still appears once, in the top bar label.
+    expect(screen.getAllByRole('button', { name: /^done$/i })).toHaveLength(2)
     expect(screen.getAllByText(mockDeck.title)).toHaveLength(1)
+  })
+
+  it('shows "Draft" on a face once it stops editing', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    const [firstDone] = screen.getAllByRole('button', { name: /^done$/i })
+    fireEvent.click(firstDone)
+    expect(screen.getByText('Draft')).toBeInTheDocument()
   })
 
   it('renders no error text by default', () => {
@@ -209,5 +218,53 @@ describe('CardEditor — flip duration', () => {
   it('uses the flipDuration prop when provided', () => {
     render(<CardEditor deck={mockDeck} cardNumber={1} flipDuration={570} />)
     expect(screen.getByTestId('flip-card')).toHaveStyle({ transitionDuration: '570ms' })
+  })
+})
+
+describe('CardEditor — Markdown toolbar presence', () => {
+  it('renders a formatting toolbar per face on desktop', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    expect(screen.getAllByTitle(/bold/i)).toHaveLength(2)
+    expect(screen.getAllByTitle(/italic/i)).toHaveLength(2)
+  })
+
+  it('renders a single formatting toolbar in the mobile bottom bar', () => {
+    mockUseIsMobile.mockReturnValue(true)
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    expect(screen.getAllByTitle(/bold/i)).toHaveLength(1)
+  })
+})
+
+describe('CardEditor — form submission carries both faces regardless of editing state', () => {
+  it('submits both question and reference_answer even though only one face is "front" when saving', async () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    const [questionTextarea, answerTextarea] = screen.getAllByRole('textbox')
+
+    fireEvent.change(questionTextarea, { target: { value: 'What is **Big-O**?' } })
+    fireEvent.change(answerTextarea, { target: { value: 'A growth-rate bound.' } })
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /save card/i }))
+    })
+
+    const submittedData = vi.mocked(createCard).mock.calls.at(-1)?.[0] as FormData
+    expect(submittedData.get('question')).toBe('What is **Big-O**?')
+    expect(submittedData.get('reference_answer')).toBe('A growth-rate bound.')
+  })
+})
+
+describe('CardEditor — Tab inside a fenced code block does not flip', () => {
+  it('inserts spaces and keeps the question face front when the caret is inside an open fence', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    const [questionTextarea] = screen.getAllByRole('textbox') as HTMLTextAreaElement[]
+
+    fireEvent.change(questionTextarea, { target: { value: '```python\ndef f():\n' } })
+    questionTextarea.selectionStart = questionTextarea.value.length
+    questionTextarea.selectionEnd = questionTextarea.value.length
+
+    fireEvent.keyDown(questionTextarea, { key: 'Tab' })
+
+    expect(screen.getByTestId('flip-card')).toHaveStyle({ transform: 'rotateY(0deg)' })
+    expect((screen.getAllByRole('textbox')[0] as HTMLTextAreaElement).value).toBe('```python\ndef f():\n    ')
   })
 })

@@ -2,6 +2,9 @@ import { PAPER_NOISE } from '@/lib/palette'
 import { CreateBar } from '@/components/layout/TopBar'
 import QAToggle from '@/components/ui/QAToggle'
 import KeyPill from '@/components/ui/KeyPill'
+import MarkdownFace from '@/components/cards/markdown/MarkdownFace'
+import FormatToolbar from '@/components/cards/markdown/FormatToolbar'
+import type { useMarkdownFace } from '@/components/cards/markdown/useMarkdownFace'
 
 interface Deck {
   id: string
@@ -21,8 +24,8 @@ interface Props {
   face: Face
   flipped: boolean
   setFace: (face: Face) => void
-  questionRef: React.RefObject<HTMLTextAreaElement | null>
-  answerRef: React.RefObject<HTMLTextAreaElement | null>
+  questionFace: ReturnType<typeof useMarkdownFace>
+  answerFace: ReturnType<typeof useMarkdownFace>
   formRef: React.RefObject<HTMLFormElement | null>
   formAction: (formData: FormData) => void
   pending: boolean
@@ -34,7 +37,7 @@ interface Props {
 
 export default function DesktopCardEditor({
   deck, cardNumber, flipDuration, bg, ink, face, flipped, setFace, previousCardId,
-  questionRef, answerRef, formRef, formAction, pending, state, onKeyDown, onCancel,
+  questionFace, answerFace, formRef, formAction, pending, state, onKeyDown, onCancel,
 }: Props) {
   return (
     <div className="min-h-screen bg-surface flex flex-col">
@@ -68,14 +71,17 @@ export default function DesktopCardEditor({
                 className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-50"
                 style={{ backgroundImage: PAPER_NOISE }}
               />
-              <CardHeader label="Question" deckName={deck.title} />
-              <div className="flex-1 relative">
-                <textarea
-                  ref={questionRef}
+              <CardHeader label="Question" toolbar={<FormatToolbar onFmt={questionFace.fmt} color="var(--card-ink)" />} />
+              <div className="flex-1 relative px-10 pt-4 pb-14">
+                <MarkdownFace
                   name="question"
+                  face={questionFace}
                   placeholder="What's the question?"
+                  ink="var(--card-ink)"
+                  size={25}
+                  codeSize={13}
                   onKeyDown={onKeyDown}
-                  className="absolute inset-0 w-full h-full bg-transparent resize-none outline-none px-10 pt-4 pb-14 font-display leading-snug text-[clamp(20px,3vw,38px)] tracking-[-0.5px] text-[var(--card-ink)] placeholder:opacity-30 placeholder:text-center"
+                  autoFocus={face === 'question'}
                 />
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
                   <QAToggle face={face} onChange={setFace} />
@@ -89,14 +95,17 @@ export default function DesktopCardEditor({
                 className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-50"
                 style={{ backgroundImage: PAPER_NOISE }}
               />
-              <CardHeader label="Answer" deckName={deck.title} />
-              <div className="flex-1 relative">
-                <textarea
-                  ref={answerRef}
+              <CardHeader label="Answer" toolbar={<FormatToolbar onFmt={answerFace.fmt} color="var(--card-ink)" />} />
+              <div className="flex-1 relative px-10 pt-4 pb-14">
+                <MarkdownFace
                   name="reference_answer"
+                  face={answerFace}
                   placeholder="Write the answer…"
+                  ink="var(--card-ink)"
+                  size={25}
+                  codeSize={13}
                   onKeyDown={onKeyDown}
-                  className="absolute inset-0 w-full h-full bg-transparent resize-none outline-none px-10 pt-4 pb-14 font-display leading-snug text-[clamp(20px,3vw,38px)] tracking-[-0.5px] text-[var(--card-ink)] placeholder:opacity-30 placeholder:text-center"
+                  autoFocus={face === 'answer'}
                 />
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
                   <QAToggle face={face} onChange={setFace} />
@@ -142,11 +151,11 @@ export default function DesktopCardEditor({
   )
 }
 
-function CardHeader({ label, deckName }: { label: string; deckName: string }) {
+function CardHeader({ label, toolbar }: { label: string; toolbar: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between px-5 py-3 shrink-0 border-b border-[color:var(--card-ink-subtle)]">
       <span className="font-mono text-[10px] uppercase tracking-[0.8px] text-[var(--card-ink)] opacity-50">{label}</span>
-      <span className="font-sans text-[11px] text-[var(--card-ink)] opacity-40">{deckName}</span>
+      {toolbar}
     </div>
   )
 }
