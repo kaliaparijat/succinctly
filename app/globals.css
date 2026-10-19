@@ -62,3 +62,18 @@ body {
   font-family: var(--font-inter-tight), sans-serif;
   overscroll-behavior: none;
 }
+
+/*
+ * Card-editor code block syntax colors (CodeBlock.tsx). Hand-mapped to
+ * highlight.js's token classes instead of importing a stock hljs theme —
+ * see docs/specs/issue-18-markdown-card-editor/spec.md's "New dependencies"
+ * section for why.
+ */
+.hljs-keyword { color: #F5D96B; }
+.hljs-built_in { color: #F5D96B; }
+.hljs-string { color: #B8DFC4; }
+.hljs-number,
+.hljs-literal { color: #F2A68F; }
+.hljs-comment { color: rgba(237, 230, 214, 0.45); font-style: italic; }
+.hljs-title.function_ { color: #A8C8E8; }
+.hljs-meta { color: #D4BFE8; }
