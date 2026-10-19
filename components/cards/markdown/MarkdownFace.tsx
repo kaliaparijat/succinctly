@@ -9,6 +9,8 @@ interface Props {
   codeSize?: number
   ink?: string
   className?: string
+  /** Extra classes for the editing textarea itself — font/size/color/placeholder tokens, which differ per breakpoint. */
+  textareaClassName?: string
   /**
    * Called after the face's own onKeyDown (Escape/⌘B/⌘I/Tab-in-fence/list
    * Enter), but only if that didn't call stopPropagation() — e.g. CardEditor's
@@ -26,7 +28,7 @@ interface Props {
   autoFocus?: boolean
 }
 
-export default function MarkdownFace({ name, face, placeholder, size = 24, codeSize = 13, ink, className, onKeyDown, autoFocus = true }: Props) {
+export default function MarkdownFace({ name, face, placeholder, size = 24, codeSize = 13, ink, className, textareaClassName = '', onKeyDown, autoFocus = true }: Props) {
   const { text, editing, open, close, setText, textareaRef, onKeyDown: faceOnKeyDown } = face
 
   function handleBlur(e: React.FocusEvent<HTMLDivElement>) {
@@ -47,7 +49,7 @@ export default function MarkdownFace({ name, face, placeholder, size = 24, codeS
   }
 
   return (
-    <div data-face className={className} onBlur={handleBlur} style={{ position: 'relative', flex: 1 }}>
+    <div data-face className={`absolute inset-0 ${className ?? ''}`} onBlur={handleBlur}>
       <input type="hidden" name={name} value={text} readOnly />
       {editing ? (
         <textarea
@@ -57,7 +59,7 @@ export default function MarkdownFace({ name, face, placeholder, size = 24, codeS
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           autoFocus={autoFocus}
-          className="absolute inset-0 w-full h-full bg-transparent resize-none outline-none"
+          className={`absolute inset-0 w-full h-full bg-transparent resize-none outline-none ${textareaClassName}`}
         />
       ) : (
         <div

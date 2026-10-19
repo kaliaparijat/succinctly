@@ -85,6 +85,7 @@ export default function MobileCardEditor({
                   codeSize={10.5}
                   onKeyDown={onKeyDown}
                   autoFocus={face === 'question'}
+                  textareaClassName="font-display text-center leading-[1.3] text-[26px] landscape:text-[22px] tracking-[-0.3px] text-[var(--card-ink)] placeholder:opacity-30"
                 />
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
                   <QAToggle face={face} onChange={setFace} />
@@ -109,6 +110,7 @@ export default function MobileCardEditor({
                   codeSize={10.5}
                   onKeyDown={onKeyDown}
                   autoFocus={face === 'answer'}
+                  textareaClassName="font-display text-center leading-[1.3] text-[26px] landscape:text-[22px] tracking-[-0.3px] text-[var(--card-ink)] placeholder:opacity-30"
                 />
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
                   <QAToggle face={face} onChange={setFace} />

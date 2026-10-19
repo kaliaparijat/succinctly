@@ -108,16 +108,33 @@ alongside the (sometimes-absent) visible `<textarea>`. The visible textarea
 itself carries no `name` — it's write-only UI for the hidden input's value.
 
 ### Initial state
-Both faces start in `editing` mode on a fresh `/cards/new` (Question
-autofocused, same as today). This isn't what the prototype's demo harness
-does (it opens with Answer flipped-to and *not* editing, for screenshot
-purposes), but starting both faces open preserves today's "just start typing
-either face" flow with no extra click, and still gets the real payoff of the
-redesign: flip Question → Answer and back, and Question now shows its
-*rendered* Markdown (bold applied, code highlighted) rather than raw syntax,
-because `editor-simple.jsx`'s flip behavior renders the outgoing face once
-the flip animation completes (~420ms) and opens the incoming face in edit
-mode immediately.
+Only the Question face starts in `editing` mode on a fresh `/cards/new`
+(autofocused, same as today); Answer starts closed/click-to-edit, matching
+the design doc's "the New card flow opens with the Question face already
+editing."
+
+An earlier draft of this spec called for *both* faces starting in editing
+mode, reasoning that it'd preserve today's "just start typing either face"
+flow with no extra click. **Implemented and reverted** — caught live in the
+browser, not by unit tests: a face's `editing` flag is also `flipTo()`'s
+signal for "this was an active session, so open the incoming face in edit
+mode too" (`editor-simple.jsx`'s `flip()`: `if (wasEditing) { nxt.open();
+setTimeout(from.close, 420) }`). If Answer defaults to `editing: true` and
+is simply never touched, that permanently-true flag makes the *first* flip
+away from it re-open Question in raw edit mode too — even right after
+Question had already rendered its finished Markdown on its own explicit
+close. jsdom doesn't enforce backface-hidden hit-testing the way a real 3D
+flip does, so this only surfaced once actually flipping the card by hand.
+Starting Answer closed means its `editing` flag only ever goes true via a
+real navigation into it (click, Tab, QA toggle) — at which point it's
+legitimately an active session, and the signal means what it says.
+
+The resulting rule, confirmed live: hopping between faces *while actively
+editing* keeps both in edit mode (per the design: "if you were editing, the
+incoming face opens in edit mode at once"); the "preview rendered Markdown"
+payoff shows up once a face is explicitly closed (Esc, or blur away from the
+whole card) and you flip elsewhere — matching "if you were viewing, both
+faces stay rendered."
 
 ### Existing Tab-to-flip integration
 `CardEditor.tsx`'s top-level `handleKeyDown` (Tab → flip face, focus the
@@ -145,23 +162,23 @@ other side after `flipDuration`) stays, but face-local Tab handling (insert
   card editor spec — manual/devtools-verified, not unit-tested.
 
 ## Acceptance Criteria
-- [ ] Each face renders Markdown (bold, italic, inline code, fenced code with
+- [x] Each face renders Markdown (bold, italic, inline code, fenced code with
       syntax highlighting, inline/display math, bullet lists) when not being
       edited, and a raw Markdown textarea when clicked/tapped into
-- [ ] Formatting toolbar (Bold/Italic/Code/Math/List — no Image) present on
+- [x] Formatting toolbar (Bold/Italic/Code/Math/List — no Image) present on
       both faces, desktop (header, right-aligned) and mobile (bottom bar);
       ⌘B/⌘I work from anywhere in the textarea
-- [ ] Tab inside an open fenced code block inserts 4 spaces and does not flip
+- [x] Tab inside an open fenced code block inserts 4 spaces and does not flip
       the card; Tab elsewhere still flips, matching today's behavior
-- [ ] Submitting the form always includes both faces' current Markdown
+- [x] Submitting the form always includes both faces' current Markdown
       source in `FormData` (`question`, `reference_answer`), regardless of
       which face is currently rendered vs. editing
-- [ ] Save still calls `createCard` and `navigateWithTransition` to the new
+- [x] Save still calls `createCard` and `navigateWithTransition` to the new
       card's page, unchanged from current behavior (no "Save & next")
-- [ ] Cancel behavior (previousCardId-or-`/library`) unchanged
-- [ ] No Image button/paste/drop handling present in this round
-- [ ] `StudyViewer` is untouched — cards still render as plain text there
-- [ ] At >768px and ≤768px, respectively, the editor matches the design
+- [x] Cancel behavior (previousCardId-or-`/library`) unchanged
+- [x] No Image button/paste/drop handling present in this round
+- [x] `StudyViewer` is untouched — cards still render as plain text there
+- [x] At >768px and ≤768px, respectively, the editor matches the design
       doc's desktop/mobile tokens for the face chrome, toolbar and rendered
       content styles
-- [ ] `npm test` and `npm run build` pass
+- [x] `npm test` and `npm run build` pass

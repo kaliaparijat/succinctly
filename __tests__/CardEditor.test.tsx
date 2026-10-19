@@ -47,11 +47,12 @@ describe('CardEditor — create mode', () => {
     expect(container.querySelector('input[name="id"]')).toBeNull()
   })
 
-  it('renders empty textareas', () => {
+  it('renders an empty, editable question textarea; the answer face starts closed (click-to-edit)', () => {
     render(<CardEditor deck={mockDeck} cardNumber={1} />)
-    const [question, answer] = screen.getAllByRole('textbox')
+    const [question] = screen.getAllByRole('textbox')
     expect(question).toHaveValue('')
-    expect(answer).toHaveValue('')
+    expect(screen.queryAllByRole('textbox')).toHaveLength(1)
+    expect(screen.getByText('Write the answer…')).toBeInTheDocument()
   })
 })
 
@@ -158,20 +159,21 @@ describe('CardEditor — mobile skeleton', () => {
 describe('CardEditor — mobile card body (Screen 3 tokens)', () => {
   beforeEach(() => mockUseIsMobile.mockReturnValue(true))
 
-  it('shows a "Done" pill on both faces while both start editing', () => {
+  it('shows a "Done" pill on the question face (starts editing) and "Draft" on the answer face (starts closed)', () => {
     render(<CardEditor deck={mockDeck} cardNumber={1} />)
-    // Both faces start in editing mode (see useMarkdownFace calls in
-    // CardEditor), so both read "Done" rather than "Draft" at mount — the
-    // deck title still appears once, in the top bar label.
-    expect(screen.getAllByRole('button', { name: /^done$/i })).toHaveLength(2)
+    // Only Question starts editing — see the comment on its useMarkdownFace
+    // call in CardEditor.tsx for why Answer must start closed, not editing.
+    // The deck title still appears once, in the top bar label.
+    expect(screen.getAllByRole('button', { name: /^done$/i })).toHaveLength(1)
+    expect(screen.getByText('Draft')).toBeInTheDocument()
     expect(screen.getAllByText(mockDeck.title)).toHaveLength(1)
   })
 
-  it('shows "Draft" on a face once it stops editing', () => {
+  it('shows "Draft" on the question face too once it stops editing', () => {
     render(<CardEditor deck={mockDeck} cardNumber={1} />)
-    const [firstDone] = screen.getAllByRole('button', { name: /^done$/i })
-    fireEvent.click(firstDone)
-    expect(screen.getByText('Draft')).toBeInTheDocument()
+    const [done] = screen.getAllByRole('button', { name: /^done$/i })
+    fireEvent.click(done)
+    expect(screen.getAllByText('Draft')).toHaveLength(2)
   })
 
   it('renders no error text by default', () => {
@@ -238,9 +240,12 @@ describe('CardEditor — Markdown toolbar presence', () => {
 describe('CardEditor — form submission carries both faces regardless of editing state', () => {
   it('submits both question and reference_answer even though only one face is "front" when saving', async () => {
     render(<CardEditor deck={mockDeck} cardNumber={1} />)
-    const [questionTextarea, answerTextarea] = screen.getAllByRole('textbox')
-
+    const [questionTextarea] = screen.getAllByRole('textbox')
     fireEvent.change(questionTextarea, { target: { value: 'What is **Big-O**?' } })
+
+    // Answer starts closed (click-to-edit) — open it before typing into it.
+    fireEvent.mouseDown(screen.getByText('Write the answer…'))
+    const [, answerTextarea] = screen.getAllByRole('textbox')
     fireEvent.change(answerTextarea, { target: { value: 'A growth-rate bound.' } })
 
     await act(async () => {

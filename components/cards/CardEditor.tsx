@@ -28,8 +28,19 @@ interface Props {
 
 export default function CardEditor({ deck, cardNumber, previousCardId, flipDuration = 380 }: Props) {
   const [face, setFace] = useState<Face>('question')
+  // Only the Question face starts editing (matches the design: "the New
+  // card flow opens with the Question face already editing"). The Answer
+  // face starts closed/click-to-edit — not just to match the design, but
+  // because starting both editing is actively wrong: a face's `editing` flag
+  // is also flipTo()'s signal for "this was an active session, so open the
+  // incoming face in edit mode too." If Answer defaulted to editing=true
+  // and was simply never touched, that stale "true" would make the first
+  // later flip-away-from-Answer re-open Question in raw edit mode even
+  // after Question had already rendered its finished Markdown — caught live
+  // in the browser, not by the unit tests, since jsdom doesn't enforce
+  // backface-hidden hit-testing the way a real flip does.
   const questionFace = useMarkdownFace({ initialEditing: true })
-  const answerFace = useMarkdownFace({ initialEditing: true })
+  const answerFace = useMarkdownFace({ initialEditing: false })
   const formRef = useRef<HTMLFormElement>(null)
   const router = useRouter()
   const isMobile = useIsMobile()

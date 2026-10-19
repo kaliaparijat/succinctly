@@ -8,14 +8,24 @@ function TestFace({
   initialEditing = false,
   name = 'question',
   onKeyDown,
+  textareaClassName,
 }: {
   initialText?: string
   initialEditing?: boolean
   name?: string
   onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
+  textareaClassName?: string
 }) {
   const face = useMarkdownFace({ initialText, initialEditing })
-  return <MarkdownFace name={name} face={face} placeholder="What's the question?" onKeyDown={onKeyDown} />
+  return (
+    <MarkdownFace
+      name={name}
+      face={face}
+      placeholder="What's the question?"
+      onKeyDown={onKeyDown}
+      textareaClassName={textareaClassName}
+    />
+  )
 }
 
 describe('MarkdownFace — render/edit toggle', () => {
@@ -105,5 +115,32 @@ describe('MarkdownFace — composed onKeyDown', () => {
     textarea.selectionStart = textarea.selectionEnd = textarea.value.length
     fireEvent.keyDown(textarea, { key: 'Tab' })
     expect(outer).not.toHaveBeenCalled()
+  })
+})
+
+describe('MarkdownFace — textarea styling', () => {
+  it('applies the caller-supplied textareaClassName to the editing textarea', () => {
+    render(<TestFace initialText="" initialEditing textareaClassName="font-display text-[25px]" />)
+    const textarea = screen.getByRole('textbox')
+    expect(textarea.className).toContain('font-display')
+    expect(textarea.className).toContain('text-[25px]')
+    // Base positioning classes are still present alongside the caller's.
+    expect(textarea.className).toContain('absolute inset-0')
+  })
+})
+
+describe('MarkdownFace — layout (the one jsdom can pin at the class level)', () => {
+  it('the face root fills its positioned flex-item parent via absolute inset-0, not flex:1 on an unpositioned wrapper', () => {
+    // Regression: an earlier version used style={position:'relative', flex:1}
+    // on this root div. flex:1 only resolves against a `display:flex` parent —
+    // the real parent here is a plain block div — so the root collapsed to
+    // 0 height, and the textarea's `inset-0`/`h-full` (which resolve against
+    // the *nearest positioned ancestor*, this root) then resolved against
+    // that zero-height box. jsdom doesn't compute real layout, so this only
+    // pins the class-level fix; see the plan's note that textarea auto-grow/
+    // real layout resolution needs the Phase 6.2 live browser check.
+    const { container } = render(<TestFace initialText="Hello" initialEditing />)
+    const root = container.querySelector('[data-face]')
+    expect(root).toHaveClass('absolute', 'inset-0')
   })
 })

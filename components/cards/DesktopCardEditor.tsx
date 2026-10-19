@@ -82,6 +82,7 @@ export default function DesktopCardEditor({
                   codeSize={13}
                   onKeyDown={onKeyDown}
                   autoFocus={face === 'question'}
+                  textareaClassName="font-display leading-snug text-[clamp(20px,3vw,38px)] tracking-[-0.5px] text-[var(--card-ink)] placeholder:opacity-30 placeholder:text-center"
                 />
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
                   <QAToggle face={face} onChange={setFace} />
@@ -106,6 +107,7 @@ export default function DesktopCardEditor({
                   codeSize={13}
                   onKeyDown={onKeyDown}
                   autoFocus={face === 'answer'}
+                  textareaClassName="font-display leading-snug text-[clamp(20px,3vw,38px)] tracking-[-0.5px] text-[var(--card-ink)] placeholder:opacity-30 placeholder:text-center"
                 />
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
                   <QAToggle face={face} onChange={setFace} />
