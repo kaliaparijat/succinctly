@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef, useEffect, startTransition } from 'react'
+import { useState, useCallback, useMemo, useRef, useEffect, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { PALETTES, stableTilt, type Palette } from '@/lib/palette'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
@@ -49,6 +49,10 @@ export default function StudyViewer({
   const [helpOpen, setHelpOpen] = useState(false)
   const [dir, setDir] = useState<'next' | 'prev' | null>(null)
   const [editingFace, setEditingFace] = useState<'question' | 'answer' | null>(null)
+  // Locally saved card text, keyed by card id. Field names mirror the `cards` table
+  // (`reference_answer`, not `answer`) so this can be spread over the server card as-is;
+  // the UI's face name 'answer' (editingFace, the Q/A toggle) is a separate concept.
+  const [saved, setSaved] = useState<Record<string, { question: string; reference_answer: string }>>({})
   const editRef = useRef<HTMLDivElement>(null)
   const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -64,8 +68,11 @@ export default function StudyViewer({
   }, [idx])
 
   const { bg, ink } = PALETTES[deck.palette as Palette] ?? PALETTES.butter
-  const card = cards[idx]
-  const tilt = tiltEnabled ? stableTilt(card.question) : 0
+  const serverCard = cards[idx]
+  // Locally saved text wins over server props, which stay stale until router.refresh() lands (#21).
+  const savedForCard = saved[serverCard.id]
+  const card = useMemo(() => ({ ...serverCard, ...savedForCard }), [serverCard, savedForCard])
+  const tilt = tiltEnabled ? stableTilt(serverCard.question) : 0
   const progress = (idx / (cards.length - 1)) * 100
 
   const flip = useCallback(() => setFlipped(f => !f), [])
@@ -112,12 +119,28 @@ export default function StudyViewer({
   const handleEditSave = useCallback((nextFace: 'question' | 'answer' | null = null) => {
     if (!editRef.current || !editingFace) return
     const text = editRef.current.innerText.trim()
-    if (!text) return
+    const otherFace = editingFace === 'question' ? card.reference_answer : card.question
+    if (!text && !otherFace.trim()) {
+      // Both faces would be empty: save nothing and fall back to the last saved text.
+      // (Becomes a delete once card delete exists — #23.)
+      setEditingFace(nextFace)
+      return
+    }
     const question = editingFace === 'question' ? text : card.question
     const referenceAnswer = editingFace === 'answer' ? text : card.reference_answer
     setEditingFace(nextFace)
+    const previous = { question: card.question, reference_answer: card.reference_answer }
+    const next = { question, reference_answer: referenceAnswer }
+    setSaved(prev => ({ ...prev, [card.id]: next }))
     startTransition(async () => {
-      await updateCardInline(card.id, deck.id, question, referenceAnswer)
+      try {
+        await updateCardInline(card.id, deck.id, question, referenceAnswer)
+      } catch {
+        // Roll back to the last saved text, unless a newer save has already replaced this one.
+        // The user-facing failure signal is tracked in #22.
+        setSaved(prev => (prev[card.id] === next ? { ...prev, [card.id]: previous } : prev))
+        return
+      }
       router.refresh()
     })
   }, [editingFace, card, deck.id, router])

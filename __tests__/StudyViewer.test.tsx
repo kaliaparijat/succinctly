@@ -403,3 +403,111 @@ describe.each([
     expect(screen.getByRole('button', { name: 'Previous card' })).toBeDisabled()
   })
 })
+
+describe('StudyViewer — inline edit with empty faces (#21)', () => {
+  beforeEach(() => mockUseIsMobile.mockReturnValue(true))
+
+  it('clearing a face then toggling saves the empty face and moves editing to the other face', async () => {
+    const user = userEvent.setup()
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+
+    const editable = screen.getByRole('textbox', { name: 'Question' })
+    editable.innerText = ''
+    await user.click(screen.getByRole('button', { name: 'A' }))
+
+    await waitFor(() =>
+      expect(updateCardInline).toHaveBeenCalledWith('c1', 'deck-1', '', 'A1')
+    )
+    expect(screen.getByRole('textbox', { name: 'Answer' })).toBeInTheDocument()
+  })
+
+  const emptyAnswerCard = [{ id: 'c1', question: 'Q1', reference_answer: '' }]
+
+  it('clearing the only filled face saves nothing, but the toggle still moves editing to the other face', async () => {
+    const user = userEvent.setup()
+    render(<StudyViewer deck={deck} cards={emptyAnswerCard} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+
+    screen.getByRole('textbox', { name: 'Question' }).innerText = ''
+    await user.click(screen.getByRole('button', { name: 'A' }))
+
+    expect(updateCardInline).not.toHaveBeenCalled()
+    expect(screen.getByRole('textbox', { name: 'Answer' })).toBeInTheDocument()
+  })
+
+  it('blurring after clearing the only filled face saves nothing and shows the last saved text', async () => {
+    const user = userEvent.setup()
+    render(<StudyViewer deck={deck} cards={emptyAnswerCard} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+
+    screen.getByRole('textbox', { name: 'Question' }).innerText = '   '
+    await user.click(within(screen.getByRole('banner')).getByText('Test Deck'))
+
+    expect(updateCardInline).not.toHaveBeenCalled()
+    expect(screen.queryByRole('textbox', { name: 'Question' })).not.toBeInTheDocument()
+    expect(screen.getByText('Q1')).toBeInTheDocument()
+  })
+})
+
+describe('StudyViewer — saved text shows immediately (#21)', () => {
+  beforeEach(() => mockUseIsMobile.mockReturnValue(true))
+
+  it('shows the edited text right after blur, before the save or refresh completes', async () => {
+    vi.mocked(updateCardInline).mockReturnValueOnce(new Promise(() => {}))
+    const user = userEvent.setup()
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+
+    screen.getByRole('textbox', { name: 'Question' }).innerText = 'Updated question'
+    await user.click(within(screen.getByRole('banner')).getByText('Test Deck'))
+
+    expect(screen.getByText('Updated question')).toBeInTheDocument()
+    expect(screen.queryByText('Q1')).not.toBeInTheDocument()
+  })
+
+  it('keeps an edited face when toggling to the other face and back', async () => {
+    vi.mocked(updateCardInline).mockReturnValue(new Promise(() => {}))
+    const user = userEvent.setup()
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+
+    screen.getByRole('textbox', { name: 'Question' }).innerText = 'Edited Q'
+    await user.click(screen.getByRole('button', { name: 'A' }))
+    await user.click(screen.getByRole('button', { name: 'Q' }))
+
+    // jsdom doesn't implement innerText as a DOM-backed property; the component reads/writes it directly.
+    expect((screen.getByRole('textbox', { name: 'Question' }) as HTMLElement).innerText).toBe('Edited Q')
+  })
+
+  it('saves the other face against the edited text, not the stale server text', async () => {
+    vi.mocked(updateCardInline).mockReturnValue(new Promise(() => {}))
+    const user = userEvent.setup()
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+
+    screen.getByRole('textbox', { name: 'Question' }).innerText = 'Edited Q'
+    await user.click(screen.getByRole('button', { name: 'A' }))
+    screen.getByRole('textbox', { name: 'Answer' }).innerText = 'Edited A'
+    await user.click(within(screen.getByRole('banner')).getByText('Test Deck'))
+
+    expect(updateCardInline).toHaveBeenLastCalledWith('c1', 'deck-1', 'Edited Q', 'Edited A')
+  })
+})
+
+describe('StudyViewer — failed save rolls back (#21)', () => {
+  beforeEach(() => mockUseIsMobile.mockReturnValue(true))
+
+  it('restores the last saved text when updateCardInline rejects', async () => {
+    vi.mocked(updateCardInline).mockRejectedValueOnce(new Error('boom'))
+    const user = userEvent.setup()
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+
+    screen.getByRole('textbox', { name: 'Question' }).innerText = 'Updated question'
+    await user.click(within(screen.getByRole('banner')).getByText('Test Deck'))
+
+    await waitFor(() => expect(screen.getByText('Q1')).toBeInTheDocument())
+    expect(screen.queryByText('Updated question')).not.toBeInTheDocument()
+  })
+})
