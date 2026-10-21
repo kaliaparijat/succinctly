@@ -49,6 +49,9 @@ export default function StudyViewer({
   const [helpOpen, setHelpOpen] = useState(false)
   const [dir, setDir] = useState<'next' | 'prev' | null>(null)
   const [editingFace, setEditingFace] = useState<'question' | 'answer' | null>(null)
+  // Locally saved card text, keyed by card id. Field names mirror the `cards` table
+  // (`reference_answer`, not `answer`) so this can be spread over the server card as-is;
+  // the UI's face name 'answer' (editingFace, the Q/A toggle) is a separate concept.
   const [saved, setSaved] = useState<Record<string, { question: string; reference_answer: string }>>({})
   const editRef = useRef<HTMLDivElement>(null)
   const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
