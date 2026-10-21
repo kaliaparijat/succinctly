@@ -449,3 +449,20 @@ describe('StudyViewer — inline edit with empty faces (#21)', () => {
     expect(screen.getByText('Q1')).toBeInTheDocument()
   })
 })
+
+describe('StudyViewer — saved text shows immediately (#21)', () => {
+  beforeEach(() => mockUseIsMobile.mockReturnValue(true))
+
+  it('shows the edited text right after blur, before the save or refresh completes', async () => {
+    vi.mocked(updateCardInline).mockReturnValueOnce(new Promise(() => {}))
+    const user = userEvent.setup()
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+
+    screen.getByRole('textbox', { name: 'Question' }).innerText = 'Updated question'
+    await user.click(within(screen.getByRole('banner')).getByText('Test Deck'))
+
+    expect(screen.getByText('Updated question')).toBeInTheDocument()
+    expect(screen.queryByText('Q1')).not.toBeInTheDocument()
+  })
+})

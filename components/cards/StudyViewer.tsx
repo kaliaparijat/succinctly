@@ -49,6 +49,7 @@ export default function StudyViewer({
   const [helpOpen, setHelpOpen] = useState(false)
   const [dir, setDir] = useState<'next' | 'prev' | null>(null)
   const [editingFace, setEditingFace] = useState<'question' | 'answer' | null>(null)
+  const [saved, setSaved] = useState<Record<string, { question: string; reference_answer: string }>>({})
   const editRef = useRef<HTMLDivElement>(null)
   const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -64,8 +65,10 @@ export default function StudyViewer({
   }, [idx])
 
   const { bg, ink } = PALETTES[deck.palette as Palette] ?? PALETTES.butter
-  const card = cards[idx]
-  const tilt = tiltEnabled ? stableTilt(card.question) : 0
+  const serverCard = cards[idx]
+  // Locally saved text wins over server props, which stay stale until router.refresh() lands (#21).
+  const card = { ...serverCard, ...saved[serverCard.id] }
+  const tilt = tiltEnabled ? stableTilt(serverCard.question) : 0
   const progress = (idx / (cards.length - 1)) * 100
 
   const flip = useCallback(() => setFlipped(f => !f), [])
@@ -122,6 +125,7 @@ export default function StudyViewer({
     const question = editingFace === 'question' ? text : card.question
     const referenceAnswer = editingFace === 'answer' ? text : card.reference_answer
     setEditingFace(nextFace)
+    setSaved(prev => ({ ...prev, [card.id]: { question, reference_answer: referenceAnswer } }))
     startTransition(async () => {
       await updateCardInline(card.id, deck.id, question, referenceAnswer)
       router.refresh()
