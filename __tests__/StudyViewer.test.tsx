@@ -465,4 +465,32 @@ describe('StudyViewer — saved text shows immediately (#21)', () => {
     expect(screen.getByText('Updated question')).toBeInTheDocument()
     expect(screen.queryByText('Q1')).not.toBeInTheDocument()
   })
+
+  it('keeps an edited face when toggling to the other face and back', async () => {
+    vi.mocked(updateCardInline).mockReturnValue(new Promise(() => {}))
+    const user = userEvent.setup()
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+
+    screen.getByRole('textbox', { name: 'Question' }).innerText = 'Edited Q'
+    await user.click(screen.getByRole('button', { name: 'A' }))
+    await user.click(screen.getByRole('button', { name: 'Q' }))
+
+    // jsdom doesn't implement innerText as a DOM-backed property; the component reads/writes it directly.
+    expect((screen.getByRole('textbox', { name: 'Question' }) as HTMLElement).innerText).toBe('Edited Q')
+  })
+
+  it('saves the other face against the edited text, not the stale server text', async () => {
+    vi.mocked(updateCardInline).mockReturnValue(new Promise(() => {}))
+    const user = userEvent.setup()
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+
+    screen.getByRole('textbox', { name: 'Question' }).innerText = 'Edited Q'
+    await user.click(screen.getByRole('button', { name: 'A' }))
+    screen.getByRole('textbox', { name: 'Answer' }).innerText = 'Edited A'
+    await user.click(within(screen.getByRole('banner')).getByText('Test Deck'))
+
+    expect(updateCardInline).toHaveBeenLastCalledWith('c1', 'deck-1', 'Edited Q', 'Edited A')
+  })
 })
