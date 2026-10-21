@@ -421,4 +421,31 @@ describe('StudyViewer — inline edit with empty faces (#21)', () => {
     )
     expect(screen.getByRole('textbox', { name: 'Answer' })).toBeInTheDocument()
   })
+
+  const emptyAnswerCard = [{ id: 'c1', question: 'Q1', reference_answer: '' }]
+
+  it('clearing the only filled face saves nothing, but the toggle still moves editing to the other face', async () => {
+    const user = userEvent.setup()
+    render(<StudyViewer deck={deck} cards={emptyAnswerCard} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+
+    screen.getByRole('textbox', { name: 'Question' }).innerText = ''
+    await user.click(screen.getByRole('button', { name: 'A' }))
+
+    expect(updateCardInline).not.toHaveBeenCalled()
+    expect(screen.getByRole('textbox', { name: 'Answer' })).toBeInTheDocument()
+  })
+
+  it('blurring after clearing the only filled face saves nothing and shows the last saved text', async () => {
+    const user = userEvent.setup()
+    render(<StudyViewer deck={deck} cards={emptyAnswerCard} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+
+    screen.getByRole('textbox', { name: 'Question' }).innerText = '   '
+    await user.click(within(screen.getByRole('banner')).getByText('Test Deck'))
+
+    expect(updateCardInline).not.toHaveBeenCalled()
+    expect(screen.queryByRole('textbox', { name: 'Question' })).not.toBeInTheDocument()
+    expect(screen.getByText('Q1')).toBeInTheDocument()
+  })
 })

@@ -113,7 +113,12 @@ export default function StudyViewer({
     if (!editRef.current || !editingFace) return
     const text = editRef.current.innerText.trim()
     const otherFace = editingFace === 'question' ? card.reference_answer : card.question
-    if (!text && !otherFace.trim()) return
+    if (!text && !otherFace.trim()) {
+      // Both faces would be empty: save nothing and fall back to the last saved text.
+      // (Becomes a delete once card delete exists — #23.)
+      setEditingFace(nextFace)
+      return
+    }
     const question = editingFace === 'question' ? text : card.question
     const referenceAnswer = editingFace === 'answer' ? text : card.reference_answer
     setEditingFace(nextFace)
