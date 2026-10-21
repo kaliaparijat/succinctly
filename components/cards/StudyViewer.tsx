@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef, useEffect, startTransition } from 'react'
+import { useState, useCallback, useMemo, useRef, useEffect, startTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { PALETTES, stableTilt, type Palette } from '@/lib/palette'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
@@ -67,7 +67,8 @@ export default function StudyViewer({
   const { bg, ink } = PALETTES[deck.palette as Palette] ?? PALETTES.butter
   const serverCard = cards[idx]
   // Locally saved text wins over server props, which stay stale until router.refresh() lands (#21).
-  const card = { ...serverCard, ...saved[serverCard.id] }
+  const savedForCard = saved[serverCard.id]
+  const card = useMemo(() => ({ ...serverCard, ...savedForCard }), [serverCard, savedForCard])
   const tilt = tiltEnabled ? stableTilt(serverCard.question) : 0
   const progress = (idx / (cards.length - 1)) * 100
 
