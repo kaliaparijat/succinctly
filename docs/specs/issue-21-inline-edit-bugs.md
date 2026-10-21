@@ -33,14 +33,14 @@ that work.
 
 ## Tasks
 Each task is red test → minimal green → its own commit, tests green after each.
-- [ ] 1. Clearing a face then toggling moves editing to the other face (bug 1). Empty text saves
+- [x] 1. Clearing a face then toggling moves editing to the other face (bug 1). Empty text saves
       unless both faces would be empty.
-- [ ] 2. Both faces empty: nothing saved, text reverts, toggle still switches.
-- [ ] 3. After blur, the edited text shows immediately even while `updateCardInline` is still
+- [x] 2. Both faces empty: nothing saved, text reverts, toggle still switches.
+- [x] 3. After blur, the edited text shows immediately even while `updateCardInline` is still
       pending (mock never resolves) — bug 2. Introduces `saved` state.
-- [ ] 4. Edit Q, toggle to A and back: Q shows the edit. Edit A and save: `updateCardInline` receives
+- [x] 4. Edit Q, toggle to A and back: Q shows the edit. Edit A and save: `updateCardInline` receives
       the edited Q, not the stale one — bug 3.
-- [ ] 5. `updateCardInline` rejects: text rolls back to the last saved value.
+- [x] 5. `updateCardInline` rejects: text rolls back to the last saved value.
 - [ ] 6. Verify: `npm test`, `npm run build`, live check at 1280×800 and 390×844, then browser-qa
       against the Vercel preview after the PR is open.
 
