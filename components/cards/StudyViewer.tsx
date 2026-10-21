@@ -125,9 +125,18 @@ export default function StudyViewer({
     const question = editingFace === 'question' ? text : card.question
     const referenceAnswer = editingFace === 'answer' ? text : card.reference_answer
     setEditingFace(nextFace)
-    setSaved(prev => ({ ...prev, [card.id]: { question, reference_answer: referenceAnswer } }))
+    const previous = { question: card.question, reference_answer: card.reference_answer }
+    const next = { question, reference_answer: referenceAnswer }
+    setSaved(prev => ({ ...prev, [card.id]: next }))
     startTransition(async () => {
-      await updateCardInline(card.id, deck.id, question, referenceAnswer)
+      try {
+        await updateCardInline(card.id, deck.id, question, referenceAnswer)
+      } catch {
+        // Roll back to the last saved text, unless a newer save has already replaced this one.
+        // The user-facing failure signal is tracked in #22.
+        setSaved(prev => (prev[card.id] === next ? { ...prev, [card.id]: previous } : prev))
+        return
+      }
       router.refresh()
     })
   }, [editingFace, card, deck.id, router])

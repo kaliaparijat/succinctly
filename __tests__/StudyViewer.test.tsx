@@ -494,3 +494,20 @@ describe('StudyViewer — saved text shows immediately (#21)', () => {
     expect(updateCardInline).toHaveBeenLastCalledWith('c1', 'deck-1', 'Edited Q', 'Edited A')
   })
 })
+
+describe('StudyViewer — failed save rolls back (#21)', () => {
+  beforeEach(() => mockUseIsMobile.mockReturnValue(true))
+
+  it('restores the last saved text when updateCardInline rejects', async () => {
+    vi.mocked(updateCardInline).mockRejectedValueOnce(new Error('boom'))
+    const user = userEvent.setup()
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+
+    screen.getByRole('textbox', { name: 'Question' }).innerText = 'Updated question'
+    await user.click(within(screen.getByRole('banner')).getByText('Test Deck'))
+
+    await waitFor(() => expect(screen.getByText('Q1')).toBeInTheDocument())
+    expect(screen.queryByText('Updated question')).not.toBeInTheDocument()
+  })
+})
