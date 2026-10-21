@@ -112,7 +112,8 @@ export default function StudyViewer({
   const handleEditSave = useCallback((nextFace: 'question' | 'answer' | null = null) => {
     if (!editRef.current || !editingFace) return
     const text = editRef.current.innerText.trim()
-    if (!text) return
+    const otherFace = editingFace === 'question' ? card.reference_answer : card.question
+    if (!text && !otherFace.trim()) return
     const question = editingFace === 'question' ? text : card.question
     const referenceAnswer = editingFace === 'answer' ? text : card.reference_answer
     setEditingFace(nextFace)

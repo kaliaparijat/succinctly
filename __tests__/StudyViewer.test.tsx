@@ -403,3 +403,22 @@ describe.each([
     expect(screen.getByRole('button', { name: 'Previous card' })).toBeDisabled()
   })
 })
+
+describe('StudyViewer — inline edit with empty faces (#21)', () => {
+  beforeEach(() => mockUseIsMobile.mockReturnValue(true))
+
+  it('clearing a face then toggling saves the empty face and moves editing to the other face', async () => {
+    const user = userEvent.setup()
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+
+    const editable = screen.getByRole('textbox', { name: 'Question' })
+    editable.innerText = ''
+    await user.click(screen.getByRole('button', { name: 'A' }))
+
+    await waitFor(() =>
+      expect(updateCardInline).toHaveBeenCalledWith('c1', 'deck-1', '', 'A1')
+    )
+    expect(screen.getByRole('textbox', { name: 'Answer' })).toBeInTheDocument()
+  })
+})
