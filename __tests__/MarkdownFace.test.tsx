@@ -127,8 +127,8 @@ describe('MarkdownFace — textarea styling', () => {
     const textarea = screen.getByRole('textbox')
     expect(textarea.className).toContain('font-display')
     expect(textarea.className).toContain('text-[25px]')
-    // Base positioning classes are still present alongside the caller's.
-    expect(textarea.className).toContain('absolute inset-0')
+    // Base layout classes (fills the padded editing view) are still present alongside the caller's.
+    expect(textarea.className).toContain('flex-1')
   })
 })
 
@@ -151,13 +151,27 @@ describe('MarkdownFace — layout (the one jsdom can pin at the class level)', (
 describe('MarkdownFace — padding lives on the face itself (#18 follow-up)', () => {
   // A parent's padding doesn't inset an absolutely-positioned child, so the face
   // must carry its own padding in both of its states.
-  it('applies paddingClassName to the editing textarea', () => {
+  it('applies paddingClassName to the editing view (the textarea and the footer sit inside it)', () => {
     render(<TestFace initialText="Hello" initialEditing paddingClassName="px-[44px]" />)
-    expect(screen.getByRole('textbox')).toHaveClass('px-[44px]')
+    const padded = screen.getByRole('textbox').closest('.px-\\[44px\\]')
+    expect(padded).not.toBeNull()
+    expect(padded!.contains(screen.getByText('Markdown supported'))).toBe(true)
   })
 
   it('applies paddingClassName to the rendered view', () => {
     const { container } = render(<TestFace initialText="Hello" paddingClassName="px-[44px]" />)
     expect(container.querySelector('.rt')!.closest('.px-\\[44px\\]')).not.toBeNull()
+  })
+})
+
+describe('MarkdownFace — "Markdown supported" footer', () => {
+  it('shows the footer under the textarea while editing', () => {
+    render(<TestFace initialText="Hello" initialEditing />)
+    expect(screen.getByText('Markdown supported')).toBeInTheDocument()
+  })
+
+  it('does not show the footer when rendered', () => {
+    render(<TestFace initialText="Hello" />)
+    expect(screen.queryByText('Markdown supported')).toBeNull()
   })
 })

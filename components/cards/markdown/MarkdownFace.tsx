@@ -57,15 +57,23 @@ export default function MarkdownFace({ name, face, placeholder, size = 24, codeS
     <div data-face className={`absolute inset-0 ${className ?? ''}`} onBlur={handleBlur}>
       <input type="hidden" name={name} value={text} readOnly />
       {editing ? (
-        <textarea
-          ref={textareaRef}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={`${placeholder}   **bold**  \`code\`  $math$`}
-          autoFocus={autoFocus}
-          className={`absolute inset-0 w-full h-full min-h-[6em] bg-transparent resize-none outline-none ${paddingClassName} ${textareaClassName}`}
-        />
+        <div className={`absolute inset-0 overflow-y-auto flex flex-col ${paddingClassName}`}>
+          <textarea
+            ref={textareaRef}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={`${placeholder}   **bold**  \`code\`  $math$`}
+            autoFocus={autoFocus}
+            className={`block w-full flex-1 min-h-[6em] [field-sizing:content] bg-transparent resize-none outline-none ${textareaClassName}`}
+          />
+          <div
+            className="mt-[14px] pt-2 shrink-0 border-t border-dashed font-mono text-[9.5px] uppercase tracking-[0.6px]"
+            style={{ borderColor: 'color-mix(in srgb, var(--card-ink) 19%, transparent)', color: 'color-mix(in srgb, var(--card-ink) 60%, transparent)' }}
+          >
+            Markdown supported
+          </div>
+        </div>
       ) : (
         <div
           onMouseDown={(e) => {

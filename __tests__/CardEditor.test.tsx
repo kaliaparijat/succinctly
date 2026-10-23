@@ -275,15 +275,16 @@ describe('CardEditor — Tab inside a fenced code block does not flip', () => {
 })
 
 describe('CardEditor — face padding matches the design (#18 follow-up)', () => {
+  // Padding is on the editing view that wraps the textarea and its footer, as in the design.
   it('desktop: 26px 44px 74px on the editing textarea', () => {
     render(<CardEditor deck={mockDeck} cardNumber={1} />)
-    expect(screen.getByRole('textbox')).toHaveClass('pt-[26px]', 'px-[44px]', 'pb-[74px]')
+    expect(screen.getByRole('textbox').closest('.pt-\\[26px\\].px-\\[44px\\].pb-\\[74px\\]')).not.toBeNull()
   })
 
   it('mobile: 18px 20px 66px on the editing textarea', () => {
     mockUseIsMobile.mockReturnValue(true)
     render(<CardEditor deck={mockDeck} />)
-    expect(screen.getByRole('textbox')).toHaveClass('pt-[18px]', 'px-5', 'pb-[66px]')
+    expect(screen.getByRole('textbox').closest('.pt-\\[18px\\].px-5.pb-\\[66px\\]')).not.toBeNull()
   })
 })
 
