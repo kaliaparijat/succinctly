@@ -62,7 +62,7 @@ green. One logical change per commit, suite green after each. Phase 4 is verific
         │
 2.3 toolbar (desktop header / mobile) ─ 2.4 mobile Done ─ 2.5 ⌘B/⌘I, Tab-in-fence in viewer
         │
-3.1 createCard both-empty guard ─ 3.2 CardEditor stays put on null ─ (3.3 tabled)
+3.1 createCard both-empty guard ─ 3.2 CardEditor stays put on null ─ 3.3 disabled Save
         │
 4.x cleanup, verification, PR
 ```

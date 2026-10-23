@@ -45,8 +45,8 @@ parsing or rendering logic.
     delete exists (#23) this case saves nothing and reverts to the last saved text.
   - Saving a *new* card with both faces empty is a no-op: `createCard` inserts nothing and returns
     `null`; `CardEditor` stays on the page (no navigation, no error). "Empty" means
-    `trim() === ''`, so whitespace-only counts as empty on every path above. Whether the Save
-    button is also disabled in that state (and ⌘↵ blocked) is **tabled** — decide before planning.
+    `trim() === ''`, so whitespace-only counts as empty on every path above. The create
+    editor's Save button is also disabled in that state and ⌘↵ does nothing.
 - **Keyboard shortcuts:** study shortcuts (flip, next, prev, help) stay disabled while editing.
 - **Layout (dynamic):** the edited face fills the card exactly as the rendered face does — it must
   not change the card's size when toggling between view and edit. Face padding is 26px 44px 74px
