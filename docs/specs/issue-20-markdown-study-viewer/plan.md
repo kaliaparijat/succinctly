@@ -95,9 +95,9 @@ green. One logical change per commit, suite green after each. Phase 4 is verific
       `useMarkdownFace` instances in `StudyViewer` (hooks' `editing` is the only state;
       `editingFace` derived), `MarkdownFace` as the editing surface on both viewers, `editRef`
       removed. One commit, because the swap and the test migration cannot be green apart.
-- [ ] **2.3 Formatting toolbar.** Red: toolbar present only while editing, desktop in the card
-      header (compact 26px, replacing the deck name), mobile in the bottom row; buttons call the
-      editing face's `fmt`. Green: wire `FormatToolbar`.
+- [ ] **2.3 Formatting toolbar.** Red: toolbar present only while editing, in the card header on both
+      desktop and mobile (compact buttons, replacing the deck name; mobile keeps clear of the
+      keyboard); buttons call the editing face's `fmt`. Green: wire `FormatToolbar`.
 - [ ] **2.4 Mobile "Done".** Red: tapping Done saves (not cancels), via `onMouseDown` preventDefault.
 - [ ] **2.5 Keyboard.** Red: ⌘B/⌘I, list continuation, Tab in a fence inserts 4 spaces and does not
       flip/navigate.
@@ -108,8 +108,9 @@ green. One logical change per commit, suite green after each. Phase 4 is verific
       whitespace-only → nothing inserted, returns `null`. Green.
 - [ ] **3.2 `CardEditor` handles `null`.** Red: Save on a blank card does not navigate and shows
       no error. Green: skip `navigateWithTransition` when `createCard` returns null.
-- [ ] **3.3 Disabled Save + ⌘↵ guard.** *Tabled* — blocked on the spec's open decision; add
-      here once decided.
+- [ ] **3.3 Disabled Save + ⌘↵ guard.** Red: Save is disabled while both faces are blank
+      (`trim() === ''`) on desktop and mobile, enabled once either has text; ⌘↵ does not submit
+      while blank. Green: derive from the two faces' text in `CardEditor`.
 
 ## Phase 4 — Verification
 
@@ -128,20 +129,16 @@ green. One logical change per commit, suite green after each. Phase 4 is verific
 ## Decisions and open questions
 
 Decided:
-1. **Vertical position:** keep short text vertically centered in the viewer; top-align once the
-   content is taller than the card. (Decided.)
+1. **Vertical position:** short text stays vertically centered when viewing; when editing, the text
+   area is top-aligned (as when the card was created). Top-align once content overflows too.
+2. **Text size:** keep the viewer's current sizes (fluid 20–40px desktop, 27px mobile).
+   `MarkdownRenderer` gets a way to take a CSS size.
+3. **Mobile toolbar:** while editing on mobile the toolbar goes in the card header, not a bottom bar,
+   so the iPhone keyboard can't cover it. #18's create editor should follow the same placement.
+   Verify on a real iPhone via the Vercel preview of PR #19.
+5. **Blank new card:** Save is disabled while both faces are blank and ⌘↵ does nothing.
 
-Open (explained in plain terms in the PR #19 conversation; answer before the matching task):
-2. **Text size in the viewer** (affects 1.2, 1.3, 1.5). Recommendation: keep the viewer's current
-   sizes (fluid 20–40px on desktop, 27px on mobile) rather than the editor's smaller fixed sizes
-   (25px / 19px); needs `MarkdownRenderer` to accept a CSS size.
-3. **Mobile toolbar and the iOS keyboard** (affects 2.3, and possibly #18's create editor, which
-   already puts its toolbar in a bottom bar). On iPhone Safari the on-screen keyboard covers the
-   bottom of the page, so a bottom toolbar may be hidden. Options: (A) put the toolbar in the card
-   header while editing on mobile, where the keyboard can't cover it; (B) keep a bottom bar and lift
-   it above the keyboard using the browser's `visualViewport`. Needs a real-iPhone check of the
-   create editor first.
-4. **Editing font** (affects 2.2). The design handoff shows a monospace font in the editing box;
-   the shipped create editor keeps the serif card font. Recommendation: match the shipped editor.
-5. **Disable Save on a blank new card** (task 3.3). The blank card already won't be saved; the open
-   part is whether the button also looks disabled. Recommendation: yes, and ⌘↵ also does nothing.
+Open:
+4. **Editing font.** The design handoff specifies a monospace editing box; the shipped create editor
+   uses the serif card font. Recommendation: fix the create editor to match the design first (it is
+   a defect against #18's acceptance criteria), and the viewer inherits it.

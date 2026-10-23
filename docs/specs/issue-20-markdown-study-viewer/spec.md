@@ -33,7 +33,7 @@ parsing or rendering logic.
 - **Enter edit mode:** unchanged entry points — double-click on desktop, Edit button on mobile.
   The face being edited is the currently visible one. The caret starts at the end of the text.
 - **Editing UI:** the visible face becomes a `MarkdownFace` textarea. The `FormatToolbar` appears
-  in the card header (desktop, compact 26px) or the bottom bar (mobile, 38px targets).
+  in the card header on both desktop and mobile (compact buttons, so the iPhone keyboard cannot cover it).
   ⌘B/⌘I, list continuation and Tab-in-fence behave as in #18.
 - **Save/cancel (preserve #15):** blur away from the face saves via `updateCardInline`; ⌘↵ saves;
   Esc cancels and restores the last saved text; blurring *to* the Q/A toggle saves and switches the
@@ -60,10 +60,13 @@ parsing or rendering logic.
 - [ ] Existing cards can be edited with the Markdown textarea and toolbar, desktop and mobile
 - [ ] Editing a card, then blurring, persists the new source via `updateCardInline`
 - [ ] Clearing one face and blurring saves the empty face; clearing both faces saves nothing
-- [ ] Save on a new card with both faces empty (or whitespace-only) inserts nothing and does not navigate
+- [ ] Save on a new card with both faces empty (or whitespace-only) is disabled; ⌘↵ and the server
+      both refuse it (inserts nothing, does not navigate)
 - [ ] Esc cancels and restores the last saved text
 - [ ] ⌘↵ saves; study shortcuts are inactive while editing
 - [ ] Switching Q/A via the toggle mid-edit saves and keeps editing the other face
 - [ ] Toggling view ↔ edit does not resize the card (checked at 390×844 and 1280×800)
 - [ ] Padding matches the numbers above in both viewers
+- [ ] Text keeps the viewer's current sizes; short text is vertically centered when viewing and
+      top-aligned when editing
 - [ ] The `contentEditable` path is removed; `npm test` and `npm run build` pass
