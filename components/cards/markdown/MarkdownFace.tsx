@@ -57,7 +57,16 @@ export default function MarkdownFace({ name, face, placeholder, size = 24, codeS
     <div data-face className={`absolute inset-0 ${className ?? ''}`} onBlur={handleBlur}>
       <input type="hidden" name={name} value={text} readOnly />
       {editing ? (
-        <div className={`absolute inset-0 overflow-y-auto flex flex-col ${paddingClassName}`}>
+        <div
+          className={`absolute inset-0 overflow-y-auto flex flex-col ${paddingClassName}`}
+          onMouseDown={(e) => {
+            // Padding sits outside the textarea; a click there must not blur it and close the face.
+            if (e.target === e.currentTarget) {
+              e.preventDefault()
+              textareaRef.current?.focus()
+            }
+          }}
+        >
           <textarea
             ref={textareaRef}
             value={text}

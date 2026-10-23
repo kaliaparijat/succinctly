@@ -175,3 +175,16 @@ describe('MarkdownFace — "Markdown supported" footer', () => {
     expect(screen.queryByText('Markdown supported')).toBeNull()
   })
 })
+
+describe('MarkdownFace — clicking the padding while editing', () => {
+  // The padding is outside the textarea; a click there would blur it and close the face.
+  it('keeps the textarea focused instead of blurring it', () => {
+    render(<TestFace initialText="Hello" initialEditing />)
+    const textarea = screen.getByRole('textbox')
+    const padding = textarea.parentElement!
+    const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+    fireEvent(padding, event)
+    expect(event.defaultPrevented).toBe(true)
+    expect(textarea).toHaveFocus()
+  })
+})
