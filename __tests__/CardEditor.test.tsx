@@ -302,3 +302,30 @@ describe('CardEditor — empty editing face starts the caret at the placeholder 
     expect(textarea).not.toHaveClass('placeholder:text-center')
   })
 })
+
+describe('CardEditor — editing textarea matches the design (#18 follow-up)', () => {
+  // design_handoff_succinctly/card_editor_improvements/README.md, "Editing state (textarea)":
+  // JetBrains Mono 14px desktop / 12.5px mobile, line-height 1.65, min-height 6em, placeholder 35%.
+  it('desktop: mono 14px, line-height 1.65, min-height 6em, 35% placeholder', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    const textarea = screen.getByRole('textbox')
+    expect(textarea).toHaveClass('font-mono', 'text-[14px]', 'leading-[1.65]', 'min-h-[6em]', 'placeholder:opacity-[0.35]')
+    expect(textarea).not.toHaveClass('font-display')
+  })
+
+  it('mobile: mono 12.5px, line-height 1.65, min-height 6em, 35% placeholder', () => {
+    mockUseIsMobile.mockReturnValue(true)
+    render(<CardEditor deck={mockDeck} />)
+    const textarea = screen.getByRole('textbox')
+    expect(textarea).toHaveClass('font-mono', 'text-[12.5px]', 'leading-[1.65]', 'min-h-[6em]', 'placeholder:opacity-[0.35]')
+    expect(textarea).not.toHaveClass('font-display')
+  })
+
+  it('the editing placeholder hints at the supported syntax', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    expect(screen.getByRole('textbox')).toHaveAttribute(
+      'placeholder',
+      "What's the question?   **bold**  `code`  $math$"
+    )
+  })
+})

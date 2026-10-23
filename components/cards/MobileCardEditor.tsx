@@ -86,7 +86,7 @@ export default function MobileCardEditor({
                   onKeyDown={onKeyDown}
                   autoFocus={face === 'question'}
                   paddingClassName="pt-[18px] px-5 pb-[66px] landscape:pt-2 landscape:px-10"
-                  textareaClassName="font-display leading-[1.3] text-[26px] landscape:text-[22px] tracking-[-0.3px] text-[var(--card-ink)] placeholder:opacity-30"
+                  textareaClassName="font-mono text-[12.5px] leading-[1.65] text-[var(--card-ink)] caret-[var(--card-ink)] placeholder:opacity-[0.35]"
                 />
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
                   <QAToggle face={face} onChange={setFace} />
@@ -112,7 +112,7 @@ export default function MobileCardEditor({
                   onKeyDown={onKeyDown}
                   autoFocus={face === 'answer'}
                   paddingClassName="pt-[18px] px-5 pb-[66px] landscape:pt-2 landscape:px-10"
-                  textareaClassName="font-display leading-[1.3] text-[26px] landscape:text-[22px] tracking-[-0.3px] text-[var(--card-ink)] placeholder:opacity-30"
+                  textareaClassName="font-mono text-[12.5px] leading-[1.65] text-[var(--card-ink)] caret-[var(--card-ink)] placeholder:opacity-[0.35]"
                 />
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
                   <QAToggle face={face} onChange={setFace} />

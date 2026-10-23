@@ -62,9 +62,9 @@ export default function MarkdownFace({ name, face, placeholder, size = 24, codeS
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={placeholder}
+          placeholder={`${placeholder}   **bold**  \`code\`  $math$`}
           autoFocus={autoFocus}
-          className={`absolute inset-0 w-full h-full bg-transparent resize-none outline-none ${paddingClassName} ${textareaClassName}`}
+          className={`absolute inset-0 w-full h-full min-h-[6em] bg-transparent resize-none outline-none ${paddingClassName} ${textareaClassName}`}
         />
       ) : (
         <div
