@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "katex/dist/katex.min.css";
 
 @theme {
   /* Surfaces */
@@ -61,3 +62,43 @@ body {
   font-family: var(--font-inter-tight), sans-serif;
   overscroll-behavior: none;
 }
+
+/*
+ * Card-editor code block syntax colors (CodeBlock.tsx). Hand-mapped to
+ * highlight.js's token classes instead of importing a stock hljs theme —
+ * see docs/specs/issue-18-markdown-card-editor/spec.md's "New dependencies"
+ * section for why.
+ */
+.hljs-keyword { color: #F5D96B; }
+.hljs-built_in { color: #F5D96B; }
+.hljs-string { color: #B8DFC4; }
+.hljs-number,
+.hljs-literal { color: #F2A68F; }
+.hljs-comment { color: rgba(237, 230, 214, 0.45); font-style: italic; }
+.hljs-title,
+.hljs-title.function_ { color: #A8C8E8; }
+.hljs-meta { color: #D4BFE8; }
+
+/*
+ * Rendered Markdown face content (MarkdownRenderer.tsx). Bold doesn't bump
+ * font-weight — it gets a highlighter underline instead, per the design
+ * handoff. The handoff hardcodes this to Butter palette's ink
+ * (rgba(58,46,10,...)); generalized here with color-mix(currentColor) so it
+ * reads correctly on every deck palette's ink color, not just Butter.
+ */
+.rt strong {
+  font-weight: 400;
+  background: linear-gradient(transparent 62%, color-mix(in srgb, currentColor 16%, transparent) 62%);
+}
+.rt em { font-style: italic; }
+.rt .ic {
+  font-family: var(--font-mono);
+  font-size: 0.62em;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  padding: 2px 6px;
+  border-radius: 5px;
+  vertical-align: 0.12em;
+  letter-spacing: 0;
+}
+.katex { font-size: 1.05em; }
+.katex-display { margin: 0; }

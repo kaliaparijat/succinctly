@@ -47,11 +47,12 @@ describe('CardEditor — create mode', () => {
     expect(container.querySelector('input[name="id"]')).toBeNull()
   })
 
-  it('renders empty textareas', () => {
+  it('renders an empty, editable question textarea; the answer face starts closed (click-to-edit)', () => {
     render(<CardEditor deck={mockDeck} cardNumber={1} />)
-    const [question, answer] = screen.getAllByRole('textbox')
+    const [question] = screen.getAllByRole('textbox')
     expect(question).toHaveValue('')
-    expect(answer).toHaveValue('')
+    expect(screen.queryAllByRole('textbox')).toHaveLength(1)
+    expect(screen.getByText('Write the answer…')).toBeInTheDocument()
   })
 })
 
@@ -158,11 +159,21 @@ describe('CardEditor — mobile skeleton', () => {
 describe('CardEditor — mobile card body (Screen 3 tokens)', () => {
   beforeEach(() => mockUseIsMobile.mockReturnValue(true))
 
-  it('shows "Draft" instead of the deck title on both faces', () => {
+  it('shows a "Done" pill on the question face (starts editing) and "Draft" on the answer face (starts closed)', () => {
     render(<CardEditor deck={mockDeck} cardNumber={1} />)
-    // Both card faces read "Draft" — the deck title still appears once, in the top bar label.
-    expect(screen.getAllByText('Draft')).toHaveLength(2)
+    // Only Question starts editing — see the comment on its useMarkdownFace
+    // call in CardEditor.tsx for why Answer must start closed, not editing.
+    // The deck title still appears once, in the top bar label.
+    expect(screen.getAllByRole('button', { name: /^done$/i })).toHaveLength(1)
+    expect(screen.getByText('Draft')).toBeInTheDocument()
     expect(screen.getAllByText(mockDeck.title)).toHaveLength(1)
+  })
+
+  it('shows "Draft" on the question face too once it stops editing', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    const [done] = screen.getAllByRole('button', { name: /^done$/i })
+    fireEvent.click(done)
+    expect(screen.getAllByText('Draft')).toHaveLength(2)
   })
 
   it('renders no error text by default', () => {
@@ -209,5 +220,113 @@ describe('CardEditor — flip duration', () => {
   it('uses the flipDuration prop when provided', () => {
     render(<CardEditor deck={mockDeck} cardNumber={1} flipDuration={570} />)
     expect(screen.getByTestId('flip-card')).toHaveStyle({ transitionDuration: '570ms' })
+  })
+})
+
+describe('CardEditor — Markdown toolbar presence', () => {
+  it('renders a formatting toolbar per face on desktop', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    expect(screen.getAllByTitle(/bold/i)).toHaveLength(2)
+    expect(screen.getAllByTitle(/italic/i)).toHaveLength(2)
+  })
+
+  it('renders a single formatting toolbar in the mobile bottom bar', () => {
+    mockUseIsMobile.mockReturnValue(true)
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    expect(screen.getAllByTitle(/bold/i)).toHaveLength(1)
+  })
+})
+
+describe('CardEditor — form submission carries both faces regardless of editing state', () => {
+  it('submits both question and reference_answer even though only one face is "front" when saving', async () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    const [questionTextarea] = screen.getAllByRole('textbox')
+    fireEvent.change(questionTextarea, { target: { value: 'What is **Big-O**?' } })
+
+    // Answer starts closed (click-to-edit) — open it before typing into it.
+    fireEvent.mouseDown(screen.getByText('Write the answer…'))
+    const [, answerTextarea] = screen.getAllByRole('textbox')
+    fireEvent.change(answerTextarea, { target: { value: 'A growth-rate bound.' } })
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /save card/i }))
+    })
+
+    const submittedData = vi.mocked(createCard).mock.calls.at(-1)?.[0] as FormData
+    expect(submittedData.get('question')).toBe('What is **Big-O**?')
+    expect(submittedData.get('reference_answer')).toBe('A growth-rate bound.')
+  })
+})
+
+describe('CardEditor — Tab inside a fenced code block does not flip', () => {
+  it('inserts spaces and keeps the question face front when the caret is inside an open fence', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    const [questionTextarea] = screen.getAllByRole('textbox') as HTMLTextAreaElement[]
+
+    fireEvent.change(questionTextarea, { target: { value: '```python\ndef f():\n' } })
+    questionTextarea.selectionStart = questionTextarea.value.length
+    questionTextarea.selectionEnd = questionTextarea.value.length
+
+    fireEvent.keyDown(questionTextarea, { key: 'Tab' })
+
+    expect(screen.getByTestId('flip-card')).toHaveStyle({ transform: 'rotateY(0deg)' })
+    expect((screen.getAllByRole('textbox')[0] as HTMLTextAreaElement).value).toBe('```python\ndef f():\n    ')
+  })
+})
+
+describe('CardEditor — face padding matches the design (#18 follow-up)', () => {
+  // Padding is on the editing view that wraps the textarea and its footer, as in the design.
+  it('desktop: 26px 44px 74px on the editing textarea', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    expect(screen.getByRole('textbox').closest('.pt-\\[26px\\].px-\\[44px\\].pb-\\[74px\\]')).not.toBeNull()
+  })
+
+  it('mobile: 18px 20px 66px on the editing textarea', () => {
+    mockUseIsMobile.mockReturnValue(true)
+    render(<CardEditor deck={mockDeck} />)
+    expect(screen.getByRole('textbox').closest('.pt-\\[18px\\].px-5.pb-\\[66px\\]')).not.toBeNull()
+  })
+})
+
+describe('CardEditor — empty editing face starts the caret at the placeholder (#18 follow-up)', () => {
+  // A centered textarea puts the caret in the middle of its centered placeholder; the
+  // design's editing textarea (and placeholder) is left-aligned, so the caret sits before
+  // the first placeholder character like any ordinary input.
+  it.each([
+    ['desktop', false],
+    ['mobile', true],
+  ])('%s: neither the textarea nor its placeholder is centered', (_label, mobile) => {
+    mockUseIsMobile.mockReturnValue(mobile)
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    const textarea = screen.getByRole('textbox')
+    expect(textarea).not.toHaveClass('text-center')
+    expect(textarea).not.toHaveClass('placeholder:text-center')
+  })
+})
+
+describe('CardEditor — editing textarea matches the design (#18 follow-up)', () => {
+  // design_handoff_succinctly/card_editor_improvements/README.md, "Editing state (textarea)":
+  // JetBrains Mono 14px desktop / 12.5px mobile, line-height 1.65, min-height 6em, placeholder 35%.
+  it('desktop: mono 14px, line-height 1.65, min-height 6em, 35% placeholder', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    const textarea = screen.getByRole('textbox')
+    expect(textarea).toHaveClass('font-mono', 'text-[14px]', 'leading-[1.65]', 'min-h-[6em]', 'placeholder:opacity-[0.35]')
+    expect(textarea).not.toHaveClass('font-display')
+  })
+
+  it('mobile: mono 12.5px, line-height 1.65, min-height 6em, 35% placeholder', () => {
+    mockUseIsMobile.mockReturnValue(true)
+    render(<CardEditor deck={mockDeck} />)
+    const textarea = screen.getByRole('textbox')
+    expect(textarea).toHaveClass('font-mono', 'text-[12.5px]', 'leading-[1.65]', 'min-h-[6em]', 'placeholder:opacity-[0.35]')
+    expect(textarea).not.toHaveClass('font-display')
+  })
+
+  it('the editing placeholder hints at the supported syntax', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    expect(screen.getByRole('textbox')).toHaveAttribute(
+      'placeholder',
+      "What's the question?   **bold**  `code`  $math$"
+    )
   })
 })
