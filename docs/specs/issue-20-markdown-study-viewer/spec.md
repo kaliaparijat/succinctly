@@ -4,7 +4,7 @@ Issue: https://github.com/kaliaparijat/succinctly/issues/20
 
 Delivered on the `issue-18` branch / PR #19, together with #18's work (one PR to review, test and merge).
 
-Builds on `docs/specs/issue-18-markdown-card-editor/spec.md`, which shipped Markdown
+Plan: `plan.md` (this folder). Builds on `docs/specs/issue-18-markdown-card-editor/spec.md`, which shipped Markdown
 authoring for new cards and explicitly deferred the two items below.
 
 ## Problem
