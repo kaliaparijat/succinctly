@@ -286,3 +286,19 @@ describe('CardEditor — face padding matches the design (#18 follow-up)', () =>
     expect(screen.getByRole('textbox')).toHaveClass('pt-[18px]', 'px-5', 'pb-[66px]')
   })
 })
+
+describe('CardEditor — empty editing face starts the caret at the placeholder (#18 follow-up)', () => {
+  // A centered textarea puts the caret in the middle of its centered placeholder; the
+  // design's editing textarea (and placeholder) is left-aligned, so the caret sits before
+  // the first placeholder character like any ordinary input.
+  it.each([
+    ['desktop', false],
+    ['mobile', true],
+  ])('%s: neither the textarea nor its placeholder is centered', (_label, mobile) => {
+    mockUseIsMobile.mockReturnValue(mobile)
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    const textarea = screen.getByRole('textbox')
+    expect(textarea).not.toHaveClass('text-center')
+    expect(textarea).not.toHaveClass('placeholder:text-center')
+  })
+})
