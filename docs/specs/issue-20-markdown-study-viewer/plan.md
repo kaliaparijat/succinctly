@@ -125,17 +125,23 @@ green. One logical change per commit, suite green after each. Phase 4 is verific
 - [ ] **4.4 PR #19:** title/body cover #18 and #20 with "Closes #18" and "Closes #20"; verify
       with `gh pr view 19 --json closingIssuesReferences` that exactly those are linked.
 
-## Questions for review
+## Decisions and open questions
 
-1. **Vertical position in the viewer.** Today short text is vertically centered. The editor's
-   rendered view is top-aligned. I'd keep centering for a single short block in the viewer and
-   top-align once content overflows. OK?
-2. **Text size.** The viewer uses `clamp(20px, 3vw, 40px)` (desktop) and 27px (mobile);
-   `MarkdownRenderer` takes a fixed number (25 / 19 in the editor). I'd add a renderer size that
-   accepts the viewer's fluid size so study text doesn't shrink. Or accept the editor's sizes?
-3. **Mobile toolbar slot.** The viewer's bottom row holds prev / insert / next. While editing I'd
-   swap it for the toolbar (matching the editor's bottom bar) and restore it after. OK?
-4. **Edit-mode font.** The design's editing textarea is JetBrains Mono, left-aligned; the shipped
-   editor uses the display font. I'd match the editor (not the design) in the viewer for
-   consistency. Revisit both together later?
-5. **Save disabled on a blank new card** (task 3.3) — still tabled.
+Decided:
+1. **Vertical position:** keep short text vertically centered in the viewer; top-align once the
+   content is taller than the card. (Decided.)
+
+Open (explained in plain terms in the PR #19 conversation; answer before the matching task):
+2. **Text size in the viewer** (affects 1.2, 1.3, 1.5). Recommendation: keep the viewer's current
+   sizes (fluid 20–40px on desktop, 27px on mobile) rather than the editor's smaller fixed sizes
+   (25px / 19px); needs `MarkdownRenderer` to accept a CSS size.
+3. **Mobile toolbar and the iOS keyboard** (affects 2.3, and possibly #18's create editor, which
+   already puts its toolbar in a bottom bar). On iPhone Safari the on-screen keyboard covers the
+   bottom of the page, so a bottom toolbar may be hidden. Options: (A) put the toolbar in the card
+   header while editing on mobile, where the keyboard can't cover it; (B) keep a bottom bar and lift
+   it above the keyboard using the browser's `visualViewport`. Needs a real-iPhone check of the
+   create editor first.
+4. **Editing font** (affects 2.2). The design handoff shows a monospace font in the editing box;
+   the shipped create editor keeps the serif card font. Recommendation: match the shipped editor.
+5. **Disable Save on a blank new card** (task 3.3). The blank card already won't be saved; the open
+   part is whether the button also looks disabled. Recommendation: yes, and ⌘↵ also does nothing.
