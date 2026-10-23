@@ -72,7 +72,7 @@ export default function DesktopCardEditor({
                 style={{ backgroundImage: PAPER_NOISE }}
               />
               <CardHeader label="Question" toolbar={<FormatToolbar onFmt={questionFace.fmt} color="var(--card-ink)" />} />
-              <div className="flex-1 relative px-10 pt-4 pb-14">
+              <div className="flex-1 relative">
                 <MarkdownFace
                   name="question"
                   face={questionFace}
@@ -82,6 +82,7 @@ export default function DesktopCardEditor({
                   codeSize={13}
                   onKeyDown={onKeyDown}
                   autoFocus={face === 'question'}
+                  paddingClassName="pt-[26px] px-[44px] pb-[74px]"
                   textareaClassName="font-display leading-snug text-[clamp(20px,3vw,38px)] tracking-[-0.5px] text-[var(--card-ink)] placeholder:opacity-30 placeholder:text-center"
                 />
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
@@ -97,7 +98,7 @@ export default function DesktopCardEditor({
                 style={{ backgroundImage: PAPER_NOISE }}
               />
               <CardHeader label="Answer" toolbar={<FormatToolbar onFmt={answerFace.fmt} color="var(--card-ink)" />} />
-              <div className="flex-1 relative px-10 pt-4 pb-14">
+              <div className="flex-1 relative">
                 <MarkdownFace
                   name="reference_answer"
                   face={answerFace}
@@ -107,6 +108,7 @@ export default function DesktopCardEditor({
                   codeSize={13}
                   onKeyDown={onKeyDown}
                   autoFocus={face === 'answer'}
+                  paddingClassName="pt-[26px] px-[44px] pb-[74px]"
                   textareaClassName="font-display leading-snug text-[clamp(20px,3vw,38px)] tracking-[-0.5px] text-[var(--card-ink)] placeholder:opacity-30 placeholder:text-center"
                 />
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2">

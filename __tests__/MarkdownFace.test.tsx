@@ -9,12 +9,14 @@ function TestFace({
   name = 'question',
   onKeyDown,
   textareaClassName,
+  paddingClassName,
 }: {
   initialText?: string
   initialEditing?: boolean
   name?: string
   onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
   textareaClassName?: string
+  paddingClassName?: string
 }) {
   const face = useMarkdownFace({ initialText, initialEditing })
   return (
@@ -24,6 +26,7 @@ function TestFace({
       placeholder="What's the question?"
       onKeyDown={onKeyDown}
       textareaClassName={textareaClassName}
+      paddingClassName={paddingClassName}
     />
   )
 }
@@ -142,5 +145,19 @@ describe('MarkdownFace — layout (the one jsdom can pin at the class level)', (
     const { container } = render(<TestFace initialText="Hello" initialEditing />)
     const root = container.querySelector('[data-face]')
     expect(root).toHaveClass('absolute', 'inset-0')
+  })
+})
+
+describe('MarkdownFace — padding lives on the face itself (#18 follow-up)', () => {
+  // A parent's padding doesn't inset an absolutely-positioned child, so the face
+  // must carry its own padding in both of its states.
+  it('applies paddingClassName to the editing textarea', () => {
+    render(<TestFace initialText="Hello" initialEditing paddingClassName="px-[44px]" />)
+    expect(screen.getByRole('textbox')).toHaveClass('px-[44px]')
+  })
+
+  it('applies paddingClassName to the rendered view', () => {
+    const { container } = render(<TestFace initialText="Hello" paddingClassName="px-[44px]" />)
+    expect(container.querySelector('.rt')!.closest('.px-\\[44px\\]')).not.toBeNull()
   })
 })

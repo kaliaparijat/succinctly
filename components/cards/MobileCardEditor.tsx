@@ -75,7 +75,7 @@ export default function MobileCardEditor({
                 style={{ backgroundImage: PAPER_NOISE }}
               />
               <CardHeader editing={questionFace.editing} onDone={questionFace.close} />
-              <div className="flex-1 relative px-[26px] py-[10px] landscape:px-10 landscape:py-1">
+              <div className="flex-1 relative">
                 <MarkdownFace
                   name="question"
                   face={questionFace}
@@ -85,6 +85,7 @@ export default function MobileCardEditor({
                   codeSize={10.5}
                   onKeyDown={onKeyDown}
                   autoFocus={face === 'question'}
+                  paddingClassName="pt-[18px] px-5 pb-[66px] landscape:pt-2 landscape:px-10"
                   textareaClassName="font-display text-center leading-[1.3] text-[26px] landscape:text-[22px] tracking-[-0.3px] text-[var(--card-ink)] placeholder:opacity-30"
                 />
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
@@ -100,7 +101,7 @@ export default function MobileCardEditor({
                 style={{ backgroundImage: PAPER_NOISE }}
               />
               <CardHeader editing={answerFace.editing} onDone={answerFace.close} />
-              <div className="flex-1 relative px-[26px] py-[10px] landscape:px-10 landscape:py-1">
+              <div className="flex-1 relative">
                 <MarkdownFace
                   name="reference_answer"
                   face={answerFace}
@@ -110,6 +111,7 @@ export default function MobileCardEditor({
                   codeSize={10.5}
                   onKeyDown={onKeyDown}
                   autoFocus={face === 'answer'}
+                  paddingClassName="pt-[18px] px-5 pb-[66px] landscape:pt-2 landscape:px-10"
                   textareaClassName="font-display text-center leading-[1.3] text-[26px] landscape:text-[22px] tracking-[-0.3px] text-[var(--card-ink)] placeholder:opacity-30"
                 />
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2">

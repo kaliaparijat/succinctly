@@ -12,6 +12,11 @@ interface Props {
   /** Extra classes for the editing textarea itself — font/size/color/placeholder tokens, which differ per breakpoint. */
   textareaClassName?: string
   /**
+   * Padding classes for the face's content, applied to the editing textarea and the rendered view
+   * themselves. The face is absolutely positioned, so padding on a parent would not inset it.
+   */
+  paddingClassName?: string
+  /**
    * Called after the face's own onKeyDown (Escape/⌘B/⌘I/Tab-in-fence/list
    * Enter), but only if that didn't call stopPropagation() — e.g. CardEditor's
    * Tab-to-flip, which should still fire for a plain Tab outside a fence.
@@ -28,7 +33,7 @@ interface Props {
   autoFocus?: boolean
 }
 
-export default function MarkdownFace({ name, face, placeholder, size = 24, codeSize = 13, ink, className, textareaClassName = '', onKeyDown, autoFocus = true }: Props) {
+export default function MarkdownFace({ name, face, placeholder, size = 24, codeSize = 13, ink, className, textareaClassName = '', paddingClassName = '', onKeyDown, autoFocus = true }: Props) {
   const { text, editing, open, close, setText, textareaRef, onKeyDown: faceOnKeyDown } = face
 
   function handleBlur(e: React.FocusEvent<HTMLDivElement>) {
@@ -59,7 +64,7 @@ export default function MarkdownFace({ name, face, placeholder, size = 24, codeS
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           autoFocus={autoFocus}
-          className={`absolute inset-0 w-full h-full bg-transparent resize-none outline-none ${textareaClassName}`}
+          className={`absolute inset-0 w-full h-full bg-transparent resize-none outline-none ${paddingClassName} ${textareaClassName}`}
         />
       ) : (
         <div
@@ -68,7 +73,7 @@ export default function MarkdownFace({ name, face, placeholder, size = 24, codeS
             e.preventDefault()
             open()
           }}
-          className="absolute inset-0 cursor-text overflow-y-auto"
+          className={`absolute inset-0 cursor-text overflow-y-auto ${paddingClassName}`}
         >
           <MarkdownRenderer src={text} placeholder={placeholder} size={size} codeSize={codeSize} ink={ink} />
         </div>

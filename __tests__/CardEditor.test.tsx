@@ -273,3 +273,16 @@ describe('CardEditor — Tab inside a fenced code block does not flip', () => {
     expect((screen.getAllByRole('textbox')[0] as HTMLTextAreaElement).value).toBe('```python\ndef f():\n    ')
   })
 })
+
+describe('CardEditor — face padding matches the design (#18 follow-up)', () => {
+  it('desktop: 26px 44px 74px on the editing textarea', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    expect(screen.getByRole('textbox')).toHaveClass('pt-[26px]', 'px-[44px]', 'pb-[74px]')
+  })
+
+  it('mobile: 18px 20px 66px on the editing textarea', () => {
+    mockUseIsMobile.mockReturnValue(true)
+    render(<CardEditor deck={mockDeck} />)
+    expect(screen.getByRole('textbox')).toHaveClass('pt-[18px]', 'px-5', 'pb-[66px]')
+  })
+})
