@@ -511,3 +511,100 @@ describe('StudyViewer — failed save rolls back (#21)', () => {
     expect(screen.queryByText('Updated question')).not.toBeInTheDocument()
   })
 })
+
+describe('StudyViewer — renders Markdown on the card faces (#20)', () => {
+  // One card exercising every format. Per-format rendering is covered by the markdown and
+  // MarkdownRenderer tests; this only proves the viewer renders through the Markdown renderer.
+  const markdownCard = [{
+    id: 'c1',
+    question: 'A **bold** and *italic* word with `inline`\n\n- item one\n- item two',
+    reference_answer: '```python\nprint(1)\n```\n\n$$x^2$$',
+  }]
+
+  function expectMarkdownRendered(container: HTMLElement) {
+    expect(container.querySelector('strong')).toHaveTextContent('bold')
+    expect(container.querySelector('em')).toHaveTextContent('italic')
+    expect(container.querySelector('code.ic')).toHaveTextContent('inline')
+    expect(container.querySelectorAll('li')).toHaveLength(2)
+    expect(screen.getByText('python')).toBeInTheDocument()
+    expect(container.querySelector('.hljs-built_in')).toHaveTextContent('print')
+    expect(container.querySelector('.katex')).not.toBeNull()
+    // None of the raw Markdown syntax is shown as text.
+    for (const raw of ['**bold**', '*italic*', '`inline`', '- item one', '```', '$$']) {
+      expect(container).not.toHaveTextContent(raw)
+    }
+  }
+
+  it('desktop: bold, italic, inline code, list, fenced code and math render', () => {
+    mockUseIsMobile.mockReturnValue(false)
+    const { container } = render(<StudyViewer deck={deck} cards={markdownCard} />)
+    expectMarkdownRendered(container)
+  })
+
+  it('mobile: bold, italic, inline code, list, fenced code and math render', () => {
+    mockUseIsMobile.mockReturnValue(true)
+    const { container } = render(<StudyViewer deck={deck} cards={markdownCard} />)
+    expectMarkdownRendered(container)
+  })
+})
+
+describe('StudyViewer — empty faces (#20)', () => {
+  // createCard allows a card with one blank face, so the viewer must render it cleanly.
+  const blankAnswer = [{ id: 'c1', question: 'Q1', reference_answer: '' }]
+  const blankQuestion = [{ id: 'c1', question: '', reference_answer: 'A1' }]
+
+  it.each([
+    ['desktop', false],
+    ['mobile', true],
+  ])('%s: a blank answer shows the answer placeholder', (_label, mobile) => {
+    mockUseIsMobile.mockReturnValue(mobile)
+    render(<StudyViewer deck={deck} cards={blankAnswer} />)
+    expect(screen.getByText('Write the answer…')).toBeInTheDocument()
+    expect(screen.getByText('Q1')).toBeInTheDocument()
+  })
+
+  it.each([
+    ['desktop', false],
+    ['mobile', true],
+  ])("%s: a blank question shows the question placeholder", (_label, mobile) => {
+    mockUseIsMobile.mockReturnValue(mobile)
+    render(<StudyViewer deck={deck} cards={blankQuestion} />)
+    expect(screen.getByText("What's the question?")).toBeInTheDocument()
+  })
+
+  it('a blank face can still be entered for editing (desktop double-click)', () => {
+    mockUseIsMobile.mockReturnValue(false)
+    render(<StudyViewer deck={deck} cards={blankQuestion} />)
+    fireEvent.doubleClick(screen.getByText("What's the question?"))
+    expect(screen.getByRole('textbox', { name: 'Question' })).toBeInTheDocument()
+  })
+
+  it('a blank face can still be entered for editing (mobile Edit button)', () => {
+    mockUseIsMobile.mockReturnValue(true)
+    render(<StudyViewer deck={deck} cards={blankQuestion} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+    expect(screen.getByRole('textbox', { name: 'Question' })).toBeInTheDocument()
+  })
+})
+
+describe('StudyViewer — face layout (#20)', () => {
+  // The face's text sits in a scroller that owns the design's padding (the bottom value clears the
+  // Q/A toggle / flip hint), and the text block centers itself with my-auto: centered when short,
+  // top-aligned and scrollable once it outgrows the card. jsdom can't measure layout, so the real
+  // behavior is covered by the live check.
+  it('desktop: 26px 44px 74px padding on the scroller, short text centered via my-auto', () => {
+    mockUseIsMobile.mockReturnValue(false)
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    const scroller = screen.getByText('Q1').closest('.overflow-y-auto') as HTMLElement
+    expect(scroller).toHaveClass('pt-[26px]', 'px-[44px]', 'pb-[74px]')
+    expect(scroller.firstElementChild).toHaveClass('my-auto')
+  })
+
+  it('mobile: 18px 20px 66px padding on the scroller, short text centered via my-auto', () => {
+    mockUseIsMobile.mockReturnValue(true)
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    const scroller = screen.getByText('Q1').closest('.overflow-y-auto') as HTMLElement
+    expect(scroller).toHaveClass('pt-[18px]', 'px-5', 'pb-[66px]')
+    expect(scroller.firstElementChild).toHaveClass('my-auto')
+  })
+})

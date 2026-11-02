@@ -2,7 +2,7 @@
 
 Source spec: `docs/specs/issue-20-markdown-study-viewer/spec.md`
 (issue #20: https://github.com/kaliaparijat/succinctly/issues/20)
-Delivered on the `issue-18` branch / PR #19 with #18's work.
+Delivered on the `issue-20` branch in its own PR, after #18 (PR #19) merged.
 
 ## Context
 
@@ -29,8 +29,8 @@ draft:
 3. **Click semantics differ from the create editor.** `MarkdownFace` opens edit on a single
    mousedown on its rendered view. In the study viewer a single click/tap *flips* the card
    (`onClick={onFlip}` / `handleClick`), and edit starts from double-click (desktop) or the pencil
-   (mobile). `MarkdownFace` therefore needs a display-only mode (`openOnClick={false}`), or the
-   viewer uses `MarkdownRenderer` directly. Without this, every flip click would open the editor.
+   (mobile). So the viewer renders `MarkdownRenderer` directly while viewing and only mounts the
+   editing surface while editing; `MarkdownFace`'s click-to-open must never be in play there.
 4. **Escape must cancel, but `useMarkdownFace`'s Escape handler calls `el.blur()` first.** A blur
    handler that saves would save on Escape. #15 avoided this by clearing `editingFace` before the
    blur lands; the new flow needs the same guarantee, with a test (the existing "Escape-to-cancel
@@ -54,7 +54,7 @@ green. One logical change per commit, suite green after each. Phase 4 is verific
 ## Dependency graph
 
 ```
-1.1 display-only face ──┐
+1.1b renderer size ─────┐
                         ├─ 1.2 desktop render ─ 1.3 mobile render ─ 1.4 empty face ─ 1.5 layout
 2.1 hook: seed + cancel ┘
         │
@@ -69,12 +69,20 @@ green. One logical change per commit, suite green after each. Phase 4 is verific
 
 ## Phase 1 — Display
 
-- [ ] **1.1 `MarkdownFace` display-only mode.** Red: with `openOnClick={false}`, mousedown on the
-      rendered view does not open editing (existing default behavior unchanged). Green: new prop.
-- [ ] **1.2 Desktop viewer renders Markdown.** Red: card `*italic* and \`code\`` renders `<em>` and
-      `<code>`, bold/list/fenced code/math too (one test each). Green: replace `{!isEditing && text}`
-      in `DesktopStudyViewer`'s `CardFace` with `MarkdownRenderer`.
-- [ ] **1.3 Mobile viewer renders Markdown.** Same tests against `MobileStudyViewer`.
+- [x] **1.1 ~~`MarkdownFace` display-only mode~~ — dropped.** The viewers render `MarkdownRenderer`
+      directly while viewing and mount the editing surface only while editing, so the display
+      branch of `MarkdownFace` (and an `openOnClick` option for it) is never used. Added in
+      error and reverted.
+- [x] **1.1b `MarkdownRenderer` accepts any CSS length as its base size** (so the viewer keeps its
+      fluid text size). Blocks are sized in em relative to it.
+- [ ] **1.2 Desktop viewer renders Markdown.** Red: one test renders a card whose question and answer
+      together use bold, italic, inline code, a list, a fenced code block and math, and asserts each
+      renders as its element (`<strong>`, `<em>`, `<code>`, `<li>`, highlighted code block, KaTeX).
+      One test, not one per format: the per-format rendering is already covered by #18's
+      `MarkdownRenderer` and `markdown` tests, so this only needs to prove the viewer uses the
+      renderer. Green: replace `{!isEditing && text}` in `DesktopStudyViewer`'s `CardFace` with
+      `MarkdownRenderer`.
+- [ ] **1.3 Mobile viewer renders Markdown.** The same single test against `MobileStudyViewer`.
 - [ ] **1.4 Empty faces render cleanly.** Red: `reference_answer: ''` (and empty question) renders the
       placeholder, no errors, layout intact; double-click (desktop) / Edit (mobile) still enters edit
       mode on it. Green as needed.
@@ -123,8 +131,8 @@ green. One logical change per commit, suite green after each. Phase 4 is verific
       edit the other); an empty face; a card with code + math.
 - [ ] **4.3** browser-qa against the PR preview (desktop + mobile), including WebKit for the Q/A
       toggle's mousedown handling.
-- [ ] **4.4 PR #19:** title/body cover #18 and #20 with "Closes #18" and "Closes #20"; verify
-      with `gh pr view 19 --json closingIssuesReferences` that exactly those are linked.
+- [ ] **4.4 PR:** body says "Closes #20"; verify with `gh pr view <n> --json
+      closingIssuesReferences` that exactly #20 is linked (#22 and #23 are related, not closed).
 
 ## Decisions and open questions
 
@@ -135,7 +143,7 @@ Decided:
    `MarkdownRenderer` gets a way to take a CSS size.
 3. **Mobile toolbar:** while editing on mobile the toolbar goes in the card header, not a bottom bar,
    so the iPhone keyboard can't cover it. #18's create editor should follow the same placement.
-   Verify on a real iPhone via the Vercel preview of PR #19.
+   Verified on a real iPhone via the Vercel preview of PR #19 (bottom bar was hidden; header placement shipped in #18).
 5. **Blank new card:** Save is disabled while both faces are blank and ⌘↵ does nothing.
 
 Open:

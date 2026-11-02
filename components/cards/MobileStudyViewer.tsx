@@ -4,6 +4,7 @@ import type { RefObject } from 'react'
 import Link from 'next/link'
 import { MobileViewerBar } from '@/components/layout/TopBar'
 import { PAPER_NOISE } from '@/lib/palette'
+import MarkdownRenderer from '@/components/cards/markdown/MarkdownRenderer'
 import QAToggle from '@/components/ui/QAToggle'
 
 interface Card {
@@ -207,26 +208,31 @@ function CardFace({
         <span className="font-sans text-[11px]" style={{ color: ink, opacity: 0.4 }}>{deckName}</span>
       </div>
 
-      <div className="flex-1 flex items-center justify-center relative p-[18px_26px] landscape:p-[6px_40px]">
-        <div
-          ref={isEditing ? editRef : null}
-          contentEditable={isEditing ? 'plaintext-only' : 'false'}
-          suppressContentEditableWarning
-          role={isEditing ? 'textbox' : undefined}
-          aria-label={isEditing ? label : undefined}
-          onKeyDown={isEditing ? onEditKeyDown : undefined}
-          onBlur={isEditing ? onEditBlur : undefined}
-          className="font-display text-center outline-none w-full text-[27px] landscape:text-[24px]"
-          style={{
-            color: ink,
-            lineHeight: 1.28,
-            letterSpacing: '-0.3px',
-            textWrap: 'pretty',
-            cursor: isEditing ? 'text' : 'inherit',
-            minHeight: '1em',
-          }}
-        >
-          {!isEditing && text}
+      <div className="flex-1 min-h-0 relative">
+        {/* Scroller owns the design's padding (bottom clears the toggle/hint); the text block below
+            centers itself with my-auto: centered when short, top-aligned and scrollable when long. */}
+        <div className="absolute inset-0 overflow-y-auto flex flex-col pt-[18px] px-5 pb-[66px] landscape:pt-[6px] landscape:px-10 landscape:pb-11">
+          <div
+            ref={isEditing ? editRef : null}
+            contentEditable={isEditing ? 'plaintext-only' : 'false'}
+            suppressContentEditableWarning
+            role={isEditing ? 'textbox' : undefined}
+            aria-label={isEditing ? label : undefined}
+            onKeyDown={isEditing ? onEditKeyDown : undefined}
+            onBlur={isEditing ? onEditBlur : undefined}
+            className="font-display text-center outline-none w-full my-auto text-[27px] landscape:text-[24px]"
+            style={{
+              color: ink,
+              lineHeight: 1.28,
+              letterSpacing: '-0.3px',
+              textWrap: 'pretty',
+              cursor: isEditing ? 'text' : 'inherit',
+              minHeight: '1em',
+            }}
+          >
+            {/* size="inherit": the text container above owns the responsive font size (including mobile landscape) */}
+            {!isEditing && <MarkdownRenderer src={text} placeholder={label === 'Question' ? "What's the question?" : 'Write the answer…'} size="inherit" codeSize={10.5} ink={ink} />}
+          </div>
         </div>
 
         {isEditing && (
