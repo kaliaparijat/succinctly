@@ -13,7 +13,17 @@ export function useMarkdownFace({ initialText = '', initialEditing = false }: Op
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const pendingSelection = useRef<[number, number] | null>(null)
 
-  const open = () => setEditing(true)
+  // Set by Escape so the blur it causes can tell "cancel" from "click away" (see consumeCancel).
+  const cancelled = useRef(false)
+
+  // `seed` replaces the text on entry (a viewer re-seeds from the card each time). Either way the
+  // caret lands at the end of the text, as in the design.
+  const open = (seed?: string) => {
+    const next = typeof seed === 'string' ? seed : text
+    if (typeof seed === 'string') setText(seed)
+    setEditing(true)
+    pendingSelection.current = [next.length, next.length]
+  }
   const close = () => setEditing(false)
 
   // After a text update that moves the caret (fmt()), restore focus and the
@@ -47,6 +57,7 @@ export function useMarkdownFace({ initialText = '', initialEditing = false }: Op
 
     if (e.key === 'Escape') {
       e.preventDefault()
+      cancelled.current = true
       el.blur()
       close()
       return
@@ -77,5 +88,13 @@ export function useMarkdownFace({ initialText = '', initialEditing = false }: Op
     }
   }
 
-  return { text, setText, editing, open, close, fmt, onKeyDown, textareaRef }
+  // True once if Escape just fired. The blur that Escape triggers runs the face's blur handler;
+  // a caller that saves on blur calls this to skip that save.
+  function consumeCancel() {
+    const was = cancelled.current
+    cancelled.current = false
+    return was
+  }
+
+  return { text, setText, editing, open, close, fmt, onKeyDown, textareaRef, consumeCancel }
 }
