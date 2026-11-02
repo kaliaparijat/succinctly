@@ -3,6 +3,7 @@ import { MobileCreateBar } from '@/components/layout/TopBar'
 import QAToggle from '@/components/ui/QAToggle'
 import MarkdownFace from '@/components/cards/markdown/MarkdownFace'
 import FormatToolbar from '@/components/cards/markdown/FormatToolbar'
+import type { FormatKind } from '@/lib/applyFormat'
 import type { useMarkdownFace } from '@/components/cards/markdown/useMarkdownFace'
 
 interface Deck {
@@ -37,8 +38,6 @@ export default function MobileCardEditor({
   deck, flipDuration, bg, ink, face, flipped, setFace, previousCardId,
   questionFace, answerFace, formRef, formAction, pending, state, onKeyDown, onBack,
 }: Props) {
-  const currentFace = face === 'question' ? questionFace : answerFace
-
   return (
     <div className="h-dvh bg-surface flex flex-col">
       <MobileCreateBar
@@ -74,7 +73,7 @@ export default function MobileCardEditor({
                 className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-50"
                 style={{ backgroundImage: PAPER_NOISE }}
               />
-              <CardHeader editing={questionFace.editing} onDone={questionFace.close} />
+              <CardHeader editing={questionFace.editing} onDone={questionFace.close} onFmt={questionFace.fmt} />
               <div className="flex-1 relative">
                 <MarkdownFace
                   name="question"
@@ -100,7 +99,7 @@ export default function MobileCardEditor({
                 className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-50"
                 style={{ backgroundImage: PAPER_NOISE }}
               />
-              <CardHeader editing={answerFace.editing} onDone={answerFace.close} />
+              <CardHeader editing={answerFace.editing} onDone={answerFace.close} onFmt={answerFace.fmt} />
               <div className="flex-1 relative">
                 <MarkdownFace
                   name="reference_answer"
@@ -124,20 +123,18 @@ export default function MobileCardEditor({
           {state?.error && (
             <span className="text-red-400 text-xs font-sans text-center">{state.error}</span>
           )}
-
-          {/* Formatting toolbar — bottom bar, targets whichever face is currently showing */}
-          <div className="w-full max-w-[700px] flex items-center justify-center border-t border-divider pt-3">
-            <FormatToolbar onFmt={currentFace.fmt} size={38} gap={0} color="var(--text-primary)" />
-          </div>
         </form>
       </div>
     </div>
   )
 }
 
-function CardHeader({ editing, onDone }: { editing: boolean; onDone: () => void }) {
+// The formatting toolbar lives in the card header, not a bottom bar: the iOS keyboard covers the
+// bottom of the page but never the top of the card.
+function CardHeader({ editing, onDone, onFmt }: { editing: boolean; onDone: () => void; onFmt: (kind: FormatKind) => void }) {
   return (
-    <div className="flex items-center justify-end px-5 py-3 shrink-0 border-b border-[color:var(--card-ink-subtle)] min-h-[20px]">
+    <div className="flex items-center justify-between px-3 py-2 shrink-0 border-b border-[color:var(--card-ink-subtle)] min-h-[20px]">
+      <FormatToolbar onFmt={onFmt} size={30} gap={0} color="var(--card-ink)" />
       {editing ? (
         <button
           type="button"
@@ -148,7 +145,7 @@ function CardHeader({ editing, onDone }: { editing: boolean; onDone: () => void 
           Done
         </button>
       ) : (
-        <span className="font-sans text-[11px] text-[var(--card-ink)] opacity-40">Draft</span>
+        <span className="font-sans text-[11px] text-[var(--card-ink)] opacity-40 pr-2">Draft</span>
       )}
     </div>
   )

@@ -230,10 +230,26 @@ describe('CardEditor — Markdown toolbar presence', () => {
     expect(screen.getAllByTitle(/italic/i)).toHaveLength(2)
   })
 
-  it('renders a single formatting toolbar in the mobile bottom bar', () => {
+  // The iPhone keyboard covers the bottom of the page, so on mobile the toolbar lives in each
+  // face's header (inside the card), where the keyboard can't hide it.
+  it('renders a formatting toolbar in each face header on mobile, inside the card', () => {
     mockUseIsMobile.mockReturnValue(true)
-    render(<CardEditor deck={mockDeck} cardNumber={1} />)
-    expect(screen.getAllByTitle(/bold/i)).toHaveLength(1)
+    render(<CardEditor deck={mockDeck} />)
+    const bolds = screen.getAllByTitle(/bold/i)
+    expect(bolds).toHaveLength(2)
+    const card = screen.getByTestId('mobile-card')
+    bolds.forEach(b => expect(card.contains(b)).toBe(true))
+  })
+
+  it('a mobile face header toolbar formats its own face', () => {
+    mockUseIsMobile.mockReturnValue(true)
+    const { container } = render(<CardEditor deck={mockDeck} />)
+    const [, answerBold] = screen.getAllByTitle(/bold/i)
+    fireEvent.click(answerBold)
+    const answer = container.querySelector('input[name="reference_answer"]') as HTMLInputElement
+    const question = container.querySelector('input[name="question"]') as HTMLInputElement
+    expect(answer.value).not.toBe('')
+    expect(question.value).toBe('')
   })
 })
 
