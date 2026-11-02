@@ -216,7 +216,7 @@ function CardFace({
             minHeight: '1em',
           }}
         >
-          {/* size="inherit": the text container above owns the responsive font size (including mobile landscape) */}
+          {/* size="inherit": the text container above owns the fluid font size */}
           {!isEditing && <MarkdownRenderer src={text} placeholder="" size="inherit" codeSize={13} ink={ink} />}
         </div>
 
