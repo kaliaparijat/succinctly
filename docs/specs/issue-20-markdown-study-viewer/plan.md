@@ -71,10 +71,14 @@ green. One logical change per commit, suite green after each. Phase 4 is verific
 
 - [ ] **1.1 `MarkdownFace` display-only mode.** Red: with `openOnClick={false}`, mousedown on the
       rendered view does not open editing (existing default behavior unchanged). Green: new prop.
-- [ ] **1.2 Desktop viewer renders Markdown.** Red: card `*italic* and \`code\`` renders `<em>` and
-      `<code>`, bold/list/fenced code/math too (one test each). Green: replace `{!isEditing && text}`
-      in `DesktopStudyViewer`'s `CardFace` with `MarkdownRenderer`.
-- [ ] **1.3 Mobile viewer renders Markdown.** Same tests against `MobileStudyViewer`.
+- [ ] **1.2 Desktop viewer renders Markdown.** Red: one test renders a card whose question and answer
+      together use bold, italic, inline code, a list, a fenced code block and math, and asserts each
+      renders as its element (`<strong>`, `<em>`, `<code>`, `<li>`, highlighted code block, KaTeX).
+      One test, not one per format: the per-format rendering is already covered by #18's
+      `MarkdownRenderer` and `markdown` tests, so this only needs to prove the viewer uses the
+      renderer. Green: replace `{!isEditing && text}` in `DesktopStudyViewer`'s `CardFace` with
+      `MarkdownRenderer`.
+- [ ] **1.3 Mobile viewer renders Markdown.** The same single test against `MobileStudyViewer`.
 - [ ] **1.4 Empty faces render cleanly.** Red: `reference_answer: ''` (and empty question) renders the
       placeholder, no errors, layout intact; double-click (desktop) / Edit (mobile) still enters edit
       mode on it. Green as needed.
