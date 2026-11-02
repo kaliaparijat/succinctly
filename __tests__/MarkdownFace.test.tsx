@@ -10,7 +10,6 @@ function TestFace({
   onKeyDown,
   textareaClassName,
   paddingClassName,
-  openOnClick,
 }: {
   initialText?: string
   initialEditing?: boolean
@@ -18,7 +17,6 @@ function TestFace({
   onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
   textareaClassName?: string
   paddingClassName?: string
-  openOnClick?: boolean
 }) {
   const face = useMarkdownFace({ initialText, initialEditing })
   return (
@@ -29,7 +27,6 @@ function TestFace({
       onKeyDown={onKeyDown}
       textareaClassName={textareaClassName}
       paddingClassName={paddingClassName}
-      openOnClick={openOnClick}
     />
   )
 }
@@ -189,28 +186,5 @@ describe('MarkdownFace — clicking the padding while editing', () => {
     fireEvent(padding, event)
     expect(event.defaultPrevented).toBe(true)
     expect(textarea).toHaveFocus()
-  })
-})
-
-describe('MarkdownFace — openOnClick', () => {
-  // The study viewer flips the card on a single click and edits from a separate gesture,
-  // so it needs a face that renders but never opens itself.
-  it('opens editing on mousedown by default', () => {
-    render(<TestFace initialText="Hello" />)
-    fireEvent.mouseDown(screen.getByText('Hello'))
-    expect(screen.getByRole('textbox')).toBeInTheDocument()
-  })
-
-  it('does not open editing on mousedown, nor swallow the click, when openOnClick is false', () => {
-    render(<TestFace initialText="Hello" openOnClick={false} />)
-    const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
-    fireEvent(screen.getByText('Hello'), event)
-    expect(screen.queryByRole('textbox')).toBeNull()
-    expect(event.defaultPrevented).toBe(false)
-  })
-
-  it('does not show the text cursor when openOnClick is false (the caller owns the cursor)', () => {
-    const { container } = render(<TestFace initialText="Hello" openOnClick={false} />)
-    expect(container.querySelector('.cursor-text')).toBeNull()
   })
 })

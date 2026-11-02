@@ -17,12 +17,6 @@ interface Props {
    */
   paddingClassName?: string
   /**
-   * Whether a click on the rendered view opens editing. Default true (the create editor).
-   * The study viewer sets this false: there a click flips the card, and editing starts from
-   * its own gesture (double-click / Edit button).
-   */
-  openOnClick?: boolean
-  /**
    * Called after the face's own onKeyDown (Escape/⌘B/⌘I/Tab-in-fence/list
    * Enter), but only if that didn't call stopPropagation() — e.g. CardEditor's
    * Tab-to-flip, which should still fire for a plain Tab outside a fence.
@@ -39,7 +33,7 @@ interface Props {
   autoFocus?: boolean
 }
 
-export default function MarkdownFace({ name, face, placeholder, size = 24, codeSize = 13, ink, className, textareaClassName = '', paddingClassName = '', openOnClick = true, onKeyDown, autoFocus = true }: Props) {
+export default function MarkdownFace({ name, face, placeholder, size = 24, codeSize = 13, ink, className, textareaClassName = '', paddingClassName = '', onKeyDown, autoFocus = true }: Props) {
   const { text, editing, open, close, setText, textareaRef, onKeyDown: faceOnKeyDown } = face
 
   function handleBlur(e: React.FocusEvent<HTMLDivElement>) {
@@ -91,12 +85,12 @@ export default function MarkdownFace({ name, face, placeholder, size = 24, codeS
         </div>
       ) : (
         <div
-          onMouseDown={openOnClick ? (e) => {
+          onMouseDown={(e) => {
             if ((e.target as HTMLElement).closest('button,a')) return
             e.preventDefault()
             open()
-          } : undefined}
-          className={`absolute inset-0 overflow-y-auto ${openOnClick ? 'cursor-text' : ''} ${paddingClassName}`}
+          }}
+          className={`absolute inset-0 cursor-text overflow-y-auto ${paddingClassName}`}
         >
           <MarkdownRenderer src={text} placeholder={placeholder} size={size} codeSize={codeSize} ink={ink} />
         </div>
