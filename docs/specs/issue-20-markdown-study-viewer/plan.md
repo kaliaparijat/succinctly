@@ -2,7 +2,7 @@
 
 Source spec: `docs/specs/issue-20-markdown-study-viewer/spec.md`
 (issue #20: https://github.com/kaliaparijat/succinctly/issues/20)
-Delivered on the `issue-18` branch / PR #19 with #18's work.
+Delivered on the `issue-20` branch in its own PR, after #18 (PR #19) merged.
 
 ## Context
 
@@ -123,8 +123,8 @@ green. One logical change per commit, suite green after each. Phase 4 is verific
       edit the other); an empty face; a card with code + math.
 - [ ] **4.3** browser-qa against the PR preview (desktop + mobile), including WebKit for the Q/A
       toggle's mousedown handling.
-- [ ] **4.4 PR #19:** title/body cover #18 and #20 with "Closes #18" and "Closes #20"; verify
-      with `gh pr view 19 --json closingIssuesReferences` that exactly those are linked.
+- [ ] **4.4 PR:** body says "Closes #20"; verify with `gh pr view <n> --json
+      closingIssuesReferences` that exactly #20 is linked (#22 and #23 are related, not closed).
 
 ## Decisions and open questions
 
@@ -135,7 +135,7 @@ Decided:
    `MarkdownRenderer` gets a way to take a CSS size.
 3. **Mobile toolbar:** while editing on mobile the toolbar goes in the card header, not a bottom bar,
    so the iPhone keyboard can't cover it. #18's create editor should follow the same placement.
-   Verify on a real iPhone via the Vercel preview of PR #19.
+   Verified on a real iPhone via the Vercel preview of PR #19 (bottom bar was hidden; header placement shipped in #18).
 5. **Blank new card:** Save is disabled while both faces are blank and ⌘↵ does nothing.
 
 Open:
