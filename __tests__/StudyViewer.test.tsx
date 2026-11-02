@@ -511,3 +511,31 @@ describe('StudyViewer — failed save rolls back (#21)', () => {
     expect(screen.queryByText('Updated question')).not.toBeInTheDocument()
   })
 })
+
+describe('StudyViewer — renders Markdown on the card faces (#20)', () => {
+  // One card exercising every format. Per-format rendering is covered by the markdown and
+  // MarkdownRenderer tests; this only proves the viewer renders through the Markdown renderer.
+  const markdownCard = [{
+    id: 'c1',
+    question: 'A **bold** and *italic* word with `inline`\n\n- item one\n- item two',
+    reference_answer: '```python\nprint(1)\n```\n\n$$x^2$$',
+  }]
+
+  function expectMarkdownRendered(container: HTMLElement) {
+    expect(container.querySelector('strong')).toHaveTextContent('bold')
+    expect(container.querySelector('em')).toHaveTextContent('italic')
+    expect(container.querySelector('code.ic')).toHaveTextContent('inline')
+    expect(container.querySelectorAll('li')).toHaveLength(2)
+    expect(screen.getByText('python')).toBeInTheDocument()
+    expect(container.querySelector('.hljs-built_in')).toHaveTextContent('print')
+    expect(container.querySelector('.katex')).not.toBeNull()
+    // The raw syntax is not shown as text.
+    expect(container).not.toHaveTextContent('**bold**')
+  }
+
+  it('desktop: bold, italic, inline code, list, fenced code and math render', () => {
+    mockUseIsMobile.mockReturnValue(false)
+    const { container } = render(<StudyViewer deck={deck} cards={markdownCard} />)
+    expectMarkdownRendered(container)
+  })
+})

@@ -6,6 +6,7 @@ import { ViewerBar } from '@/components/layout/TopBar'
 import HelpOverlay from '@/components/ui/HelpOverlay'
 import KeyPill from '@/components/ui/KeyPill'
 import { PAPER_NOISE } from '@/lib/palette'
+import MarkdownRenderer from '@/components/cards/markdown/MarkdownRenderer'
 import QAToggle from '@/components/ui/QAToggle'
 
 interface Card {
@@ -215,7 +216,7 @@ function CardFace({
             minHeight: '1em',
           }}
         >
-          {!isEditing && text}
+          {!isEditing && <MarkdownRenderer src={text} placeholder="" size="clamp(20px, 3vw, 40px)" codeSize={13} ink={ink} />}
         </div>
 
         {isEditing && (
