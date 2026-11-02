@@ -529,8 +529,10 @@ describe('StudyViewer — renders Markdown on the card faces (#20)', () => {
     expect(screen.getByText('python')).toBeInTheDocument()
     expect(container.querySelector('.hljs-built_in')).toHaveTextContent('print')
     expect(container.querySelector('.katex')).not.toBeNull()
-    // The raw syntax is not shown as text.
-    expect(container).not.toHaveTextContent('**bold**')
+    // None of the raw Markdown syntax is shown as text.
+    for (const raw of ['**bold**', '*italic*', '`inline`', '- item one', '```', '$$']) {
+      expect(container).not.toHaveTextContent(raw)
+    }
   }
 
   it('desktop: bold, italic, inline code, list, fenced code and math render', () => {
