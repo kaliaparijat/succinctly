@@ -29,8 +29,8 @@ draft:
 3. **Click semantics differ from the create editor.** `MarkdownFace` opens edit on a single
    mousedown on its rendered view. In the study viewer a single click/tap *flips* the card
    (`onClick={onFlip}` / `handleClick`), and edit starts from double-click (desktop) or the pencil
-   (mobile). `MarkdownFace` therefore needs a display-only mode (`openOnClick={false}`), or the
-   viewer uses `MarkdownRenderer` directly. Without this, every flip click would open the editor.
+   (mobile). So the viewer renders `MarkdownRenderer` directly while viewing and only mounts the
+   editing surface while editing; `MarkdownFace`'s click-to-open must never be in play there.
 4. **Escape must cancel, but `useMarkdownFace`'s Escape handler calls `el.blur()` first.** A blur
    handler that saves would save on Escape. #15 avoided this by clearing `editingFace` before the
    blur lands; the new flow needs the same guarantee, with a test (the existing "Escape-to-cancel
@@ -54,7 +54,7 @@ green. One logical change per commit, suite green after each. Phase 4 is verific
 ## Dependency graph
 
 ```
-1.1 display-only face ──┐
+1.1b renderer size ─────┐
                         ├─ 1.2 desktop render ─ 1.3 mobile render ─ 1.4 empty face ─ 1.5 layout
 2.1 hook: seed + cancel ┘
         │
@@ -69,8 +69,12 @@ green. One logical change per commit, suite green after each. Phase 4 is verific
 
 ## Phase 1 — Display
 
-- [ ] **1.1 `MarkdownFace` display-only mode.** Red: with `openOnClick={false}`, mousedown on the
-      rendered view does not open editing (existing default behavior unchanged). Green: new prop.
+- [x] **1.1 ~~`MarkdownFace` display-only mode~~ — dropped.** The viewers render `MarkdownRenderer`
+      directly while viewing and mount the editing surface only while editing, so the display
+      branch of `MarkdownFace` (and an `openOnClick` option for it) is never used. Added in
+      error and reverted.
+- [x] **1.1b `MarkdownRenderer` accepts any CSS length as its base size** (so the viewer keeps its
+      fluid text size). Blocks are sized in em relative to it.
 - [ ] **1.2 Desktop viewer renders Markdown.** Red: one test renders a card whose question and answer
       together use bold, italic, inline code, a list, a fenced code block and math, and asserts each
       renders as its element (`<strong>`, `<em>`, `<code>`, `<li>`, highlighted code block, KaTeX).
