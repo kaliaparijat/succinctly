@@ -228,7 +228,7 @@ function CardFace({
           }}
         >
           {/* size="inherit": the text container above owns the responsive font size (including mobile landscape) */}
-          {!isEditing && <MarkdownRenderer src={text} placeholder="" size="inherit" codeSize={10.5} ink={ink} />}
+          {!isEditing && <MarkdownRenderer src={text} placeholder={label === 'Question' ? "What's the question?" : 'Write the answer…'} size="inherit" codeSize={10.5} ink={ink} />}
         </div>
 
         {isEditing && (

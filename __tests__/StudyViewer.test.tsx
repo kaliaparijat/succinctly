@@ -545,3 +545,42 @@ describe('StudyViewer — renders Markdown on the card faces (#20)', () => {
     expectMarkdownRendered(container)
   })
 })
+
+describe('StudyViewer — empty faces (#20)', () => {
+  // createCard allows a card with one blank face, so the viewer must render it cleanly.
+  const blankAnswer = [{ id: 'c1', question: 'Q1', reference_answer: '' }]
+  const blankQuestion = [{ id: 'c1', question: '', reference_answer: 'A1' }]
+
+  it.each([
+    ['desktop', false],
+    ['mobile', true],
+  ])('%s: a blank answer shows the answer placeholder', (_label, mobile) => {
+    mockUseIsMobile.mockReturnValue(mobile)
+    render(<StudyViewer deck={deck} cards={blankAnswer} />)
+    expect(screen.getByText('Write the answer…')).toBeInTheDocument()
+    expect(screen.getByText('Q1')).toBeInTheDocument()
+  })
+
+  it.each([
+    ['desktop', false],
+    ['mobile', true],
+  ])("%s: a blank question shows the question placeholder", (_label, mobile) => {
+    mockUseIsMobile.mockReturnValue(mobile)
+    render(<StudyViewer deck={deck} cards={blankQuestion} />)
+    expect(screen.getByText("What's the question?")).toBeInTheDocument()
+  })
+
+  it('a blank face can still be entered for editing (desktop double-click)', () => {
+    mockUseIsMobile.mockReturnValue(false)
+    render(<StudyViewer deck={deck} cards={blankQuestion} />)
+    fireEvent.doubleClick(screen.getByText("What's the question?"))
+    expect(screen.getByRole('textbox', { name: 'Question' })).toBeInTheDocument()
+  })
+
+  it('a blank face can still be entered for editing (mobile Edit button)', () => {
+    mockUseIsMobile.mockReturnValue(true)
+    render(<StudyViewer deck={deck} cards={blankQuestion} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+    expect(screen.getByRole('textbox', { name: 'Question' })).toBeInTheDocument()
+  })
+})

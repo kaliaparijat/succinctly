@@ -217,7 +217,7 @@ function CardFace({
           }}
         >
           {/* size="inherit": the text container above owns the fluid font size */}
-          {!isEditing && <MarkdownRenderer src={text} placeholder="" size="inherit" codeSize={13} ink={ink} />}
+          {!isEditing && <MarkdownRenderer src={text} placeholder={label === 'Question' ? "What's the question?" : 'Write the answer…'} size="inherit" codeSize={13} ink={ink} />}
         </div>
 
         {isEditing && (
