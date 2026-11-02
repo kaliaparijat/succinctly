@@ -538,4 +538,10 @@ describe('StudyViewer — renders Markdown on the card faces (#20)', () => {
     const { container } = render(<StudyViewer deck={deck} cards={markdownCard} />)
     expectMarkdownRendered(container)
   })
+
+  it('mobile: bold, italic, inline code, list, fenced code and math render', () => {
+    mockUseIsMobile.mockReturnValue(true)
+    const { container } = render(<StudyViewer deck={deck} cards={markdownCard} />)
+    expectMarkdownRendered(container)
+  })
 })

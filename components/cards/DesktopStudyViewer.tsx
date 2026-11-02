@@ -216,7 +216,8 @@ function CardFace({
             minHeight: '1em',
           }}
         >
-          {!isEditing && <MarkdownRenderer src={text} placeholder="" size="clamp(20px, 3vw, 40px)" codeSize={13} ink={ink} />}
+          {/* size="inherit": the text container above owns the responsive font size (including mobile landscape) */}
+          {!isEditing && <MarkdownRenderer src={text} placeholder="" size="inherit" codeSize={13} ink={ink} />}
         </div>
 
         {isEditing && (

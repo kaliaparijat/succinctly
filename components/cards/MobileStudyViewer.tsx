@@ -4,6 +4,7 @@ import type { RefObject } from 'react'
 import Link from 'next/link'
 import { MobileViewerBar } from '@/components/layout/TopBar'
 import { PAPER_NOISE } from '@/lib/palette'
+import MarkdownRenderer from '@/components/cards/markdown/MarkdownRenderer'
 import QAToggle from '@/components/ui/QAToggle'
 
 interface Card {
@@ -226,7 +227,8 @@ function CardFace({
             minHeight: '1em',
           }}
         >
-          {!isEditing && text}
+          {/* size="inherit": the text container above owns the responsive font size (including mobile landscape) */}
+          {!isEditing && <MarkdownRenderer src={text} placeholder="" size="inherit" codeSize={10.5} ink={ink} />}
         </div>
 
         {isEditing && (
