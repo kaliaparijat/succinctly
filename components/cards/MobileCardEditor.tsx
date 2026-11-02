@@ -1,6 +1,10 @@
 import { PAPER_NOISE } from '@/lib/palette'
 import { MobileCreateBar } from '@/components/layout/TopBar'
 import QAToggle from '@/components/ui/QAToggle'
+import MarkdownFace from '@/components/cards/markdown/MarkdownFace'
+import FormatToolbar from '@/components/cards/markdown/FormatToolbar'
+import type { FormatKind } from '@/lib/applyFormat'
+import type { useMarkdownFace } from '@/components/cards/markdown/useMarkdownFace'
 
 interface Deck {
   id: string
@@ -19,8 +23,8 @@ interface Props {
   face: Face
   flipped: boolean
   setFace: (face: Face) => void
-  questionRef: React.RefObject<HTMLTextAreaElement | null>
-  answerRef: React.RefObject<HTMLTextAreaElement | null>
+  questionFace: ReturnType<typeof useMarkdownFace>
+  answerFace: ReturnType<typeof useMarkdownFace>
   formRef: React.RefObject<HTMLFormElement | null>
   formAction: (formData: FormData) => void
   pending: boolean
@@ -32,7 +36,7 @@ interface Props {
 
 export default function MobileCardEditor({
   deck, flipDuration, bg, ink, face, flipped, setFace, previousCardId,
-  questionRef, answerRef, formRef, formAction, pending, state, onKeyDown, onBack,
+  questionFace, answerFace, formRef, formAction, pending, state, onKeyDown, onBack,
 }: Props) {
   return (
     <div className="h-dvh bg-surface flex flex-col">
@@ -69,14 +73,19 @@ export default function MobileCardEditor({
                 className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-50"
                 style={{ backgroundImage: PAPER_NOISE }}
               />
-              <CardHeader label="Question" />
+              <CardHeader editing={questionFace.editing} onDone={questionFace.close} onFmt={questionFace.fmt} />
               <div className="flex-1 relative">
-                <textarea
-                  ref={questionRef}
+                <MarkdownFace
                   name="question"
+                  face={questionFace}
                   placeholder="What's the question?"
+                  ink="var(--card-ink)"
+                  size={19}
+                  codeSize={10.5}
                   onKeyDown={onKeyDown}
-                  className="absolute inset-0 w-full h-full bg-transparent resize-none outline-none px-[26px] py-[10px] landscape:px-10 landscape:py-1 font-display text-center leading-[1.3] text-[26px] landscape:text-[22px] tracking-[-0.3px] text-[var(--card-ink)] placeholder:opacity-30"
+                  autoFocus={face === 'question'}
+                  paddingClassName="pt-[18px] px-5 pb-[66px] landscape:pt-2 landscape:px-10"
+                  textareaClassName="font-mono text-[12.5px] leading-[1.65] text-[var(--card-ink)] caret-[var(--card-ink)] placeholder:opacity-[0.35]"
                 />
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
                   <QAToggle face={face} onChange={setFace} />
@@ -90,14 +99,19 @@ export default function MobileCardEditor({
                 className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-50"
                 style={{ backgroundImage: PAPER_NOISE }}
               />
-              <CardHeader label="Answer" />
+              <CardHeader editing={answerFace.editing} onDone={answerFace.close} onFmt={answerFace.fmt} />
               <div className="flex-1 relative">
-                <textarea
-                  ref={answerRef}
+                <MarkdownFace
                   name="reference_answer"
+                  face={answerFace}
                   placeholder="Write the answer…"
+                  ink="var(--card-ink)"
+                  size={19}
+                  codeSize={10.5}
                   onKeyDown={onKeyDown}
-                  className="absolute inset-0 w-full h-full bg-transparent resize-none outline-none px-[26px] py-[10px] landscape:px-10 landscape:py-1 font-display text-center leading-[1.3] text-[26px] landscape:text-[22px] tracking-[-0.3px] text-[var(--card-ink)] placeholder:opacity-30"
+                  autoFocus={face === 'answer'}
+                  paddingClassName="pt-[18px] px-5 pb-[66px] landscape:pt-2 landscape:px-10"
+                  textareaClassName="font-mono text-[12.5px] leading-[1.65] text-[var(--card-ink)] caret-[var(--card-ink)] placeholder:opacity-[0.35]"
                 />
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
                   <QAToggle face={face} onChange={setFace} />
@@ -115,11 +129,24 @@ export default function MobileCardEditor({
   )
 }
 
-function CardHeader({ label }: { label: string }) {
+// The formatting toolbar lives in the card header, not a bottom bar: the iOS keyboard covers the
+// bottom of the page but never the top of the card.
+function CardHeader({ editing, onDone, onFmt }: { editing: boolean; onDone: () => void; onFmt: (kind: FormatKind) => void }) {
   return (
-    <div className="flex items-center justify-between px-5 py-3 shrink-0 border-b border-[color:var(--card-ink-subtle)]">
-      <span className="font-mono text-[10px] uppercase tracking-[0.8px] text-[var(--card-ink)] opacity-50">{label}</span>
-      <span className="font-sans text-[11px] text-[var(--card-ink)] opacity-40">Draft</span>
+    <div className="flex items-center justify-between px-3 py-2 shrink-0 border-b border-[color:var(--card-ink-subtle)] min-h-[20px]">
+      <FormatToolbar onFmt={onFmt} size={30} gap={0} color="var(--card-ink)" />
+      {editing ? (
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={onDone}
+          className="font-mono text-[9.5px] uppercase tracking-[0.7px] rounded-pill px-[10px] py-[5px] bg-[var(--card-ink)] text-[var(--card-bg)]"
+        >
+          Done
+        </button>
+      ) : (
+        <span className="font-sans text-[11px] text-[var(--card-ink)] opacity-40 pr-2">Draft</span>
+      )}
     </div>
   )
 }
