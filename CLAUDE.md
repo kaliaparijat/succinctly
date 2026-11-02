@@ -125,6 +125,19 @@ When reviewing any PR, always check:
   tests, a UI change and its tests), each leaving the tests green. Never squash a whole feature
   into a single commit before opening a PR.
 
+### Phase-gated review
+
+Work is reviewed one plan phase at a time:
+
+1. The plan (`docs/specs/<name>/plan.md`) is reviewed and approved before any code is written.
+2. Approval covers **one phase**. Within it, work through the tasks without asking for permission
+   between them; stop only when something needs the user's input or a decision.
+3. When the phase is done, stop. The user reviews the code and gives feedback; address it before
+   anything else.
+4. Starting the next phase needs the user's go-ahead. Approval of one phase does not carry over to
+   the next, and neither does an earlier "continue".
+5. Push after each completed phase so the user can review it on the branch/PR.
+
 ---
 
 ## PR Descriptions
