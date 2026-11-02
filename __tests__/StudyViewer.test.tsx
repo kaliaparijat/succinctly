@@ -584,3 +584,25 @@ describe('StudyViewer — empty faces (#20)', () => {
     expect(screen.getByRole('textbox', { name: 'Question' })).toBeInTheDocument()
   })
 })
+
+describe('StudyViewer — face layout (#20)', () => {
+  // The face's text sits in a scroller that owns the design's padding (the bottom value clears the
+  // Q/A toggle / flip hint), and the text block centers itself with my-auto: centered when short,
+  // top-aligned and scrollable once it outgrows the card. jsdom can't measure layout, so the real
+  // behavior is covered by the live check.
+  it('desktop: 26px 44px 74px padding on the scroller, short text centered via my-auto', () => {
+    mockUseIsMobile.mockReturnValue(false)
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    const scroller = screen.getByText('Q1').closest('.overflow-y-auto') as HTMLElement
+    expect(scroller).toHaveClass('pt-[26px]', 'px-[44px]', 'pb-[74px]')
+    expect(scroller.firstElementChild).toHaveClass('my-auto')
+  })
+
+  it('mobile: 18px 20px 66px padding on the scroller, short text centered via my-auto', () => {
+    mockUseIsMobile.mockReturnValue(true)
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    const scroller = screen.getByText('Q1').closest('.overflow-y-auto') as HTMLElement
+    expect(scroller).toHaveClass('pt-[18px]', 'px-5', 'pb-[66px]')
+    expect(scroller.firstElementChild).toHaveClass('my-auto')
+  })
+})

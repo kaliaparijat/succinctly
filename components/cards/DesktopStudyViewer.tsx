@@ -198,26 +198,30 @@ function CardFace({
         <span className="font-sans text-[11px]" style={{ color: ink, opacity: 0.4 }}>{deckName}</span>
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-10 py-6 relative">
-        <div
-          ref={isEditing ? editRef : null}
-          contentEditable={isEditing ? 'plaintext-only' : 'false'}
-          suppressContentEditableWarning
-          role={isEditing ? 'textbox' : undefined}
-          aria-label={isEditing ? label : undefined}
-          onKeyDown={isEditing ? onEditKeyDown : undefined}
-          onBlur={isEditing ? onEditBlur : undefined}
-          className="font-display text-center leading-snug outline-none w-full"
-          style={{
-            color: ink,
-            fontSize: 'clamp(20px, 3vw, 40px)',
-            letterSpacing: '-0.5px',
-            cursor: isEditing ? 'text' : 'inherit',
-            minHeight: '1em',
-          }}
-        >
-          {/* size="inherit": the text container above owns the fluid font size */}
-          {!isEditing && <MarkdownRenderer src={text} placeholder={label === 'Question' ? "What's the question?" : 'Write the answer…'} size="inherit" codeSize={13} ink={ink} />}
+      <div className="flex-1 min-h-0 relative">
+        {/* Scroller owns the design's padding (bottom clears the toggle/hint); the text block below
+            centers itself with my-auto: centered when short, top-aligned and scrollable when long. */}
+        <div className="absolute inset-0 overflow-y-auto flex flex-col pt-[26px] px-[44px] pb-[74px]">
+          <div
+            ref={isEditing ? editRef : null}
+            contentEditable={isEditing ? 'plaintext-only' : 'false'}
+            suppressContentEditableWarning
+            role={isEditing ? 'textbox' : undefined}
+            aria-label={isEditing ? label : undefined}
+            onKeyDown={isEditing ? onEditKeyDown : undefined}
+            onBlur={isEditing ? onEditBlur : undefined}
+            className="font-display text-center leading-snug outline-none w-full my-auto"
+            style={{
+              color: ink,
+              fontSize: 'clamp(20px, 3vw, 40px)',
+              letterSpacing: '-0.5px',
+              cursor: isEditing ? 'text' : 'inherit',
+              minHeight: '1em',
+            }}
+          >
+            {/* size="inherit": the text container above owns the fluid font size */}
+            {!isEditing && <MarkdownRenderer src={text} placeholder={label === 'Question' ? "What's the question?" : 'Write the answer…'} size="inherit" codeSize={13} ink={ink} />}
+          </div>
         </div>
 
         {isEditing && (
