@@ -11,7 +11,7 @@ https://succinctly.vercel.app/  (registration required)
 
 The current state of this project is a **prototype**, built to validate the foundation: auth, deck and card management, a study viewer, keyboard shortcuts, and mobile gestures. The aim is to iterate away the friction in the core experience of creating and reviewing flashcards. 
 
-The first stage was **vibe-coded** the prototype using Claude Code with a mix of known (React, Typescript) and unknown technologies (NextJS, Supabase). Now, the vibe coding has taken a step back as I take a more deliberate, spec driven development and agentic development workflow. 
+The first stage was **vibe-coded** the prototype using Claude Code with a mix of known (React, Typescript) and unknown technologies (NextJS, Supabase). Now, the vibe coding has taken a step back as I take a more deliberate, **spec driven development and agentic development workflows**. 
 
 The core differentiator here is AI-graded free-text answers. Instead of self-grading, a user types/speaks their recall response and the AI evaluates it for conceptual correctness. Spaced repetition is enhanced using AI by framing questions made by the user differently. This removes self-grading bias and makes spaced repetition intervals more accurate.
 
