@@ -658,3 +658,54 @@ describe.each([
     expect(screen.getByRole('textbox', { name: 'Question' })).toBeInTheDocument()
   })
 })
+
+describe.each([
+  ['desktop', false],
+  ['mobile', true],
+])('StudyViewer — formatting toolbar (#20, %s)', (_label, mobile) => {
+  beforeEach(() => mockUseIsMobile.mockReturnValue(mobile))
+
+  function startEditing() {
+    if (mobile) fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+    else fireEvent.doubleClick(screen.getByText('Q1'))
+  }
+
+  it('is absent while viewing', () => {
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    expect(screen.queryByTitle('Bold ⌘B')).not.toBeInTheDocument()
+  })
+
+  it('shows once, in the editing face, while editing', () => {
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    startEditing()
+    expect(screen.getAllByTitle('Bold ⌘B')).toHaveLength(1)
+    expect(screen.getByTitle('Math')).toBeInTheDocument()
+  })
+
+  it('formats the editing face\'s selection', () => {
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    startEditing()
+    const textarea = screen.getByRole('textbox', { name: 'Question' }) as HTMLTextAreaElement
+    textarea.setSelectionRange(0, 2)
+    fireEvent.click(screen.getByTitle('Bold ⌘B'))
+    expect(textarea).toHaveValue('**Q1**')
+  })
+
+  it('formats the answer face after toggling to it', async () => {
+    const user = userEvent.setup()
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    startEditing()
+    await user.click(screen.getByRole('button', { name: 'A' }))
+    const textarea = screen.getByRole('textbox', { name: 'Answer' }) as HTMLTextAreaElement
+    textarea.setSelectionRange(0, 2)
+    fireEvent.click(screen.getByTitle('Italic ⌘I'))
+    expect(textarea).toHaveValue('*A1*')
+  })
+
+  it('disappears when editing ends', () => {
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    startEditing()
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Question' }), { key: 'Escape' })
+    expect(screen.queryByTitle('Bold ⌘B')).not.toBeInTheDocument()
+  })
+})

@@ -103,7 +103,7 @@ green. One logical change per commit, suite green after each. Phase 4 is verific
       `useMarkdownFace` instances in `StudyViewer` (hooks' `editing` is the only state;
       `editingFace` derived), `MarkdownFace` as the editing surface on both viewers, `editRef`
       removed. One commit, because the swap and the test migration cannot be green apart.
-- [ ] **2.3 Formatting toolbar.** Red: toolbar present only while editing, in the card header on both
+- [x] **2.3 Formatting toolbar.** Red: toolbar present only while editing, in the card header on both
       desktop and mobile (compact buttons, replacing the deck name; mobile keeps clear of the
       keyboard); buttons call the editing face's `fmt`. Green: wire `FormatToolbar`.
 - [ ] **2.4 Mobile "Done".** Red: tapping Done saves (not cancels), via `onMouseDown` preventDefault.

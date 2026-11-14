@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { MobileViewerBar } from '@/components/layout/TopBar'
 import { PAPER_NOISE } from '@/lib/palette'
 import MarkdownRenderer from '@/components/cards/markdown/MarkdownRenderer'
+import FormatToolbar from '@/components/cards/markdown/FormatToolbar'
 import MarkdownFace from '@/components/cards/markdown/MarkdownFace'
 import type { useMarkdownFace } from '@/components/cards/markdown/useMarkdownFace'
 import QAToggle from '@/components/ui/QAToggle'
@@ -209,7 +210,9 @@ function CardFace({
 
       <div className="relative flex items-center justify-between shrink-0" style={{ padding: '18px 22px 14px', borderBottom: `1px solid ${ink}1c` }}>
         <span className="font-mono text-[10px] uppercase tracking-[0.8px]" style={{ color: ink, opacity: 0.5 }}>{label}</span>
-        <span className="font-sans text-[11px]" style={{ color: ink, opacity: 0.4 }}>{deckName}</span>
+        {isEditing
+          ? <FormatToolbar onFmt={face.fmt} size={30} gap={0} color={ink} />
+          : <span className="font-sans text-[11px]" style={{ color: ink, opacity: 0.4 }}>{deckName}</span>}
       </div>
 
       <div className="flex-1 min-h-0 relative">
