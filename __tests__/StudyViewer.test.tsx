@@ -709,3 +709,42 @@ describe.each([
     expect(screen.queryByTitle('Bold ⌘B')).not.toBeInTheDocument()
   })
 })
+
+describe('StudyViewer — mobile Done button (#20)', () => {
+  it('is absent while viewing', () => {
+    mockUseIsMobile.mockReturnValue(true)
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    expect(screen.queryByRole('button', { name: 'Done' })).not.toBeInTheDocument()
+  })
+
+  it('saves the edit and leaves edit mode when tapped', async () => {
+    mockUseIsMobile.mockReturnValue(true)
+    const user = userEvent.setup()
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+    fireEvent.change(screen.getByRole('textbox', { name: 'Question' }), { target: { value: 'Done edit' } })
+    await user.click(screen.getByRole('button', { name: 'Done' }))
+
+    await waitFor(() =>
+      expect(updateCardInline).toHaveBeenCalledWith('c1', 'deck-1', 'Done edit', 'A1')
+    )
+    expect(screen.queryByRole('textbox', { name: 'Question' })).not.toBeInTheDocument()
+    expect(screen.getByText('Done edit')).toBeInTheDocument()
+  })
+
+  it('prevents the default mousedown so the textarea does not blur first', () => {
+    mockUseIsMobile.mockReturnValue(true)
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+    const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+    fireEvent(screen.getByRole('button', { name: 'Done' }), event)
+    expect(event.defaultPrevented).toBe(true)
+  })
+
+  it('is not shown on desktop', () => {
+    mockUseIsMobile.mockReturnValue(false)
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    fireEvent.doubleClick(screen.getByText('Q1'))
+    expect(screen.queryByRole('button', { name: 'Done' })).not.toBeInTheDocument()
+  })
+})

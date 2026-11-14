@@ -220,6 +220,7 @@ export default function StudyViewer({
         onFlip={flip}
         onEditKeyDown={handleEditKeyDown}
         onBlurAway={handleBlurAway}
+        onDone={() => handleEditSave(null)}
         onToggleFace={handleToggleFace}
         onPrev={goPrev}
         onNext={goNext}

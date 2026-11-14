@@ -54,6 +54,7 @@ interface Props {
   onFlip: () => void
   onEditKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
   onBlurAway: (e: React.FocusEvent<HTMLDivElement>) => void
+  onDone: () => void
   onToggleFace: (face: 'question' | 'answer') => void
   onPrev: () => void
   onNext: () => void
@@ -62,7 +63,7 @@ interface Props {
 export default function MobileStudyViewer({
   deck, card, idx, totalCards, bg, ink, tilt, flipped, flipDuration,
   hintsEnabled, editingFace, questionFace, answerFace, dir, swipeRef, dragX, isDragging,
-  onBackClick, onEditClick, onFlip, onEditKeyDown, onBlurAway, onToggleFace, onPrev, onNext,
+  onBackClick, onEditClick, onFlip, onEditKeyDown, onBlurAway, onDone, onToggleFace, onPrev, onNext,
 }: Props) {
   let transform: string
   let transition: string | undefined
@@ -138,6 +139,7 @@ export default function MobileStudyViewer({
               face={questionFace}
               onEditKeyDown={onEditKeyDown}
               onBlurAway={onBlurAway}
+              onDone={onDone}
               onToggleFace={onToggleFace}
               viewTransitionName={`card-${deck.id}`}
             />
@@ -153,6 +155,7 @@ export default function MobileStudyViewer({
               face={answerFace}
               onEditKeyDown={onEditKeyDown}
               onBlurAway={onBlurAway}
+              onDone={onDone}
               onToggleFace={onToggleFace}
             />
           </div>
@@ -179,13 +182,14 @@ export default function MobileStudyViewer({
 
 function CardFace({
   label, text, deckName, bg, ink, tilt, showHint, back,
-  face, onEditKeyDown, onBlurAway, onToggleFace, viewTransitionName,
+  face, onEditKeyDown, onBlurAway, onDone, onToggleFace, viewTransitionName,
 }: {
   label: string; text: string; deckName: string; bg: string; ink: string
   tilt: number; showHint: boolean; back: boolean
   face: Face
   onEditKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
   onBlurAway: (e: React.FocusEvent<HTMLDivElement>) => void
+  onDone: () => void
   onToggleFace: (face: 'question' | 'answer') => void
   viewTransitionName?: string
 }) {
@@ -210,9 +214,23 @@ function CardFace({
 
       <div className="relative flex items-center justify-between shrink-0" style={{ padding: '18px 22px 14px', borderBottom: `1px solid ${ink}1c` }}>
         <span className="font-mono text-[10px] uppercase tracking-[0.8px]" style={{ color: ink, opacity: 0.5 }}>{label}</span>
-        {isEditing
-          ? <FormatToolbar onFmt={face.fmt} size={30} gap={0} color={ink} />
-          : <span className="font-sans text-[11px]" style={{ color: ink, opacity: 0.4 }}>{deckName}</span>}
+        {isEditing ? (
+          <div className="flex items-center gap-2">
+            <FormatToolbar onFmt={face.fmt} size={30} gap={0} color={ink} />
+            <button
+              type="button"
+              // Keep focus in the textarea so tapping Done saves via onDone, not via the blur it would cause.
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={onDone}
+              className="font-mono text-[9.5px] uppercase tracking-[0.7px] rounded-pill px-[10px] py-[5px]"
+              style={{ background: ink, color: bg }}
+            >
+              Done
+            </button>
+          </div>
+        ) : (
+          <span className="font-sans text-[11px]" style={{ color: ink, opacity: 0.4 }}>{deckName}</span>
+        )}
       </div>
 
       <div className="flex-1 min-h-0 relative">
