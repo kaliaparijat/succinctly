@@ -748,3 +748,63 @@ describe('StudyViewer — mobile Done button (#20)', () => {
     expect(screen.queryByRole('button', { name: 'Done' })).not.toBeInTheDocument()
   })
 })
+
+describe.each([
+  ['desktop', false],
+  ['mobile', true],
+])('StudyViewer — editing keyboard (#20, %s)', (_label, mobile) => {
+  beforeEach(() => mockUseIsMobile.mockReturnValue(mobile))
+
+  function startEditing(cards = oneCard) {
+    render(<StudyViewer deck={deck} cards={cards} />)
+    if (mobile) fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+    else fireEvent.doubleClick(screen.getByText('Q1'))
+    return screen.getByRole('textbox', { name: 'Question' }) as HTMLTextAreaElement
+  }
+
+  function setValue(textarea: HTMLTextAreaElement, value: string) {
+    fireEvent.change(textarea, { target: { value } })
+    textarea.setSelectionRange(value.length, value.length)
+  }
+
+  it('⌘B bolds the selection', () => {
+    const textarea = startEditing()
+    textarea.setSelectionRange(0, 2)
+    fireEvent.keyDown(textarea, { key: 'b', metaKey: true })
+    expect(textarea).toHaveValue('**Q1**')
+  })
+
+  it('⌘I italicizes the selection', () => {
+    const textarea = startEditing()
+    textarea.setSelectionRange(0, 2)
+    fireEvent.keyDown(textarea, { key: 'i', metaKey: true })
+    expect(textarea).toHaveValue('*Q1*')
+  })
+
+  it('Enter at the end of a list item continues the list', () => {
+    const textarea = startEditing()
+    setValue(textarea, '- one')
+    fireEvent.keyDown(textarea, { key: 'Enter' })
+    expect(textarea).toHaveValue('- one\n- ')
+  })
+
+  it('Tab inside an open code fence inserts four spaces and does not move focus', () => {
+    const textarea = startEditing()
+    setValue(textarea, '```\nx')
+    const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })
+    fireEvent(textarea, event)
+    expect(event.defaultPrevented).toBe(true)
+    expect(textarea).toHaveValue('```\nx    ')
+  })
+
+  it('arrow keys and Space edit the text instead of navigating or flipping the card', async () => {
+    mockReplace.mockClear()
+    const textarea = startEditing(twoCards)
+    fireEvent.keyDown(textarea, { key: 'ArrowRight' })
+    fireEvent.keyDown(textarea, { key: ' ' })
+    // Navigation commits after a short slide delay (110–140ms); wait it out.
+    await act(() => new Promise(resolve => setTimeout(resolve, 200)))
+    expect(screen.getByRole('textbox', { name: 'Question' })).toHaveValue('Q1')
+    expect(mockReplace).not.toHaveBeenCalled()
+  })
+})

@@ -107,7 +107,7 @@ green. One logical change per commit, suite green after each. Phase 4 is verific
       desktop and mobile (compact buttons, replacing the deck name; mobile keeps clear of the
       keyboard); buttons call the editing face's `fmt`. Green: wire `FormatToolbar`.
 - [x] **2.4 Mobile "Done".** Red: tapping Done saves (not cancels), via `onMouseDown` preventDefault.
-- [ ] **2.5 Keyboard.** Red: ⌘B/⌘I, list continuation, Tab in a fence inserts 4 spaces and does not
+- [x] **2.5 Keyboard.** Red: ⌘B/⌘I, list continuation, Tab in a fence inserts 4 spaces and does not
       flip/navigate.
 
 ## Phase 3 — Creating a card
