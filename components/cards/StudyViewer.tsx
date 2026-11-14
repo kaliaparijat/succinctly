@@ -8,6 +8,7 @@ import { useSwipeGesture } from '@/hooks/useSwipeGesture'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { navigateWithTransition } from '@/lib/viewTransition'
 import { updateCardInline } from '@/app/actions/cards'
+import { useMarkdownFace } from '@/components/cards/markdown/useMarkdownFace'
 import DesktopStudyViewer from '@/components/cards/DesktopStudyViewer'
 import MobileStudyViewer from '@/components/cards/MobileStudyViewer'
 
@@ -48,12 +49,14 @@ export default function StudyViewer({
   const [flipped, setFlipped] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const [dir, setDir] = useState<'next' | 'prev' | null>(null)
-  const [editingFace, setEditingFace] = useState<'question' | 'answer' | null>(null)
   // Locally saved card text, keyed by card id. Field names mirror the `cards` table
   // (`reference_answer`, not `answer`) so this can be spread over the server card as-is;
   // the UI's face name 'answer' (editingFace, the Q/A toggle) is a separate concept.
   const [saved, setSaved] = useState<Record<string, { question: string; reference_answer: string }>>({})
-  const editRef = useRef<HTMLDivElement>(null)
+  // One Markdown face per side. Their `editing` flags are the only edit state; `editingFace` is derived.
+  const questionFace = useMarkdownFace()
+  const answerFace = useMarkdownFace()
+  const editingFace: 'question' | 'answer' | null = questionFace.editing ? 'question' : answerFace.editing ? 'answer' : null
   const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const router = useRouter()
@@ -99,36 +102,26 @@ export default function StudyViewer({
     setTimeout(() => { setIdx(i => i - 1); setDir(null) }, commitDelayMs)
   }, [idx, commitDelayMs])
 
-  // Focus the contenteditable and place cursor at end when entering edit mode
-  useEffect(() => {
-    if (!editingFace || !editRef.current) return
-    const text = editingFace === 'question' ? card.question : card.reference_answer
-    editRef.current.innerText = text
-    editRef.current.focus()
-    const range = document.createRange()
-    const sel = window.getSelection()
-    if (sel) {
-      range.selectNodeContents(editRef.current)
-      range.collapse(false)
-      sel.removeAllRanges()
-      sel.addRange(range)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editingFace]) // intentionally omit card to avoid resetting mid-edit
+  const faceFor = (which: 'question' | 'answer') => (which === 'question' ? questionFace : answerFace)
+  const textFor = (which: 'question' | 'answer') => (which === 'question' ? card.question : card.reference_answer)
 
-  const handleEditSave = useCallback((nextFace: 'question' | 'answer' | null = null) => {
-    if (!editRef.current || !editingFace) return
-    const text = editRef.current.innerText.trim()
+  // Seeds from the merged `card` (saved text over server props), never `cards[idx]` — see #21.
+  const openFace = (which: 'question' | 'answer') => faceFor(which).open(textFor(which))
+
+  const handleEditSave = (nextFace: 'question' | 'answer' | null = null) => {
+    if (!editingFace) return
+    const face = faceFor(editingFace)
+    const text = face.text.trim()
     const otherFace = editingFace === 'question' ? card.reference_answer : card.question
+    face.close()
+    if (nextFace) openFace(nextFace)
     if (!text && !otherFace.trim()) {
       // Both faces would be empty: save nothing and fall back to the last saved text.
       // (Becomes a delete once card delete exists — #23.)
-      setEditingFace(nextFace)
       return
     }
     const question = editingFace === 'question' ? text : card.question
     const referenceAnswer = editingFace === 'answer' ? text : card.reference_answer
-    setEditingFace(nextFace)
     const previous = { question: card.question, reference_answer: card.reference_answer }
     const next = { question, reference_answer: referenceAnswer }
     setSaved(prev => ({ ...prev, [card.id]: next }))
@@ -143,36 +136,32 @@ export default function StudyViewer({
       }
       router.refresh()
     })
-  }, [editingFace, card, deck.id, router])
+  }
 
-  const handleToggleFace = useCallback((newFace: 'question' | 'answer') => {
+  const handleToggleFace = (newFace: 'question' | 'answer') => {
     if (newFace === editingFace) return
     handleEditSave(newFace)
     setFlipped(newFace === 'answer')
-  }, [editingFace, handleEditSave])
+  }
 
-  // Blurring the contentEditable (tap/click elsewhere, swipe, nav away) must save —
-  // otherwise the edit is silently discarded (#15). Exception: blurring TO the Q/A
-  // toggle is the existing "save and switch which face you're editing" flow
-  // (handleToggleFace), which passes the new face as nextFace — if we also saved
-  // here with nextFace=null, we'd force editingFace closed before the toggle's own
-  // handler runs, breaking "switch face while staying in edit mode." Skip in that
-  // one case and let the toggle's click handler do the save+transition itself.
-  const handleEditBlur = useCallback((e: React.FocusEvent<HTMLDivElement>) => {
+  // Focus leaving the face (tap/click elsewhere, swipe, nav away) must save — otherwise the edit is
+  // silently discarded (#15). Two exceptions. Blurring TO the Q/A toggle is the "save and switch
+  // which face you're editing" flow (handleToggleFace does its own save). And Escape blurs the
+  // textarea on its way out; that is a cancel, so the hook's cancel flag skips the save.
+  const handleBlurAway = (e: React.FocusEvent<HTMLDivElement>) => {
     const next = e.relatedTarget
     if (next instanceof HTMLElement && next.closest('[data-qa-toggle]')) return
+    if (editingFace && faceFor(editingFace).consumeCancel()) return
     handleEditSave(null)
-  }, [handleEditSave])
+  }
 
-  const handleEditKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Escape') {
-      e.preventDefault()
-      setEditingFace(null)
-    } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+  // Escape is handled by the face itself (cancel); ⌘↵ saves.
+  const handleEditKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault()
       handleEditSave(null)
     }
-  }, [handleEditSave])
+  }
 
   const handleClick = useCallback(() => {
     if (editingFace) return
@@ -183,18 +172,18 @@ export default function StudyViewer({
     }, 220)
   }, [editingFace, flip])
 
-  const enterEdit = useCallback(() => {
+  const enterEdit = () => {
     if (editingFace) return
-    setEditingFace(flipped ? 'answer' : 'question')
-  }, [editingFace, flipped])
+    openFace(flipped ? 'answer' : 'question')
+  }
 
-  const handleDoubleClick = useCallback(() => {
+  const handleDoubleClick = () => {
     if (clickTimer.current) {
       clearTimeout(clickTimer.current)
       clickTimer.current = null
     }
     enterEdit()
-  }, [enterEdit])
+  }
 
   useKeyboardShortcuts({
     onFlip: flip,
@@ -220,7 +209,8 @@ export default function StudyViewer({
         flipDuration={flipDuration}
         hintsEnabled={hintsEnabled}
         editingFace={editingFace}
-        editRef={editRef}
+        questionFace={questionFace}
+        answerFace={answerFace}
         dir={dir}
         swipeRef={swipeRef}
         dragX={dragX}
@@ -229,7 +219,7 @@ export default function StudyViewer({
         onEditClick={enterEdit}
         onFlip={flip}
         onEditKeyDown={handleEditKeyDown}
-        onEditBlur={handleEditBlur}
+        onBlurAway={handleBlurAway}
         onToggleFace={handleToggleFace}
         onPrev={goPrev}
         onNext={goNext}
@@ -251,7 +241,8 @@ export default function StudyViewer({
       flipDuration={flipDuration}
       hintsEnabled={hintsEnabled}
       editingFace={editingFace}
-      editRef={editRef}
+      questionFace={questionFace}
+      answerFace={answerFace}
       dir={dir}
       swipeRef={swipeRef}
       helpOpen={helpOpen}
@@ -259,7 +250,7 @@ export default function StudyViewer({
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
       onEditKeyDown={handleEditKeyDown}
-      onEditBlur={handleEditBlur}
+      onBlurAway={handleBlurAway}
       onToggleFace={handleToggleFace}
       onPrev={goPrev}
       onNext={goNext}

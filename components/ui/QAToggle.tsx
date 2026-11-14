@@ -12,7 +12,7 @@ export default function QAToggle({ face, onChange }: Props) {
         <button
           key={f}
           type="button"
-          // Prevent the default click-focus so a currently-focused contentEditable
+          // Prevent the default click-focus so a currently-focused textarea
           // (StudyViewer's inline edit) never actually blurs when this is clicked.
           // WebKit doesn't focus <button> on click by default (Chromium/Firefox do),
           // so relying on the resulting blur's relatedTarget to detect "clicked the

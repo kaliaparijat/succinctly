@@ -75,27 +75,27 @@ green. One logical change per commit, suite green after each. Phase 4 is verific
       error and reverted.
 - [x] **1.1b `MarkdownRenderer` accepts any CSS length as its base size** (so the viewer keeps its
       fluid text size). Blocks are sized in em relative to it.
-- [ ] **1.2 Desktop viewer renders Markdown.** Red: one test renders a card whose question and answer
+- [x] **1.2 Desktop viewer renders Markdown.** Red: one test renders a card whose question and answer
       together use bold, italic, inline code, a list, a fenced code block and math, and asserts each
       renders as its element (`<strong>`, `<em>`, `<code>`, `<li>`, highlighted code block, KaTeX).
       One test, not one per format: the per-format rendering is already covered by #18's
       `MarkdownRenderer` and `markdown` tests, so this only needs to prove the viewer uses the
       renderer. Green: replace `{!isEditing && text}` in `DesktopStudyViewer`'s `CardFace` with
       `MarkdownRenderer`.
-- [ ] **1.3 Mobile viewer renders Markdown.** The same single test against `MobileStudyViewer`.
-- [ ] **1.4 Empty faces render cleanly.** Red: `reference_answer: ''` (and empty question) renders the
+- [x] **1.3 Mobile viewer renders Markdown.** The same single test against `MobileStudyViewer`.
+- [x] **1.4 Empty faces render cleanly.** Red: `reference_answer: ''` (and empty question) renders the
       placeholder, no errors, layout intact; double-click (desktop) / Edit (mobile) still enters edit
       mode on it. Green as needed.
-- [ ] **1.5 Layout tokens.** Class assertions for face padding (26/44/74 desktop, 18/20/66 mobile,
+- [x] **1.5 Layout tokens.** Class assertions for face padding (26/44/74 desktop, 18/20/66 mobile,
       applied on the face's own wrapper — see #18's absolute-positioning padding lesson) and
       vertical centering of short single-block text. Open: see Questions.
 
 ## Phase 2 — Edit
 
-- [ ] **2.1 `useMarkdownFace`: seed + cancel.** Red: `open(seed)` replaces text and puts the caret at
+- [x] **2.1 `useMarkdownFace`: seed + cancel.** Red: `open(seed)` replaces text and puts the caret at
       the end; `cancel()` closes without invoking an `onClose`/save callback and restores seed.
       Green: add both. (Hook tests in `useMarkdownFace.test.ts`.)
-- [ ] **2.2 Swap `contentEditable` for the Markdown textarea.** Red: migrate the existing edit tests
+- [x] **2.2 Swap `contentEditable` for the Markdown textarea.** Red: migrate the existing edit tests
       in `StudyViewer.test.tsx` from `innerText` to textarea changes — blur saves, Escape cancels,
       ⌘↵ saves, toggle saves and switches, #21's cases (clear one face; both-empty reverts; edits
       survive toggle; save built from merged text; failed save rolls back; pending save shows

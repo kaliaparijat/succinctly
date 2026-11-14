@@ -149,14 +149,10 @@ describe('StudyViewer — mobile top bar', () => {
   })
 
   it('tapping the edit-pencil button enters the same editingFace state double-click enters on desktop', () => {
-    const { container } = render(<StudyViewer deck={deck} cards={twoCards} initialCardId="c1" />)
+    render(<StudyViewer deck={deck} cards={twoCards} initialCardId="c1" />)
     fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
 
-    const editable = container.querySelector('[contenteditable="plaintext-only"]') as HTMLElement | null
-    expect(editable).not.toBeNull()
-    // jsdom doesn't sync innerText with textContent, so check innerText directly
-    // (the component reads/writes innerText, which works correctly in real browsers)
-    expect(editable?.innerText).toBe('Q1')
+    expect(screen.getByRole('textbox', { name: 'Question' })).toHaveValue('Q1')
   })
 
   it('flip-hint pill reads "Tap to flip", not "Space to flip"', () => {
@@ -264,7 +260,7 @@ describe('StudyViewer — blur saves the inline edit (#15)', () => {
     fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
 
     const editable = screen.getByRole('textbox', { name: 'Question' })
-    editable.innerText = 'Updated question'
+    fireEvent.change(editable, { target: { value: 'Updated question' } })
     // userEvent.click replicates real browser focus handling: it fires blur on the
     // previously-focused element (with the correct relatedTarget) before the click
     // lands on the target — no manual event construction needed.
@@ -281,7 +277,7 @@ describe('StudyViewer — blur saves the inline edit (#15)', () => {
     fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
 
     const editable = screen.getByRole('textbox', { name: 'Question' })
-    editable.innerText = 'Updated question'
+    fireEvent.change(editable, { target: { value: 'Updated question' } })
     const toggleToAnswer = screen.getByRole('button', { name: 'A' })
 
     await user.click(toggleToAnswer)
@@ -322,7 +318,7 @@ describe('StudyViewer — blur saves the inline edit (#15)', () => {
     fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
 
     const editable = screen.getByRole('textbox', { name: 'Question' })
-    editable.innerText = 'Should not save'
+    fireEvent.change(editable, { target: { value: 'Should not save' } })
     fireEvent.keyDown(editable, { key: 'Escape' })
     fireEvent.blur(editable, { relatedTarget: null })
 
@@ -356,12 +352,10 @@ describe('StudyViewer — desktop top bar unaffected by the mobile fork', () => 
   })
 
   it('double-click still enters editingFace state (enterEdit refactor is behaviorally identical)', () => {
-    const { container } = render(<StudyViewer deck={deck} cards={twoCards} initialCardId="c1" />)
+    render(<StudyViewer deck={deck} cards={twoCards} initialCardId="c1" />)
     fireEvent.doubleClick(screen.getByText('Q1'))
 
-    const editable = container.querySelector('[contenteditable="plaintext-only"]') as HTMLElement | null
-    expect(editable).not.toBeNull()
-    expect(editable?.innerText).toBe('Q1')
+    expect(screen.getByRole('textbox', { name: 'Question' })).toHaveValue('Q1')
   })
 })
 
@@ -413,7 +407,7 @@ describe('StudyViewer — inline edit with empty faces (#21)', () => {
     fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
 
     const editable = screen.getByRole('textbox', { name: 'Question' })
-    editable.innerText = ''
+    fireEvent.change(editable, { target: { value: '' } })
     await user.click(screen.getByRole('button', { name: 'A' }))
 
     await waitFor(() =>
@@ -429,7 +423,7 @@ describe('StudyViewer — inline edit with empty faces (#21)', () => {
     render(<StudyViewer deck={deck} cards={emptyAnswerCard} />)
     fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
 
-    screen.getByRole('textbox', { name: 'Question' }).innerText = ''
+    fireEvent.change(screen.getByRole('textbox', { name: 'Question' }), { target: { value: '' } })
     await user.click(screen.getByRole('button', { name: 'A' }))
 
     expect(updateCardInline).not.toHaveBeenCalled()
@@ -441,7 +435,7 @@ describe('StudyViewer — inline edit with empty faces (#21)', () => {
     render(<StudyViewer deck={deck} cards={emptyAnswerCard} />)
     fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
 
-    screen.getByRole('textbox', { name: 'Question' }).innerText = '   '
+    fireEvent.change(screen.getByRole('textbox', { name: 'Question' }), { target: { value: '   ' } })
     await user.click(within(screen.getByRole('banner')).getByText('Test Deck'))
 
     expect(updateCardInline).not.toHaveBeenCalled()
@@ -459,7 +453,7 @@ describe('StudyViewer — saved text shows immediately (#21)', () => {
     render(<StudyViewer deck={deck} cards={oneCard} />)
     fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
 
-    screen.getByRole('textbox', { name: 'Question' }).innerText = 'Updated question'
+    fireEvent.change(screen.getByRole('textbox', { name: 'Question' }), { target: { value: 'Updated question' } })
     await user.click(within(screen.getByRole('banner')).getByText('Test Deck'))
 
     expect(screen.getByText('Updated question')).toBeInTheDocument()
@@ -472,12 +466,11 @@ describe('StudyViewer — saved text shows immediately (#21)', () => {
     render(<StudyViewer deck={deck} cards={oneCard} />)
     fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
 
-    screen.getByRole('textbox', { name: 'Question' }).innerText = 'Edited Q'
+    fireEvent.change(screen.getByRole('textbox', { name: 'Question' }), { target: { value: 'Edited Q' } })
     await user.click(screen.getByRole('button', { name: 'A' }))
     await user.click(screen.getByRole('button', { name: 'Q' }))
 
-    // jsdom doesn't implement innerText as a DOM-backed property; the component reads/writes it directly.
-    expect((screen.getByRole('textbox', { name: 'Question' }) as HTMLElement).innerText).toBe('Edited Q')
+    expect(screen.getByRole('textbox', { name: 'Question' })).toHaveValue('Edited Q')
   })
 
   it('saves the other face against the edited text, not the stale server text', async () => {
@@ -486,9 +479,9 @@ describe('StudyViewer — saved text shows immediately (#21)', () => {
     render(<StudyViewer deck={deck} cards={oneCard} />)
     fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
 
-    screen.getByRole('textbox', { name: 'Question' }).innerText = 'Edited Q'
+    fireEvent.change(screen.getByRole('textbox', { name: 'Question' }), { target: { value: 'Edited Q' } })
     await user.click(screen.getByRole('button', { name: 'A' }))
-    screen.getByRole('textbox', { name: 'Answer' }).innerText = 'Edited A'
+    fireEvent.change(screen.getByRole('textbox', { name: 'Answer' }), { target: { value: 'Edited A' } })
     await user.click(within(screen.getByRole('banner')).getByText('Test Deck'))
 
     expect(updateCardInline).toHaveBeenLastCalledWith('c1', 'deck-1', 'Edited Q', 'Edited A')
@@ -504,7 +497,7 @@ describe('StudyViewer — failed save rolls back (#21)', () => {
     render(<StudyViewer deck={deck} cards={oneCard} />)
     fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
 
-    screen.getByRole('textbox', { name: 'Question' }).innerText = 'Updated question'
+    fireEvent.change(screen.getByRole('textbox', { name: 'Question' }), { target: { value: 'Updated question' } })
     await user.click(within(screen.getByRole('banner')).getByText('Test Deck'))
 
     await waitFor(() => expect(screen.getByText('Q1')).toBeInTheDocument())
@@ -606,5 +599,62 @@ describe('StudyViewer — face layout (#20)', () => {
     const scroller = screen.getByText('Q1').closest('.overflow-y-auto') as HTMLElement
     expect(scroller).toHaveClass('pt-[18px]', 'px-5', 'pb-[66px]')
     expect(scroller.firstElementChild).toHaveClass('my-auto')
+  })
+})
+
+describe.each([
+  ['desktop', false],
+  ['mobile', true],
+])('StudyViewer — Markdown textarea editing (#20, %s)', (_label, mobile) => {
+  beforeEach(() => mockUseIsMobile.mockReturnValue(mobile))
+
+  function startEditing() {
+    if (mobile) fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+    else fireEvent.doubleClick(screen.getByText('Q1'))
+  }
+
+  it('edits in a plain textarea, not a contenteditable', () => {
+    const { container } = render(<StudyViewer deck={deck} cards={oneCard} />)
+    startEditing()
+    expect(screen.getByRole('textbox', { name: 'Question' }).tagName).toBe('TEXTAREA')
+    expect(container.querySelector('[contenteditable]')).toBeNull()
+  })
+
+  it('puts the caret at the end of the text on entry', () => {
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    startEditing()
+    const textarea = screen.getByRole('textbox', { name: 'Question' }) as HTMLTextAreaElement
+    expect(textarea.selectionStart).toBe(2)
+    expect(textarea.selectionEnd).toBe(2)
+  })
+
+  it('seeds from the card each time, not from an earlier edit that was cancelled', () => {
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    startEditing()
+    fireEvent.change(screen.getByRole('textbox', { name: 'Question' }), { target: { value: 'Thrown away' } })
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Question' }), { key: 'Escape' })
+    startEditing()
+    expect(screen.getByRole('textbox', { name: 'Question' })).toHaveValue('Q1')
+  })
+
+  it('⌘↵ saves and leaves edit mode', async () => {
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    startEditing()
+    const textarea = screen.getByRole('textbox', { name: 'Question' })
+    fireEvent.change(textarea, { target: { value: 'Saved with a shortcut' } })
+    fireEvent.keyDown(textarea, { key: 'Enter', metaKey: true })
+
+    await waitFor(() =>
+      expect(updateCardInline).toHaveBeenCalledWith('c1', 'deck-1', 'Saved with a shortcut', 'A1')
+    )
+    expect(screen.queryByRole('textbox', { name: 'Question' })).not.toBeInTheDocument()
+  })
+
+  it('does not fire the flip shortcut while typing a space in the textarea', () => {
+    render(<StudyViewer deck={deck} cards={oneCard} />)
+    startEditing()
+    const textarea = screen.getByRole('textbox', { name: 'Question' })
+    fireEvent.keyDown(textarea, { key: ' ' })
+    expect(screen.getByRole('textbox', { name: 'Question' })).toBeInTheDocument()
   })
 })
