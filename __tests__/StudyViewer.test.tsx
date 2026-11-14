@@ -463,11 +463,12 @@ describe('StudyViewer — saved text shows immediately (#21)', () => {
   it('keeps an edited face when toggling to the other face and back', async () => {
     vi.mocked(updateCardInline).mockReturnValue(new Promise(() => {}))
     const user = userEvent.setup()
-    render(<StudyViewer deck={deck} cards={oneCard} />)
+    render(<StudyViewer deck={deck} cards={oneCard} flipDuration={0} />)
     fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
 
     fireEvent.change(screen.getByRole('textbox', { name: 'Question' }), { target: { value: 'Edited Q' } })
     await user.click(screen.getByRole('button', { name: 'A' }))
+    await waitFor(() => expect(screen.queryByRole('textbox', { name: 'Question' })).not.toBeInTheDocument())
     await user.click(screen.getByRole('button', { name: 'Q' }))
 
     expect(screen.getByRole('textbox', { name: 'Question' })).toHaveValue('Edited Q')
@@ -693,9 +694,10 @@ describe.each([
 
   it('formats the answer face after toggling to it', async () => {
     const user = userEvent.setup()
-    render(<StudyViewer deck={deck} cards={oneCard} />)
+    render(<StudyViewer deck={deck} cards={oneCard} flipDuration={0} />)
     startEditing()
     await user.click(screen.getByRole('button', { name: 'A' }))
+    await waitFor(() => expect(screen.getAllByTitle('Italic ⌘I')).toHaveLength(1))
     const textarea = screen.getByRole('textbox', { name: 'Answer' }) as HTMLTextAreaElement
     textarea.setSelectionRange(0, 2)
     fireEvent.click(screen.getByTitle('Italic ⌘I'))
@@ -806,5 +808,53 @@ describe.each([
     await act(() => new Promise(resolve => setTimeout(resolve, 200)))
     expect(screen.getByRole('textbox', { name: 'Question' })).toHaveValue('Q1')
     expect(mockReplace).not.toHaveBeenCalled()
+  })
+})
+
+describe.each([
+  ['desktop', false],
+  ['mobile', true],
+])('StudyViewer — Q/A toggle keeps the outgoing face editing through the flip (#20, %s)', (_label, mobile) => {
+  beforeEach(() => mockUseIsMobile.mockReturnValue(mobile))
+
+  function startEditing() {
+    render(<StudyViewer deck={deck} cards={oneCard} flipDuration={60} />)
+    if (mobile) fireEvent.click(screen.getByRole('button', { name: /edit card/i }))
+    else fireEvent.doubleClick(screen.getByText('Q1'))
+  }
+
+  it('does not swap the outgoing face to its rendered view mid-flip, then closes it after the flip', async () => {
+    startEditing()
+    fireEvent.click(screen.getByRole('button', { name: 'A' }))
+
+    // Mid-flip: the incoming face is editing and the outgoing one has not flickered to rendered text.
+    expect(screen.getByRole('textbox', { name: 'Answer' })).toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: 'Question' })).toBeInTheDocument()
+
+    await waitFor(() => expect(screen.queryByRole('textbox', { name: 'Question' })).not.toBeInTheDocument())
+    expect(screen.getByRole('textbox', { name: 'Answer' })).toBeInTheDocument()
+    expect(screen.getByText('Q1')).toBeInTheDocument()
+  })
+
+  it('saves the incoming face, not the lingering outgoing one, while the flip is running', async () => {
+    startEditing()
+    fireEvent.click(screen.getByRole('button', { name: 'A' }))
+    const answer = screen.getByRole('textbox', { name: 'Answer' })
+    fireEvent.change(answer, { target: { value: 'New answer' } })
+    fireEvent.keyDown(answer, { key: 'Enter', metaKey: true })
+
+    await waitFor(() =>
+      expect(updateCardInline).toHaveBeenLastCalledWith('c1', 'deck-1', 'Q1', 'New answer')
+    )
+  })
+
+  it('toggling back and forth quickly ends with only the last face editing', async () => {
+    startEditing()
+    fireEvent.click(screen.getByRole('button', { name: 'A' }))
+    // Mid-flip both faces show a toggle; the active (incoming) face is the later one in the DOM.
+    fireEvent.click(screen.getAllByRole('button', { name: 'Q' }).at(-1)!)
+
+    await waitFor(() => expect(screen.queryByRole('textbox', { name: 'Answer' })).not.toBeInTheDocument())
+    expect(screen.getByRole('textbox', { name: 'Question' })).toBeInTheDocument()
   })
 })

@@ -56,7 +56,15 @@ export default function StudyViewer({
   // One Markdown face per side. Their `editing` flags are the only edit state; `editingFace` is derived.
   const questionFace = useMarkdownFace()
   const answerFace = useMarkdownFace()
-  const editingFace: 'question' | 'answer' | null = questionFace.editing ? 'question' : answerFace.editing ? 'answer' : null
+  // After a Q/A toggle the outgoing face stays in edit mode until the flip finishes, so its content
+  // doesn't visibly swap to the rendered view mid-rotation (as CardEditor's flipTo does). It is still
+  // `editing` but no longer the face being edited, so editingFace skips it.
+  const [lingeringFace, setLingeringFace] = useState<'question' | 'answer' | null>(null)
+  const lingerTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const editingFace: 'question' | 'answer' | null =
+    questionFace.editing && lingeringFace !== 'question' ? 'question'
+    : answerFace.editing && lingeringFace !== 'answer' ? 'answer'
+    : null
   const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const router = useRouter()
@@ -108,13 +116,32 @@ export default function StudyViewer({
   // Seeds from the merged `card` (saved text over server props), never `cards[idx]` — see #21.
   const openFace = (which: 'question' | 'answer') => faceFor(which).open(textFor(which))
 
+  useEffect(() => () => { if (lingerTimer.current) clearTimeout(lingerTimer.current) }, [])
+
+  // Close the lingering outgoing face now (a new toggle, or the timer firing).
+  const finishLinger = () => {
+    if (lingerTimer.current) { clearTimeout(lingerTimer.current); lingerTimer.current = null }
+    if (lingeringFace) faceFor(lingeringFace).close()
+    setLingeringFace(null)
+  }
+
   const handleEditSave = (nextFace: 'question' | 'answer' | null = null) => {
     if (!editingFace) return
+    finishLinger()
     const face = faceFor(editingFace)
     const text = face.text.trim()
     const otherFace = editingFace === 'question' ? card.reference_answer : card.question
-    face.close()
-    if (nextFace) openFace(nextFace)
+    if (nextFace) {
+      openFace(nextFace)
+      setLingeringFace(editingFace)
+      lingerTimer.current = setTimeout(() => {
+        face.close()
+        setLingeringFace(null)
+        lingerTimer.current = null
+      }, flipDuration)
+    } else {
+      face.close()
+    }
     if (!text && !otherFace.trim()) {
       // Both faces would be empty: save nothing and fall back to the last saved text.
       // (Becomes a delete once card delete exists — #23.)
@@ -151,6 +178,8 @@ export default function StudyViewer({
   const handleBlurAway = (e: React.FocusEvent<HTMLDivElement>) => {
     const next = e.relatedTarget
     if (next instanceof HTMLElement && next.closest('[data-qa-toggle]')) return
+    // The outgoing face losing focus to the incoming one is part of the toggle, not a click-away.
+    if (lingeringFace && e.target as Element === faceFor(lingeringFace).textareaRef.current) return
     if (editingFace && faceFor(editingFace).consumeCancel()) return
     handleEditSave(null)
   }
