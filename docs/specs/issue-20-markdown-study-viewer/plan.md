@@ -116,7 +116,7 @@ green. One logical change per commit, suite green after each. Phase 4 is verific
       whitespace-only → nothing inserted, returns `null`. Green.
 - [x] **3.2 `CardEditor` handles `null`.** Red: Save on a blank card does not navigate and shows
       no error. Green: skip `navigateWithTransition` when `createCard` returns null.
-- [ ] **3.3 Disabled Save + ⌘↵ guard.** Red: Save is disabled while both faces are blank
+- [x] **3.3 Disabled Save + ⌘↵ guard.** Red: Save is disabled while both faces are blank
       (`trim() === ''`) on desktop and mobile, enabled once either has text; ⌘↵ does not submit
       while blank. Green: derive from the two faces' text in `CardEditor`.
 

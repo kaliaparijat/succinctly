@@ -95,6 +95,7 @@ describe('CardEditor — Cancel navigation', () => {
 describe('CardEditor — Save navigation (create mode)', () => {
   it('navigates to the new card URL via navigateWithTransition, forward', async () => {
     render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    fireEvent.change(screen.getAllByRole('textbox')[0], { target: { value: 'Q' } })
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /save card/i }))
@@ -116,6 +117,7 @@ describe('CardEditor — blank card is not created (#20)', () => {
     mockUseIsMobile.mockReturnValue(mobile)
     vi.mocked(createCard).mockResolvedValueOnce(null as never)
     const { container } = render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    fireEvent.change(screen.getAllByRole('textbox')[0], { target: { value: 'Q' } })
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: mobile ? /^save$/i : /save card/i }))
@@ -127,11 +129,59 @@ describe('CardEditor — blank card is not created (#20)', () => {
   })
 })
 
+describe.each([
+  ['desktop', false, /save card/i],
+  ['mobile', true, /^save$/i],
+])('CardEditor — Save is disabled while the card is blank (#20, %s)', (_label, mobile, saveName) => {
+  beforeEach(() => {
+    mockUseIsMobile.mockReturnValue(mobile)
+    vi.mocked(createCard).mockClear()
+  })
+
+  it('is disabled on a fresh card', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    expect(screen.getByRole('button', { name: saveName })).toBeDisabled()
+  })
+
+  it('stays disabled for whitespace only', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    fireEvent.change(screen.getAllByRole('textbox')[0], { target: { value: '  \n ' } })
+    expect(screen.getByRole('button', { name: saveName })).toBeDisabled()
+  })
+
+  it('enables once the question has text, and disables again when cleared', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    const question = screen.getAllByRole('textbox')[0]
+    fireEvent.change(question, { target: { value: 'Q' } })
+    expect(screen.getByRole('button', { name: saveName })).toBeEnabled()
+    fireEvent.change(question, { target: { value: '' } })
+    expect(screen.getByRole('button', { name: saveName })).toBeDisabled()
+  })
+
+  it('enables when only the answer has text', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    fireEvent.mouseDown(screen.getByText('Write the answer…'))
+    fireEvent.change(screen.getAllByRole('textbox').at(-1)!, { target: { value: 'A' } })
+    expect(screen.getByRole('button', { name: saveName })).toBeEnabled()
+  })
+
+  it('⌘↵ does not submit a blank card, but does once it has text', async () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    await act(async () => { fireEvent.keyDown(window, { key: 'Enter', metaKey: true }) })
+    expect(createCard).not.toHaveBeenCalled()
+
+    fireEvent.change(screen.getAllByRole('textbox')[0], { target: { value: 'Q' } })
+    await act(async () => { fireEvent.keyDown(window, { key: 'Enter', metaKey: true }) })
+    expect(createCard).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe('CardEditor — mobile skeleton', () => {
   beforeEach(() => mockUseIsMobile.mockReturnValue(true))
 
   it('renders a Save pill in the mobile top bar that submits the form', async () => {
     render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    fireEvent.change(screen.getAllByRole('textbox')[0], { target: { value: 'Q' } })
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /^save$/i }))
@@ -203,6 +253,7 @@ describe('CardEditor — mobile card body (Screen 3 tokens)', () => {
   it('shows the error message centered below the card when save fails', async () => {
     vi.mocked(createCard).mockRejectedValueOnce(new Error('Boom'))
     render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    fireEvent.change(screen.getAllByRole('textbox')[0], { target: { value: 'Q' } })
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /^save$/i }))

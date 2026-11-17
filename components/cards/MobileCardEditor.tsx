@@ -28,6 +28,7 @@ interface Props {
   formRef: React.RefObject<HTMLFormElement | null>
   formAction: (formData: FormData) => void
   pending: boolean
+  blank: boolean
   state: State
   onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
   onBack: () => void
@@ -36,7 +37,7 @@ interface Props {
 
 export default function MobileCardEditor({
   deck, flipDuration, bg, ink, face, flipped, setFace, previousCardId,
-  questionFace, answerFace, formRef, formAction, pending, state, onKeyDown, onBack,
+  questionFace, answerFace, formRef, formAction, pending, blank, state, onKeyDown, onBack,
 }: Props) {
   return (
     <div className="h-dvh bg-surface flex flex-col">
@@ -46,6 +47,7 @@ export default function MobileCardEditor({
         onBack={onBack}
         onSave={() => formRef.current?.requestSubmit()}
         saving={pending}
+        saveDisabled={blank}
       />
 
       {/* Card stage */}

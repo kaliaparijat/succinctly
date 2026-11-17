@@ -29,6 +29,7 @@ interface Props {
   formRef: React.RefObject<HTMLFormElement | null>
   formAction: (formData: FormData) => void
   pending: boolean
+  blank: boolean
   state: State
   onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
   onCancel: () => void
@@ -37,7 +38,7 @@ interface Props {
 
 export default function DesktopCardEditor({
   deck, cardNumber, flipDuration, bg, ink, face, flipped, setFace, previousCardId,
-  questionFace, answerFace, formRef, formAction, pending, state, onKeyDown, onCancel,
+  questionFace, answerFace, formRef, formAction, pending, blank, state, onKeyDown, onCancel,
 }: Props) {
   return (
     <div className="min-h-screen bg-surface flex flex-col">
@@ -135,7 +136,7 @@ export default function DesktopCardEditor({
               </button>
               <button
                 type="submit"
-                disabled={pending}
+                disabled={pending || blank}
                 className="flex items-center gap-2 px-4 py-2 rounded-btn text-sm font-sans font-500 bg-primary text-surface hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 Save card

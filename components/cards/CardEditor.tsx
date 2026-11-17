@@ -47,6 +47,8 @@ export default function CardEditor({ deck, cardNumber, previousCardId, flipDurat
 
   const { bg, ink } = PALETTES[deck.palette as Palette] ?? PALETTES.butter
   const flipped = face === 'answer'
+  // A card with both faces blank can't be saved (createCard refuses it too).
+  const blank = !questionFace.text.trim() && !answerFace.text.trim()
 
   const [state, formAction, pending] = useActionState<State, FormData>(
     async (prev, formData) => {
@@ -90,13 +92,13 @@ export default function CardEditor({ deck, cardNumber, previousCardId, flipDurat
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !blank) {
         formRef.current?.requestSubmit()
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [])
+  }, [blank])
 
   function handleFlipKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Tab') {
@@ -128,6 +130,7 @@ export default function CardEditor({ deck, cardNumber, previousCardId, flipDurat
         formRef={formRef}
         formAction={formAction}
         pending={pending}
+        blank={blank}
         state={state}
         onKeyDown={handleFlipKeyDown}
         onBack={handleCancel}
@@ -151,6 +154,7 @@ export default function CardEditor({ deck, cardNumber, previousCardId, flipDurat
       formRef={formRef}
       formAction={formAction}
       pending={pending}
+      blank={blank}
       state={state}
       onKeyDown={handleFlipKeyDown}
       onCancel={handleCancel}
