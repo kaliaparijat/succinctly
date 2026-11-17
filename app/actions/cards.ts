@@ -18,6 +18,11 @@ export async function listCards(deckId: string) {
 }
 
 export async function createCard(formData: FormData) {
+  const question = formData.get('question') as string
+  const referenceAnswer = formData.get('reference_answer') as string
+  // A card with both faces blank is never created (one blank face is fine).
+  if (!question?.trim() && !referenceAnswer?.trim()) return null
+
   const supabase = await createClient()
 
   const deckId = formData.get('deck_id') as string
@@ -53,8 +58,8 @@ export async function createCard(formData: FormData) {
 
   const { data, error } = await supabase.from('cards').insert({
     deck_id: deckId,
-    question: formData.get('question') as string,
-    reference_answer: formData.get('reference_answer') as string,
+    question,
+    reference_answer: referenceAnswer,
     position,
   }).select().single()
 

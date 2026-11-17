@@ -101,6 +101,25 @@ describe('createCard', () => {
     expect(state.insertedRow).toMatchObject({ position: 3 })
   })
 
+  it.each([
+    ['both empty', '', ''],
+    ['both whitespace-only', '  \n ', '\t'],
+  ])('inserts nothing and returns null when the card is blank (%s)', async (_label, question, answer) => {
+    const result = await createCard(formFor({ question, reference_answer: answer }))
+
+    expect(result).toBeNull()
+    expect(mockFrom).not.toHaveBeenCalled()
+  })
+
+  it('still creates a card with only one face filled', async () => {
+    await createCard(formFor({ question: 'Q', reference_answer: '' }))
+    expect(state.insertedRow).toMatchObject({ question: 'Q', reference_answer: '' })
+
+    state.insertedRow = undefined
+    await createCard(formFor({ question: '  ', reference_answer: 'A' }))
+    expect(state.insertedRow).toMatchObject({ reference_answer: 'A' })
+  })
+
   it('places the first card of an empty deck at position 0 without looking up an anchor', async () => {
     await createCard(formFor())
 
