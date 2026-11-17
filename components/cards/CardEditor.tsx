@@ -52,6 +52,8 @@ export default function CardEditor({ deck, cardNumber, previousCardId, flipDurat
     async (prev, formData) => {
       try {
         const newCard = await createCard(formData)
+        // null: a blank card is never created. Stay on the editor, quietly.
+        if (!newCard) return null
         navigateWithTransition(router, `/decks/${deck.id}/cards/${newCard.id}`, 'forward')
         return null
       } catch (e) {

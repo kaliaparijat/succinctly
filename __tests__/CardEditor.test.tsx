@@ -108,6 +108,25 @@ describe('CardEditor — Save navigation (create mode)', () => {
   })
 })
 
+describe('CardEditor — blank card is not created (#20)', () => {
+  it.each([
+    ['desktop', false],
+    ['mobile', true],
+  ])('%s: stays put with no error when createCard returns null', async (_label, mobile) => {
+    mockUseIsMobile.mockReturnValue(mobile)
+    vi.mocked(createCard).mockResolvedValueOnce(null as never)
+    const { container } = render(<CardEditor deck={mockDeck} cardNumber={1} />)
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: mobile ? /^save$/i : /save card/i }))
+    })
+
+    expect(createCard).toHaveBeenCalled()
+    expect(mockNavigateWithTransition).not.toHaveBeenCalled()
+    expect(container).not.toHaveTextContent(/cannot read|null|error/i)
+  })
+})
+
 describe('CardEditor — mobile skeleton', () => {
   beforeEach(() => mockUseIsMobile.mockReturnValue(true))
 
