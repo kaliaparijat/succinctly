@@ -5,6 +5,7 @@ import MarkdownFace from '@/components/cards/markdown/MarkdownFace'
 import FormatToolbar from '@/components/cards/markdown/FormatToolbar'
 import type { FormatKind } from '@/lib/applyFormat'
 import type { useMarkdownFace } from '@/components/cards/markdown/useMarkdownFace'
+import type { FaceName } from '@/lib/faceName'
 
 interface Deck {
   id: string
@@ -12,7 +13,6 @@ interface Deck {
   palette: string
 }
 
-type Face = 'question' | 'answer'
 type State = { error?: string } | null
 
 interface Props {
@@ -20,9 +20,9 @@ interface Props {
   flipDuration: number
   bg: string
   ink: string
-  face: Face
+  face: FaceName
   flipped: boolean
-  setFace: (face: Face) => void
+  setFace: (face: FaceName) => void
   questionFace: ReturnType<typeof useMarkdownFace>
   answerFace: ReturnType<typeof useMarkdownFace>
   formRef: React.RefObject<HTMLFormElement | null>

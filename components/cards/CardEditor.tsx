@@ -9,6 +9,7 @@ import { useIsMobile } from '@/hooks/useIsMobile'
 import { useMarkdownFace } from '@/components/cards/markdown/useMarkdownFace'
 import DesktopCardEditor from '@/components/cards/DesktopCardEditor'
 import MobileCardEditor from '@/components/cards/MobileCardEditor'
+import type { FaceName } from '@/lib/faceName'
 
 interface Deck {
   id: string
@@ -16,7 +17,6 @@ interface Deck {
   palette: string
 }
 
-type Face = 'question' | 'answer'
 type State = { error?: string } | null
 
 interface Props {
@@ -27,7 +27,7 @@ interface Props {
 }
 
 export default function CardEditor({ deck, cardNumber, previousCardId, flipDuration = 380 }: Props) {
-  const [face, setFace] = useState<Face>('question')
+  const [face, setFace] = useState<FaceName>('question')
   // Only the Question face starts editing (matches the design: "the New
   // card flow opens with the Question face already editing"). The Answer
   // face starts closed/click-to-edit — not just to match the design, but
@@ -69,7 +69,7 @@ export default function CardEditor({ deck, cardNumber, previousCardId, flipDurat
   // immediately; the outgoing face renders (closes) once the flip animation
   // finishes, so content never visibly swaps mid-rotation. Flipping while
   // viewing (not editing) keeps the incoming face in rendered mode too.
-  function flipTo(next: Face) {
+  function flipTo(next: FaceName) {
     if (next === face) return
     const from = face === 'question' ? questionFace : answerFace
     const to = next === 'question' ? questionFace : answerFace
