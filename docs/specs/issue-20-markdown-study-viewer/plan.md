@@ -124,7 +124,7 @@ green. One logical change per commit, suite green after each. Phase 4 is verific
 
 - [x] **4.1** Delete unused `contentEditable` code/props/types; `npm test`, `tsc --noEmit`,
       `npm run lint` (no new errors), `npm run build`, no skipped tests.
-- [ ] **4.2 Live check** at 1280×800 and 390×844 (jsdom can't cover these): Markdown renders on both
+- [x] **4.2 Live check** at 1280×800 and 390×844 (jsdom can't cover these): Markdown renders on both
       faces after a flip; single click still flips, double-click edits; view ↔ edit does not resize
       the card; the first and second face are both editable after a toggle (backface hit-testing);
       replay #21's three bugs (clear a face then toggle; flash after blur; edit one face, toggle,
