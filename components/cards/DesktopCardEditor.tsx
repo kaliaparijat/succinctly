@@ -130,14 +130,14 @@ export default function DesktopCardEditor({
               <button
                 type="button"
                 onClick={onCancel}
-                className="px-4 py-2 rounded-btn text-sm font-sans text-secondary border border-divider hover:border-divider-strong hover:text-primary transition-colors"
+                className="px-4 py-2 rounded-btn text-sm font-sans text-primary border border-divider-strong hover:bg-surface-hover transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={pending || blank}
-                className="flex items-center gap-2 px-4 py-2 rounded-btn text-sm font-sans font-500 bg-primary text-surface hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 rounded-btn text-sm font-sans font-500 bg-primary text-surface hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Save card
                 <kbd className="hidden md:inline font-mono text-[10px] px-1 py-0.5 rounded border border-divider-strong bg-surface-card text-tertiary">⌘↵</kbd>

@@ -176,6 +176,23 @@ describe.each([
   })
 })
 
+describe('CardEditor — Cancel stays distinguishable from a disabled Save (desktop, #20)', () => {
+  // A blank card disables Save (solid pill at 50% opacity). Cancel must not also look faded, or the
+  // footer reads as two disabled buttons. jsdom can't compute the rendered contrast, so this pins the tokens.
+  it('Cancel uses full-contrast text and the strong divider, not the muted secondary styling', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    const cancel = screen.getByRole('button', { name: /cancel/i })
+    expect(cancel).toHaveClass('text-primary', 'border-divider-strong')
+    expect(cancel).not.toHaveClass('text-secondary')
+    expect(cancel).toBeEnabled()
+  })
+
+  it('a disabled Save shows the not-allowed cursor', () => {
+    render(<CardEditor deck={mockDeck} cardNumber={1} />)
+    expect(screen.getByRole('button', { name: /save card/i })).toHaveClass('disabled:cursor-not-allowed')
+  })
+})
+
 describe('CardEditor — mobile skeleton', () => {
   beforeEach(() => mockUseIsMobile.mockReturnValue(true))
 
