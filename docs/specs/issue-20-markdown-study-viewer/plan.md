@@ -129,8 +129,10 @@ green. One logical change per commit, suite green after each. Phase 4 is verific
       the card; the first and second face are both editable after a toggle (backface hit-testing);
       replay #21's three bugs (clear a face then toggle; flash after blur; edit one face, toggle,
       edit the other); an empty face; a card with code + math.
-- [ ] **4.3** browser-qa against the PR preview (desktop + mobile), including WebKit for the Q/A
-      toggle's mousedown handling.
+- [x] **4.3** ~~browser-qa against the PR preview~~ — verified by hand by the owner on the preview
+      (desktop + mobile, incl. WebKit); the `browser-qa` agent had no Playwright tools in this session.
+      What didn't work to the owner's eye (bold look, list styling, viewer font, scrolling) is tabled
+      in `docs/ideas/study-viewer-typography.md`.
 - [ ] **4.4 PR:** body says "Closes #20"; verify with `gh pr view <n> --json
       closingIssuesReferences` that exactly #20 is linked (#22 and #23 are related, not closed).
 
