@@ -7,6 +7,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useSwipeGesture } from '@/hooks/useSwipeGesture'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { navigateWithTransition } from '@/lib/viewTransition'
+import type { FaceName } from '@/lib/faceName'
 import { updateCardInline } from '@/app/actions/cards'
 import { useMarkdownFace } from '@/components/cards/markdown/useMarkdownFace'
 import DesktopStudyViewer from '@/components/cards/DesktopStudyViewer'
@@ -59,9 +60,9 @@ export default function StudyViewer({
   // After a Q/A toggle the outgoing face stays in edit mode until the flip finishes, so its content
   // doesn't visibly swap to the rendered view mid-rotation (as CardEditor's flipTo does). It is still
   // `editing` but no longer the face being edited, so editingFace skips it.
-  const [lingeringFace, setLingeringFace] = useState<'question' | 'answer' | null>(null)
+  const [lingeringFace, setLingeringFace] = useState<FaceName | null>(null)
   const lingerTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const editingFace: 'question' | 'answer' | null =
+  const editingFace: FaceName | null =
     questionFace.editing && lingeringFace !== 'question' ? 'question'
     : answerFace.editing && lingeringFace !== 'answer' ? 'answer'
     : null
@@ -110,11 +111,11 @@ export default function StudyViewer({
     setTimeout(() => { setIdx(i => i - 1); setDir(null) }, commitDelayMs)
   }, [idx, commitDelayMs])
 
-  const faceFor = (which: 'question' | 'answer') => (which === 'question' ? questionFace : answerFace)
-  const textFor = (which: 'question' | 'answer') => (which === 'question' ? card.question : card.reference_answer)
+  const faceFor = (which: FaceName) => (which === 'question' ? questionFace : answerFace)
+  const textFor = (which: FaceName) => (which === 'question' ? card.question : card.reference_answer)
 
   // Seeds from the merged `card` (saved text over server props), never `cards[idx]` — see #21.
-  const openFace = (which: 'question' | 'answer') => faceFor(which).open(textFor(which))
+  const openFace = (which: FaceName) => faceFor(which).open(textFor(which))
 
   useEffect(() => () => { if (lingerTimer.current) clearTimeout(lingerTimer.current) }, [])
 
@@ -125,7 +126,7 @@ export default function StudyViewer({
     setLingeringFace(null)
   }
 
-  const handleEditSave = (nextFace: 'question' | 'answer' | null = null) => {
+  const handleEditSave = (nextFace: FaceName | null = null) => {
     if (!editingFace) return
     finishLinger()
     const face = faceFor(editingFace)
@@ -165,7 +166,7 @@ export default function StudyViewer({
     })
   }
 
-  const handleToggleFace = (newFace: 'question' | 'answer') => {
+  const handleToggleFace = (newFace: FaceName) => {
     if (newFace === editingFace) return
     handleEditSave(newFace)
     setFlipped(newFace === 'answer')

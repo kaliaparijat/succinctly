@@ -10,9 +10,10 @@ import MarkdownRenderer from '@/components/cards/markdown/MarkdownRenderer'
 import FormatToolbar from '@/components/cards/markdown/FormatToolbar'
 import MarkdownFace from '@/components/cards/markdown/MarkdownFace'
 import type { useMarkdownFace } from '@/components/cards/markdown/useMarkdownFace'
+import type { FaceName } from '@/lib/faceName'
 import QAToggle from '@/components/ui/QAToggle'
 
-type Face = ReturnType<typeof useMarkdownFace>
+type FaceState = ReturnType<typeof useMarkdownFace>
 
 interface Card {
   id: string
@@ -38,9 +39,9 @@ interface Props {
   flipped: boolean
   flipDuration: number
   hintsEnabled: boolean
-  editingFace: 'question' | 'answer' | null
-  questionFace: Face
-  answerFace: Face
+  editingFace: FaceName | null
+  questionFace: FaceState
+  answerFace: FaceState
   dir: 'next' | 'prev' | null
   swipeRef: (el: HTMLElement | null) => void
   helpOpen: boolean
@@ -49,7 +50,7 @@ interface Props {
   onDoubleClick: () => void
   onEditKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
   onBlurAway: (e: React.FocusEvent<HTMLDivElement>) => void
-  onToggleFace: (face: 'question' | 'answer') => void
+  onToggleFace: (face: FaceName) => void
   onPrev: () => void
   onNext: () => void
 }
@@ -176,10 +177,10 @@ function CardFace({
 }: {
   label: string; text: string; deckName: string; bg: string; ink: string
   tilt: number; showHint: boolean; back: boolean
-  face: Face
+  face: FaceState
   onEditKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
   onBlurAway: (e: React.FocusEvent<HTMLDivElement>) => void
-  onToggleFace: (face: 'question' | 'answer') => void
+  onToggleFace: (face: FaceName) => void
 }) {
   const isEditing = face.editing
   const placeholder = label === 'Question' ? "What's the question?" : 'Write the answer…'
