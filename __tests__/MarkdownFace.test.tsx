@@ -112,14 +112,16 @@ describe('MarkdownFace — onBlurAway', () => {
     const onBlurAway = vi.fn()
     render(
       <div>
-        <TestFace initialText="Hello" initialEditing onBlurAway={onBlurAway} />
+        <TestFace initialText="Hello" initialEditing onBlurAway={onBlurAway} ariaLabel="Question" />
         <button>outside</button>
       </div>
     )
-    fireEvent.blur(screen.getByRole('textbox'), { relatedTarget: screen.getByText('outside') })
+    // Finding the textarea by its label also asserts that ariaLabel is applied.
+    const textarea = screen.getByLabelText('Question')
+    fireEvent.blur(textarea, { relatedTarget: screen.getByText('outside') })
     expect(onBlurAway).toHaveBeenCalledTimes(1)
     // The caller decides what blur means, so the face stays open until it closes it.
-    expect(screen.getByRole('textbox')).toBeInTheDocument()
+    expect(textarea).toBeInTheDocument()
   })
 
   it('does not call onBlurAway when focus moves within the face', () => {
@@ -128,13 +130,6 @@ describe('MarkdownFace — onBlurAway', () => {
     const inside = container.querySelector('[data-face]') as HTMLElement
     fireEvent.blur(screen.getByRole('textbox'), { relatedTarget: inside })
     expect(onBlurAway).not.toHaveBeenCalled()
-  })
-})
-
-describe('MarkdownFace — ariaLabel', () => {
-  it('labels the textarea', () => {
-    render(<TestFace initialText="Hello" initialEditing ariaLabel="Question" />)
-    expect(screen.getByRole('textbox', { name: 'Question' })).toBeInTheDocument()
   })
 })
 
