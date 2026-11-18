@@ -122,7 +122,7 @@ green. One logical change per commit, suite green after each. Phase 4 is verific
 
 ## Phase 4 — Verification
 
-- [ ] **4.1** Delete unused `contentEditable` code/props/types; `npm test`, `tsc --noEmit`,
+- [x] **4.1** Delete unused `contentEditable` code/props/types; `npm test`, `tsc --noEmit`,
       `npm run lint` (no new errors), `npm run build`, no skipped tests.
 - [ ] **4.2 Live check** at 1280×800 and 390×844 (jsdom can't cover these): Markdown renders on both
       faces after a flip; single click still flips, double-click edits; view ↔ edit does not resize
