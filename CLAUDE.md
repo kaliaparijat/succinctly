@@ -99,12 +99,14 @@ Ideas start as rough brainstorms in `docs/ideas/`. When one is ready to build:
 3. **No AI calls on the client.** All AI grading happens in Server Actions or API routes. API keys never touch the browser.
 4. **Spaced repetition accuracy depends on grading quality.** The AI grading prompt is the most important logic in the app — iterate carefully.
 5. **Ship and use it.** The developer is the primary test user. If it's not useful enough to use personally, it's not ready for others.
-6. **Type refactors apply repo-wide, not just locally.** When extracting or changing a shared type
-   (e.g. replacing a repeated `'question' | 'answer'` union with a named type), update every
-   duplicate across the repo so the codebase stays consistent, not only the files the current change
-   happens to touch. This is a judgment call: if the repo-wide update is a significant effort or
-   risk, weigh it, and either scope it as its own change or say what was left and why. Don't stop at
-   the local files by default.
+6. **Type refactors: look repo-wide, propose, and let the developer decide.** Whenever a type refactor
+   is requested or introduced at one place (e.g. replacing a repeated `'question' | 'answer'` union
+   with a named type), also search the rest of the repo for the same duplication or pattern. Present
+   what you found as a concrete changeset (files and the change in each) and ask the developer for
+   permission before applying it. Don't silently widen the change, and don't silently skip it. Whether
+   a repo-wide update is worth the effort is a judgment call between you and the developer; the
+   developer gives final consent. Consistency is the goal, so recommend the repo-wide change unless
+   it is a significant effort or risk, and say so if it is.
 
 ---
 
