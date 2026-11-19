@@ -1,12 +1,19 @@
 'use client'
 
-import type { Dispatch, RefObject, SetStateAction } from 'react'
+import type { Dispatch, SetStateAction } from 'react'
 import Link from 'next/link'
 import { ViewerBar } from '@/components/layout/TopBar'
 import HelpOverlay from '@/components/ui/HelpOverlay'
 import KeyPill from '@/components/ui/KeyPill'
 import { PAPER_NOISE } from '@/lib/palette'
+import MarkdownRenderer from '@/components/cards/markdown/MarkdownRenderer'
+import FormatToolbar from '@/components/cards/markdown/FormatToolbar'
+import MarkdownFace from '@/components/cards/markdown/MarkdownFace'
+import type { useMarkdownFace } from '@/components/cards/markdown/useMarkdownFace'
+import type { FaceName } from '@/lib/faceName'
 import QAToggle from '@/components/ui/QAToggle'
+
+type FaceState = ReturnType<typeof useMarkdownFace>
 
 interface Card {
   id: string
@@ -32,25 +39,26 @@ interface Props {
   flipped: boolean
   flipDuration: number
   hintsEnabled: boolean
-  editingFace: 'question' | 'answer' | null
-  editRef: RefObject<HTMLDivElement | null>
+  editingFace: FaceName | null
+  questionFace: FaceState
+  answerFace: FaceState
   dir: 'next' | 'prev' | null
   swipeRef: (el: HTMLElement | null) => void
   helpOpen: boolean
   setHelpOpen: Dispatch<SetStateAction<boolean>>
   onClick: () => void
   onDoubleClick: () => void
-  onEditKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void
-  onEditBlur: (e: React.FocusEvent<HTMLDivElement>) => void
-  onToggleFace: (face: 'question' | 'answer') => void
+  onEditKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
+  onBlurAway: (e: React.FocusEvent<HTMLDivElement>) => void
+  onToggleFace: (face: FaceName) => void
   onPrev: () => void
   onNext: () => void
 }
 
 export default function DesktopStudyViewer({
   deck, card, idx, totalCards, bg, ink, tilt, progress, flipped, flipDuration,
-  hintsEnabled, editingFace, editRef, dir, swipeRef, helpOpen, setHelpOpen,
-  onClick, onDoubleClick, onEditKeyDown, onEditBlur, onToggleFace, onPrev, onNext,
+  hintsEnabled, editingFace, questionFace, answerFace, dir, swipeRef, helpOpen, setHelpOpen,
+  onClick, onDoubleClick, onEditKeyDown, onBlurAway, onToggleFace, onPrev, onNext,
 }: Props) {
   const slideStyle = dir === 'next'
     ? { transform: 'translateX(-110%)', opacity: 0 }
@@ -111,10 +119,9 @@ export default function DesktopStudyViewer({
               tilt={tilt}
               showHint={hintsEnabled && !editingFace}
               back={false}
-              isEditing={editingFace === 'question'}
-              editRef={editRef}
+              face={questionFace}
               onEditKeyDown={onEditKeyDown}
-              onEditBlur={onEditBlur}
+              onBlurAway={onBlurAway}
               onToggleFace={onToggleFace}
             />
             <CardFace
@@ -126,10 +133,9 @@ export default function DesktopStudyViewer({
               tilt={tilt}
               showHint={hintsEnabled && !editingFace}
               back={true}
-              isEditing={editingFace === 'answer'}
-              editRef={editRef}
+              face={answerFace}
               onEditKeyDown={onEditKeyDown}
-              onEditBlur={onEditBlur}
+              onBlurAway={onBlurAway}
               onToggleFace={onToggleFace}
             />
           </div>
@@ -167,16 +173,17 @@ export default function DesktopStudyViewer({
 
 function CardFace({
   label, text, deckName, bg, ink, tilt, showHint, back,
-  isEditing, editRef, onEditKeyDown, onEditBlur, onToggleFace,
+  face, onEditKeyDown, onBlurAway, onToggleFace,
 }: {
   label: string; text: string; deckName: string; bg: string; ink: string
   tilt: number; showHint: boolean; back: boolean
-  isEditing: boolean
-  editRef: RefObject<HTMLDivElement | null>
-  onEditKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void
-  onEditBlur: (e: React.FocusEvent<HTMLDivElement>) => void
-  onToggleFace: (face: 'question' | 'answer') => void
+  face: FaceState
+  onEditKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
+  onBlurAway: (e: React.FocusEvent<HTMLDivElement>) => void
+  onToggleFace: (face: FaceName) => void
 }) {
+  const isEditing = face.editing
+  const placeholder = label === 'Question' ? "What's the question?" : 'Write the answer…'
   return (
     <div
       className="absolute inset-0 rounded-card overflow-hidden flex flex-col"
@@ -184,39 +191,48 @@ function CardFace({
         backfaceVisibility: 'hidden',
         WebkitBackfaceVisibility: 'hidden',
         background: bg,
+        '--card-ink': ink,
         transform: `rotate(${tilt}deg)${back ? ' rotateY(180deg)' : ''}`,
         boxShadow: '0 1px 2px rgba(0,0,0,0.3), 0 24px 60px rgba(0,0,0,0.4)',
         willChange: 'transform',
         ...(isEditing ? { outline: `2px solid ${ink}25`, outlineOffset: '-2px' } : {}),
-      }}
+      } as React.CSSProperties}
     >
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: PAPER_NOISE, mixBlendMode: 'multiply', opacity: 0.5 }} />
 
       <div className="relative flex items-center justify-between px-5 py-3 shrink-0" style={{ borderBottom: `1px solid ${ink}20` }}>
         <span className="font-mono text-[10px] uppercase tracking-[0.8px]" style={{ color: ink, opacity: 0.5 }}>{label}</span>
-        <span className="font-sans text-[11px]" style={{ color: ink, opacity: 0.4 }}>{deckName}</span>
+        {isEditing
+          ? <FormatToolbar onFmt={face.fmt} color={ink} />
+          : <span className="font-sans text-[11px]" style={{ color: ink, opacity: 0.4 }}>{deckName}</span>}
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-10 py-6 relative">
-        <div
-          ref={isEditing ? editRef : null}
-          contentEditable={isEditing ? 'plaintext-only' : 'false'}
-          suppressContentEditableWarning
-          role={isEditing ? 'textbox' : undefined}
-          aria-label={isEditing ? label : undefined}
-          onKeyDown={isEditing ? onEditKeyDown : undefined}
-          onBlur={isEditing ? onEditBlur : undefined}
-          className="font-display text-center leading-snug outline-none w-full"
-          style={{
-            color: ink,
-            fontSize: 'clamp(20px, 3vw, 40px)',
-            letterSpacing: '-0.5px',
-            cursor: isEditing ? 'text' : 'inherit',
-            minHeight: '1em',
-          }}
-        >
-          {!isEditing && text}
-        </div>
+      <div className="flex-1 min-h-0 relative">
+        {isEditing ? (
+          <MarkdownFace
+            name={back ? 'reference_answer' : 'question'}
+            face={face}
+            placeholder={placeholder}
+            ariaLabel={label}
+            ink={ink}
+            onKeyDown={onEditKeyDown}
+            onBlurAway={onBlurAway}
+            paddingClassName="pt-[26px] px-[44px] pb-[74px]"
+            textareaClassName="font-mono text-[14px] leading-[1.65] text-[var(--card-ink)] caret-[var(--card-ink)] placeholder:opacity-[0.35]"
+          />
+        ) : (
+          /* Scroller owns the design's padding (bottom clears the toggle/hint); the text block below
+             centers itself with my-auto: centered when short, top-aligned and scrollable when long. */
+          <div className="absolute inset-0 overflow-y-auto flex flex-col pt-[26px] px-[44px] pb-[74px]">
+            <div
+              className="font-display text-center leading-snug w-full my-auto"
+              style={{ color: ink, fontSize: 'clamp(20px, 3vw, 40px)', letterSpacing: '-0.5px', minHeight: '1em' }}
+            >
+              {/* size="inherit": the text container above owns the fluid font size */}
+              <MarkdownRenderer src={text} placeholder={placeholder} size="inherit" codeSize={13} ink={ink} />
+            </div>
+          </div>
+        )}
 
         {isEditing && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2">

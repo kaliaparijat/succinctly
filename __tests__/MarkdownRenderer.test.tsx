@@ -46,3 +46,21 @@ describe('MarkdownRenderer', () => {
     expect(container.firstChild).toHaveStyle({ textAlign: 'left' })
   })
 })
+
+describe('MarkdownRenderer — size', () => {
+  it('accepts a CSS length and sets it once on the root; blocks size relative to it', () => {
+    const { container } = render(
+      <MarkdownRenderer src={'Hello\n\n- one'} placeholder="p" size="2.5vw" />
+    )
+    const root = container.firstElementChild as HTMLElement
+    // (jsdom can't parse clamp(), so a plain viewport length stands in for the viewer's fluid size.)
+    expect(root.style.fontSize).toBe('2.5vw')
+    expect((container.querySelector('.rt') as HTMLElement).style.fontSize).toBe('1em')
+    expect((container.querySelector('ul') as HTMLElement).style.fontSize).toBe('0.92em')
+  })
+
+  it('treats a number as pixels, as before', () => {
+    const { container } = render(<MarkdownRenderer src="Hello" placeholder="p" size={25} />)
+    expect((container.firstElementChild as HTMLElement).style.fontSize).toBe('25px')
+  })
+})

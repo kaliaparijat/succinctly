@@ -31,9 +31,16 @@ interface Props {
    * then reads the resulting blur as "focus left the face" and self-closes.
    */
   autoFocus?: boolean
+  /**
+   * What focus leaving the face means. Default: close the face. A caller that saves on blur
+   * (the study viewer) passes this instead and closes the face itself.
+   */
+  onBlurAway?: (e: React.FocusEvent<HTMLDivElement>) => void
+  /** Accessible name for the editing textarea. */
+  ariaLabel?: string
 }
 
-export default function MarkdownFace({ name, face, placeholder, size = 24, codeSize = 13, ink, className, textareaClassName = '', paddingClassName = '', onKeyDown, autoFocus = true }: Props) {
+export default function MarkdownFace({ name, face, placeholder, size = 24, codeSize = 13, ink, className, textareaClassName = '', paddingClassName = '', onKeyDown, autoFocus = true, onBlurAway, ariaLabel }: Props) {
   const { text, editing, open, close, setText, textareaRef, onKeyDown: faceOnKeyDown } = face
 
   function handleBlur(e: React.FocusEvent<HTMLDivElement>) {
@@ -45,7 +52,8 @@ export default function MarkdownFace({ name, face, placeholder, size = 24, codeS
     // closes this face on its own schedule (after the flip animation), so
     // don't race it by closing instantly here too.
     if (next && next.closest('[data-face]')) return
-    close()
+    if (onBlurAway) onBlurAway(e)
+    else close()
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -70,6 +78,7 @@ export default function MarkdownFace({ name, face, placeholder, size = 24, codeS
           <textarea
             ref={textareaRef}
             value={text}
+            aria-label={ariaLabel}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={`${placeholder}   **bold**  \`code\`  $math$`}

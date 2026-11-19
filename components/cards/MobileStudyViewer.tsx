@@ -1,10 +1,16 @@
 'use client'
 
-import type { RefObject } from 'react'
 import Link from 'next/link'
 import { MobileViewerBar } from '@/components/layout/TopBar'
 import { PAPER_NOISE } from '@/lib/palette'
+import MarkdownRenderer from '@/components/cards/markdown/MarkdownRenderer'
+import FormatToolbar from '@/components/cards/markdown/FormatToolbar'
+import MarkdownFace from '@/components/cards/markdown/MarkdownFace'
+import type { useMarkdownFace } from '@/components/cards/markdown/useMarkdownFace'
+import type { FaceName } from '@/lib/faceName'
 import QAToggle from '@/components/ui/QAToggle'
+
+type FaceState = ReturnType<typeof useMarkdownFace>
 
 interface Card {
   id: string
@@ -37,8 +43,9 @@ interface Props {
   flipped: boolean
   flipDuration: number
   hintsEnabled: boolean
-  editingFace: 'question' | 'answer' | null
-  editRef: RefObject<HTMLDivElement | null>
+  editingFace: FaceName | null
+  questionFace: FaceState
+  answerFace: FaceState
   dir: 'next' | 'prev' | null
   swipeRef: (el: HTMLElement | null) => void
   dragX: number
@@ -46,17 +53,18 @@ interface Props {
   onBackClick: () => void
   onEditClick: () => void
   onFlip: () => void
-  onEditKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void
-  onEditBlur: (e: React.FocusEvent<HTMLDivElement>) => void
-  onToggleFace: (face: 'question' | 'answer') => void
+  onEditKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
+  onBlurAway: (e: React.FocusEvent<HTMLDivElement>) => void
+  onDone: () => void
+  onToggleFace: (face: FaceName) => void
   onPrev: () => void
   onNext: () => void
 }
 
 export default function MobileStudyViewer({
   deck, card, idx, totalCards, bg, ink, tilt, flipped, flipDuration,
-  hintsEnabled, editingFace, editRef, dir, swipeRef, dragX, isDragging,
-  onBackClick, onEditClick, onFlip, onEditKeyDown, onEditBlur, onToggleFace, onPrev, onNext,
+  hintsEnabled, editingFace, questionFace, answerFace, dir, swipeRef, dragX, isDragging,
+  onBackClick, onEditClick, onFlip, onEditKeyDown, onBlurAway, onDone, onToggleFace, onPrev, onNext,
 }: Props) {
   let transform: string
   let transition: string | undefined
@@ -129,10 +137,10 @@ export default function MobileStudyViewer({
               tilt={tilt}
               showHint={hintsEnabled && !editingFace}
               back={false}
-              isEditing={editingFace === 'question'}
-              editRef={editRef}
+              face={questionFace}
               onEditKeyDown={onEditKeyDown}
-              onEditBlur={onEditBlur}
+              onBlurAway={onBlurAway}
+              onDone={onDone}
               onToggleFace={onToggleFace}
               viewTransitionName={`card-${deck.id}`}
             />
@@ -145,10 +153,10 @@ export default function MobileStudyViewer({
               tilt={tilt}
               showHint={hintsEnabled && !editingFace}
               back={true}
-              isEditing={editingFace === 'answer'}
-              editRef={editRef}
+              face={answerFace}
               onEditKeyDown={onEditKeyDown}
-              onEditBlur={onEditBlur}
+              onBlurAway={onBlurAway}
+              onDone={onDone}
               onToggleFace={onToggleFace}
             />
           </div>
@@ -175,17 +183,19 @@ export default function MobileStudyViewer({
 
 function CardFace({
   label, text, deckName, bg, ink, tilt, showHint, back,
-  isEditing, editRef, onEditKeyDown, onEditBlur, onToggleFace, viewTransitionName,
+  face, onEditKeyDown, onBlurAway, onDone, onToggleFace, viewTransitionName,
 }: {
   label: string; text: string; deckName: string; bg: string; ink: string
   tilt: number; showHint: boolean; back: boolean
-  isEditing: boolean
-  editRef: RefObject<HTMLDivElement | null>
-  onEditKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void
-  onEditBlur: (e: React.FocusEvent<HTMLDivElement>) => void
-  onToggleFace: (face: 'question' | 'answer') => void
+  face: FaceState
+  onEditKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
+  onBlurAway: (e: React.FocusEvent<HTMLDivElement>) => void
+  onDone: () => void
+  onToggleFace: (face: FaceName) => void
   viewTransitionName?: string
 }) {
+  const isEditing = face.editing
+  const placeholder = label === 'Question' ? "What's the question?" : 'Write the answer…'
   return (
     <div
       className="absolute inset-0 rounded-card overflow-hidden flex flex-col"
@@ -193,41 +203,63 @@ function CardFace({
         backfaceVisibility: 'hidden',
         WebkitBackfaceVisibility: 'hidden',
         background: bg,
+        '--card-ink': ink,
         transform: `rotate(${tilt}deg)${back ? ' rotateY(180deg)' : ''}`,
         boxShadow: '0 1px 2px rgba(0,0,0,0.3), 0 24px 60px rgba(0,0,0,0.4)',
         willChange: 'transform',
         ...(isEditing ? { outline: `2px solid ${ink}25`, outlineOffset: '-2px' } : {}),
         ...(viewTransitionName ? { viewTransitionName } : {}),
-      }}
+      } as React.CSSProperties}
     >
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: PAPER_NOISE, mixBlendMode: 'multiply', opacity: 0.5 }} />
 
       <div className="relative flex items-center justify-between shrink-0" style={{ padding: '18px 22px 14px', borderBottom: `1px solid ${ink}1c` }}>
         <span className="font-mono text-[10px] uppercase tracking-[0.8px]" style={{ color: ink, opacity: 0.5 }}>{label}</span>
-        <span className="font-sans text-[11px]" style={{ color: ink, opacity: 0.4 }}>{deckName}</span>
+        {isEditing ? (
+          <div className="flex items-center gap-2">
+            <FormatToolbar onFmt={face.fmt} size={30} gap={0} color={ink} />
+            <button
+              type="button"
+              // Keep focus in the textarea so tapping Done saves via onDone, not via the blur it would cause.
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={onDone}
+              className="font-mono text-[9.5px] uppercase tracking-[0.7px] rounded-pill px-[10px] py-[5px]"
+              style={{ background: ink, color: bg }}
+            >
+              Done
+            </button>
+          </div>
+        ) : (
+          <span className="font-sans text-[11px]" style={{ color: ink, opacity: 0.4 }}>{deckName}</span>
+        )}
       </div>
 
-      <div className="flex-1 flex items-center justify-center relative p-[18px_26px] landscape:p-[6px_40px]">
-        <div
-          ref={isEditing ? editRef : null}
-          contentEditable={isEditing ? 'plaintext-only' : 'false'}
-          suppressContentEditableWarning
-          role={isEditing ? 'textbox' : undefined}
-          aria-label={isEditing ? label : undefined}
-          onKeyDown={isEditing ? onEditKeyDown : undefined}
-          onBlur={isEditing ? onEditBlur : undefined}
-          className="font-display text-center outline-none w-full text-[27px] landscape:text-[24px]"
-          style={{
-            color: ink,
-            lineHeight: 1.28,
-            letterSpacing: '-0.3px',
-            textWrap: 'pretty',
-            cursor: isEditing ? 'text' : 'inherit',
-            minHeight: '1em',
-          }}
-        >
-          {!isEditing && text}
-        </div>
+      <div className="flex-1 min-h-0 relative">
+        {isEditing ? (
+          <MarkdownFace
+            name={back ? 'reference_answer' : 'question'}
+            face={face}
+            placeholder={placeholder}
+            ariaLabel={label}
+            ink={ink}
+            onKeyDown={onEditKeyDown}
+            onBlurAway={onBlurAway}
+            paddingClassName="pt-[18px] px-5 pb-[66px] landscape:pt-[6px] landscape:px-10 landscape:pb-11"
+            textareaClassName="font-mono text-[12.5px] leading-[1.65] text-[var(--card-ink)] caret-[var(--card-ink)] placeholder:opacity-[0.35]"
+          />
+        ) : (
+          /* Scroller owns the design's padding (bottom clears the toggle/hint); the text block below
+             centers itself with my-auto: centered when short, top-aligned and scrollable when long. */
+          <div className="absolute inset-0 overflow-y-auto flex flex-col pt-[18px] px-5 pb-[66px] landscape:pt-[6px] landscape:px-10 landscape:pb-11">
+            <div
+              className="font-display text-center w-full my-auto text-[27px] landscape:text-[24px]"
+              style={{ color: ink, lineHeight: 1.28, letterSpacing: '-0.3px', textWrap: 'pretty', minHeight: '1em' }}
+            >
+              {/* size="inherit": the text container above owns the responsive font size (including mobile landscape) */}
+              <MarkdownRenderer src={text} placeholder={placeholder} size="inherit" codeSize={10.5} ink={ink} />
+            </div>
+          </div>
+        )}
 
         {isEditing && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2">

@@ -228,3 +228,63 @@ describe('useMarkdownFace — onKeyDown', () => {
     expect(result.current.text).toBe('plain text')
   })
 })
+
+describe('useMarkdownFace — open(seed)', () => {
+  function attach(result: { current: ReturnType<typeof useMarkdownFace> }, value: string) {
+    const ta = document.createElement('textarea')
+    document.body.appendChild(ta)
+    ta.value = value
+    ta.selectionStart = ta.selectionEnd = 0
+    act(() => { result.current.textareaRef.current = ta })
+    return ta
+  }
+
+  it('replaces the text with the seed and starts editing', () => {
+    const { result } = renderHook(() => useMarkdownFace({ initialText: 'old' }))
+    act(() => result.current.open('new text'))
+    expect(result.current.text).toBe('new text')
+    expect(result.current.editing).toBe(true)
+  })
+
+  it('puts the caret at the end of the seed', () => {
+    const { result } = renderHook(() => useMarkdownFace())
+    const ta = attach(result, 'seeded')
+    act(() => result.current.open('seeded'))
+    expect(ta.selectionStart).toBe(6)
+    expect(ta.selectionEnd).toBe(6)
+    document.body.removeChild(ta)
+  })
+
+  it('open() with no seed keeps the text and puts the caret at its end', () => {
+    const { result } = renderHook(() => useMarkdownFace({ initialText: 'abc' }))
+    const ta = attach(result, 'abc')
+    act(() => result.current.open())
+    expect(result.current.text).toBe('abc')
+    expect(ta.selectionStart).toBe(3)
+    document.body.removeChild(ta)
+  })
+})
+
+describe('useMarkdownFace — cancel signal', () => {
+  it('Escape flags a cancel that consumeCancel() reports once, so a blur handler can skip its save', () => {
+    const { result } = renderHook(() => useMarkdownFace({ initialText: 'hi', initialEditing: true }))
+    const ta = document.createElement('textarea')
+    document.body.appendChild(ta)
+    const event = {
+      key: 'Escape', metaKey: false, ctrlKey: false, shiftKey: false,
+      preventDefault: vi.fn(), stopPropagation: vi.fn(), currentTarget: ta,
+    } as unknown as React.KeyboardEvent<HTMLTextAreaElement>
+
+    act(() => result.current.onKeyDown(event))
+
+    expect(result.current.consumeCancel()).toBe(true)
+    expect(result.current.consumeCancel()).toBe(false)
+    document.body.removeChild(ta)
+  })
+
+  it('is not set by a plain close()', () => {
+    const { result } = renderHook(() => useMarkdownFace({ initialEditing: true }))
+    act(() => result.current.close())
+    expect(result.current.consumeCancel()).toBe(false)
+  })
+})

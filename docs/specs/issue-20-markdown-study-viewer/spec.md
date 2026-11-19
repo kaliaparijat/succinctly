@@ -2,7 +2,7 @@
 
 Issue: https://github.com/kaliaparijat/succinctly/issues/20
 
-Delivered on the `issue-18` branch / PR #19, together with #18's work (one PR to review, test and merge).
+Delivered on the `issue-20` branch in its own PR, after #18 (PR #19) merged.
 
 Plan: `plan.md` (this folder). Builds on `docs/specs/issue-18-markdown-card-editor/spec.md`, which shipped Markdown
 authoring for new cards and explicitly deferred the two items below.
@@ -54,19 +54,19 @@ parsing or rendering logic.
   face's own wrapper, not inherited from an ancestor.
 
 ## Acceptance Criteria
-- [ ] Study viewer renders Markdown on both faces, desktop and mobile
-- [ ] A card with an empty question or answer renders the placeholder without errors and can
+- [x] Study viewer renders Markdown on both faces, desktop and mobile
+- [x] A card with an empty question or answer renders the placeholder without errors and can
       be entered for editing (test: card with `reference_answer: ''`)
-- [ ] Existing cards can be edited with the Markdown textarea and toolbar, desktop and mobile
-- [ ] Editing a card, then blurring, persists the new source via `updateCardInline`
-- [ ] Clearing one face and blurring saves the empty face; clearing both faces saves nothing
-- [ ] Save on a new card with both faces empty (or whitespace-only) is disabled; ⌘↵ and the server
+- [x] Existing cards can be edited with the Markdown textarea and toolbar, desktop and mobile
+- [x] Editing a card, then blurring, persists the new source via `updateCardInline`
+- [x] Clearing one face and blurring saves the empty face; clearing both faces saves nothing
+- [x] Save on a new card with both faces empty (or whitespace-only) is disabled; ⌘↵ and the server
       both refuse it (inserts nothing, does not navigate)
-- [ ] Esc cancels and restores the last saved text
-- [ ] ⌘↵ saves; study shortcuts are inactive while editing
-- [ ] Switching Q/A via the toggle mid-edit saves and keeps editing the other face
-- [ ] Toggling view ↔ edit does not resize the card (checked at 390×844 and 1280×800)
-- [ ] Padding matches the numbers above in both viewers
-- [ ] Text keeps the viewer's current sizes; short text is vertically centered when viewing and
+- [x] Esc cancels and restores the last saved text
+- [x] ⌘↵ saves; study shortcuts are inactive while editing
+- [x] Switching Q/A via the toggle mid-edit saves and keeps editing the other face
+- [x] Toggling view ↔ edit does not resize the card (checked at 390×844 and 1280×800)
+- [x] Padding matches the numbers above in both viewers
+- [x] Text keeps the viewer's current sizes; short text is vertically centered when viewing and
       top-aligned when editing
-- [ ] The `contentEditable` path is removed; `npm test` and `npm run build` pass
+- [x] The `contentEditable` path is removed; `npm test` and `npm run build` pass

@@ -1,18 +1,18 @@
-type Face = 'question' | 'answer'
+import type { FaceName } from '@/lib/faceName'
 
 interface Props {
-  face: Face
-  onChange: (face: Face) => void
+  face: FaceName
+  onChange: (face: FaceName) => void
 }
 
 export default function QAToggle({ face, onChange }: Props) {
   return (
     <div data-qa-toggle className="flex items-center gap-1 px-1 py-1 rounded-pill bg-surface-card">
-      {(['question', 'answer'] as Face[]).map(f => (
+      {(['question', 'answer'] as FaceName[]).map(f => (
         <button
           key={f}
           type="button"
-          // Prevent the default click-focus so a currently-focused contentEditable
+          // Prevent the default click-focus so a currently-focused textarea
           // (StudyViewer's inline edit) never actually blurs when this is clicked.
           // WebKit doesn't focus <button> on click by default (Chromium/Firefox do),
           // so relying on the resulting blur's relatedTarget to detect "clicked the

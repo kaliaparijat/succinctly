@@ -99,6 +99,14 @@ Ideas start as rough brainstorms in `docs/ideas/`. When one is ready to build:
 3. **No AI calls on the client.** All AI grading happens in Server Actions or API routes. API keys never touch the browser.
 4. **Spaced repetition accuracy depends on grading quality.** The AI grading prompt is the most important logic in the app — iterate carefully.
 5. **Ship and use it.** The developer is the primary test user. If it's not useful enough to use personally, it's not ready for others.
+6. **Type refactors: look repo-wide, propose, and let the developer decide.** Whenever a type refactor
+   is requested or introduced at one place (e.g. replacing a repeated `'question' | 'answer'` union
+   with a named type), also search the rest of the repo for the same duplication or pattern. Present
+   what you found as a concrete changeset (files and the change in each) and ask the developer for
+   permission before applying it. Don't silently widen the change, and don't silently skip it. Whether
+   a repo-wide update is worth the effort is a judgment call between you and the developer; the
+   developer gives final consent. Consistency is the goal, so recommend the repo-wide change unless
+   it is a significant effort or risk, and say so if it is.
 
 ---
 
@@ -124,6 +132,19 @@ When reviewing any PR, always check:
 - Commit atomically: one logical change per commit (e.g. a migration, a server action and its
   tests, a UI change and its tests), each leaving the tests green. Never squash a whole feature
   into a single commit before opening a PR.
+
+### Phase-gated review
+
+Work is reviewed one plan phase at a time:
+
+1. The plan (`docs/specs/<name>/plan.md`) is reviewed and approved before any code is written.
+2. Approval covers **one phase**. Within it, work through the tasks without asking for permission
+   between them; stop only when something needs the user's input or a decision.
+3. When the phase is done, stop. The user reviews the code and gives feedback; address it before
+   anything else.
+4. Starting the next phase needs the user's go-ahead. Approval of one phase does not carry over to
+   the next, and neither does an earlier "continue".
+5. Push after each completed phase so the user can review it on the branch/PR.
 
 ---
 

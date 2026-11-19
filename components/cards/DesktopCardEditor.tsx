@@ -5,6 +5,7 @@ import KeyPill from '@/components/ui/KeyPill'
 import MarkdownFace from '@/components/cards/markdown/MarkdownFace'
 import FormatToolbar from '@/components/cards/markdown/FormatToolbar'
 import type { useMarkdownFace } from '@/components/cards/markdown/useMarkdownFace'
+import type { FaceName } from '@/lib/faceName'
 
 interface Deck {
   id: string
@@ -12,7 +13,6 @@ interface Deck {
   palette: string
 }
 
-type Face = 'question' | 'answer'
 type State = { error?: string } | null
 
 interface Props {
@@ -21,14 +21,15 @@ interface Props {
   flipDuration: number
   bg: string
   ink: string
-  face: Face
+  face: FaceName
   flipped: boolean
-  setFace: (face: Face) => void
+  setFace: (face: FaceName) => void
   questionFace: ReturnType<typeof useMarkdownFace>
   answerFace: ReturnType<typeof useMarkdownFace>
   formRef: React.RefObject<HTMLFormElement | null>
   formAction: (formData: FormData) => void
   pending: boolean
+  blank: boolean
   state: State
   onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
   onCancel: () => void
@@ -37,7 +38,7 @@ interface Props {
 
 export default function DesktopCardEditor({
   deck, cardNumber, flipDuration, bg, ink, face, flipped, setFace, previousCardId,
-  questionFace, answerFace, formRef, formAction, pending, state, onKeyDown, onCancel,
+  questionFace, answerFace, formRef, formAction, pending, blank, state, onKeyDown, onCancel,
 }: Props) {
   return (
     <div className="min-h-screen bg-surface flex flex-col">
@@ -129,14 +130,14 @@ export default function DesktopCardEditor({
               <button
                 type="button"
                 onClick={onCancel}
-                className="px-4 py-2 rounded-btn text-sm font-sans text-secondary border border-divider hover:border-divider-strong hover:text-primary transition-colors"
+                className="px-4 py-2 rounded-btn text-sm font-sans text-primary border border-divider-strong hover:bg-surface-hover transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                disabled={pending}
-                className="flex items-center gap-2 px-4 py-2 rounded-btn text-sm font-sans font-500 bg-primary text-surface hover:opacity-90 transition-opacity disabled:opacity-50"
+                disabled={pending || blank}
+                className="flex items-center gap-2 px-4 py-2 rounded-btn text-sm font-sans font-500 bg-primary text-surface hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Save card
                 <kbd className="hidden md:inline font-mono text-[10px] px-1 py-0.5 rounded border border-divider-strong bg-surface-card text-tertiary">⌘↵</kbd>

@@ -133,9 +133,10 @@ interface MobileCreateBarProps {
   onBack: () => void
   onSave: () => void
   saving: boolean
+  saveDisabled?: boolean
 }
 
-export function MobileCreateBar({ deckName, label, onBack, onSave, saving }: MobileCreateBarProps) {
+export function MobileCreateBar({ deckName, label, onBack, onSave, saving, saveDisabled = false }: MobileCreateBarProps) {
   return (
     <header className="flex items-center justify-between p-[2px_16px_10px] landscape:p-[0px_16px_6px]">
       <button
@@ -159,7 +160,7 @@ export function MobileCreateBar({ deckName, label, onBack, onSave, saving }: Mob
         type="button"
         aria-label="Save"
         onClick={onSave}
-        disabled={saving}
+        disabled={saving || saveDisabled}
         className="rounded-pill bg-primary text-surface font-sans font-500 text-[12px] disabled:opacity-50"
         style={{ padding: '7px 14px' }}
       >

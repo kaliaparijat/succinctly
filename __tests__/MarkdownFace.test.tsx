@@ -10,6 +10,8 @@ function TestFace({
   onKeyDown,
   textareaClassName,
   paddingClassName,
+  onBlurAway,
+  ariaLabel,
 }: {
   initialText?: string
   initialEditing?: boolean
@@ -17,6 +19,8 @@ function TestFace({
   onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
   textareaClassName?: string
   paddingClassName?: string
+  onBlurAway?: (e: React.FocusEvent<HTMLDivElement>) => void
+  ariaLabel?: string
 }) {
   const face = useMarkdownFace({ initialText, initialEditing })
   return (
@@ -27,6 +31,8 @@ function TestFace({
       onKeyDown={onKeyDown}
       textareaClassName={textareaClassName}
       paddingClassName={paddingClassName}
+      onBlurAway={onBlurAway}
+      ariaLabel={ariaLabel}
     />
   )
 }
@@ -98,6 +104,32 @@ describe('MarkdownFace — blur closes editing', () => {
     fireEvent.blur(textarea, { relatedTarget: screen.getByText('outside') })
     expect(screen.queryByRole('textbox')).toBeNull()
     expect(screen.getByText('Hello')).toBeInTheDocument()
+  })
+})
+
+describe('MarkdownFace — onBlurAway', () => {
+  it('calls onBlurAway instead of closing when focus leaves the face', () => {
+    const onBlurAway = vi.fn()
+    render(
+      <div>
+        <TestFace initialText="Hello" initialEditing onBlurAway={onBlurAway} ariaLabel="Question" />
+        <button>outside</button>
+      </div>
+    )
+    // Finding the textarea by its label also asserts that ariaLabel is applied.
+    const textarea = screen.getByLabelText('Question')
+    fireEvent.blur(textarea, { relatedTarget: screen.getByText('outside') })
+    expect(onBlurAway).toHaveBeenCalledTimes(1)
+    // The caller decides what blur means, so the face stays open until it closes it.
+    expect(textarea).toBeInTheDocument()
+  })
+
+  it('does not call onBlurAway when focus moves within the face', () => {
+    const onBlurAway = vi.fn()
+    const { container } = render(<TestFace initialText="Hello" initialEditing onBlurAway={onBlurAway} />)
+    const inside = container.querySelector('[data-face]') as HTMLElement
+    fireEvent.blur(screen.getByRole('textbox'), { relatedTarget: inside })
+    expect(onBlurAway).not.toHaveBeenCalled()
   })
 })
 
